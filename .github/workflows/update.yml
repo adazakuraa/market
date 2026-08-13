@@ -1,0 +1,40 @@
+name: update-dashboard
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 平日 16:00 JST(=07:00 UTC) 大引け後に更新
+    - cron: '0 7 * * 1-5'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch master list (JPX)
+        run: python scripts/fetch_master.py
+
+      - name: Build sector strength (yfinance)
+        run: python scripts/build_sector_strength.py
+
+      - name: Render site
+        run: python scripts/render_site.py
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'auto update dashboard'
+          file_pattern: 'docs/* data/*'
