@@ -62,7 +62,28 @@ def download_close_prices(tickers):
         time.sleep(2)  # レート制限対策の小休止
     return pd.concat(all_frames, axis=1)
 
+DESPIKE_THRESHOLD = 0.25  # 1日でこの割合を超える変動は異常値とみなす(25%)
 
+
+def despike(df, threshold=DESPIKE_THRESHOLD):
+    """
+    yfinance側の誤ティック対策。1日の変化率が閾値を超える値をNaNにし、
+    前日値で補完する。TOPIX代理ETFのような値が1日だけ異常だと
+    全セクターの相対強度に同じ歪みが伝播するため、ここで弾いておく。
+    """
+    daily_ret = df.pct_change()
+    bad = daily_ret.abs() > threshold
+    n_bad = int(bad.sum().sum())
+    if n_bad > 0:
+        flagged = []
+        for col in df.columns:
+            bad_dates = df.index[bad[col]]
+            for d in bad_dates:
+                flagged.append(f"{col} @ {d.date()}")
+        print(f"[despike] {n_bad}件の異常値を検出し前日値で補完します: {flagged[:20]}")
+    cleaned = df.mask(bad)
+    cleaned = cleaned.ffill()
+    return cleaned
 def period_return(series, days):
     """直近値と、営業日で概ねdays日前の値との変化率(%)を返す"""
     series = series.dropna()
