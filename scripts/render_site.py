@@ -213,7 +213,7 @@ def main():
     ・グラフは取得期間の最初の日を0とした、TOPIX対比の累積相対強度（ポイント）の推移です。
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
     const TIMESERIES = {timeseries_json};
     const COLORS = {colors_json};
