@@ -147,7 +147,8 @@ def main():
     all_tickers = tickers + [TOPIX_PROXY_TICKER]
 
     close_df = download_close_prices(all_tickers)
-    close_df.to_csv(RAW_PRICES_PATH)  # デバッグ用に生データも保存
+    close_df.to_csv(RAW_PRICES_PATH)  # デバッグ用に生データ(補完前)も保存
+    close_df = despike(close_df)  # デバッグ用に生データも保存
 
     # TOPIX(代理)の期間リターン
     topix_returns = {}
