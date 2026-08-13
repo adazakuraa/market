@@ -62,17 +62,23 @@ def download_close_prices(tickers):
         time.sleep(2)  # レート制限対策の小休止
     return pd.concat(all_frames, axis=1)
 
-DESPIKE_THRESHOLD = 0.25  # 1日でこの割合を超える変動は異常値とみなす(25%)
+
+DESPIKE_THRESHOLD = 0.15  # 前後の中央値からこの割合を超えて乖離したら異常値とみなす(15%)
+DESPIKE_WINDOW = 7        # 前後を含めた中央値の算出に使う日数
 
 
-def despike(df, threshold=DESPIKE_THRESHOLD):
+def despike(df, threshold=DESPIKE_THRESHOLD, window=DESPIKE_WINDOW):
     """
-    yfinance側の誤ティック対策。1日の変化率が閾値を超える値をNaNにし、
-    前日値で補完する。TOPIX代理ETFのような値が1日だけ異常だと
-    全セクターの相対強度に同じ歪みが伝播するため、ここで弾いておく。
+    yfinance側の誤ティックや、配当調整のタイミングのズレなどによる異常値対策。
+    「前日比」ではなく「前後window日の中央値からの乖離」で判定することで、
+    異常値の翌日まで連鎖的に誤検出してしまう問題を避ける。
+    TOPIX代理ETFのような値が数日だけ異常だと全セクターの相対強度に同じ歪みが
+    伝播するため、ここで弾いておく。
     """
-    daily_ret = df.pct_change()
-    bad = daily_ret.abs() > threshold
+    med = df.rolling(window=window, center=True, min_periods=3).median()
+    dev = (df - med).abs() / med.abs()
+    bad = dev > threshold
+
     n_bad = int(bad.sum().sum())
     if n_bad > 0:
         flagged = []
@@ -80,9 +86,10 @@ def despike(df, threshold=DESPIKE_THRESHOLD):
             bad_dates = df.index[bad[col]]
             for d in bad_dates:
                 flagged.append(f"{col} @ {d.date()}")
-        print(f"[despike] {n_bad}件の異常値を検出し前日値で補完します: {flagged[:20]}")
+        print(f"[despike] {n_bad}件の異常値を検出し補完します: {flagged[:20]}")
+
     cleaned = df.mask(bad)
-    cleaned = cleaned.ffill()
+    cleaned = cleaned.ffill().bfill()
     return cleaned
 def period_return(series, days):
     """直近値と、営業日で概ねdays日前の値との変化率(%)を返す"""
