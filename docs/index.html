@@ -3,13 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>準備中</title>
+<title>セクター強度ランキング</title>
 <style>
-  body { font-family: sans-serif; background:#0f1115; color:#e8e8e8; padding:24px; }
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    margin: 0;
+    padding: 16px;
+    background: #0f1115;
+    color: #e8e8e8;
+  }
+  h1 {
+    font-size: 1.2rem;
+    margin: 0 0 4px 0;
+  }
+  .updated {
+    font-size: 0.75rem;
+    color: #999;
+    margin-bottom: 16px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th, td {
+    padding: 8px 6px;
+    text-align: right;
+    border-bottom: 1px solid #2a2d34;
+    white-space: nowrap;
+  }
+  th:first-child, td.sector-name {
+    text-align: left;
+  }
+  td.sector-name {
+    font-weight: 600;
+  }
+  th {
+    color: #aaa;
+    font-weight: 500;
+    font-size: 0.72rem;
+  }
+  .pos { color: #4caf50; font-weight: 600; }
+  .neg { color: #f44336; font-weight: 600; }
+  .zero, .na { color: #888; }
+  .note {
+    margin-top: 16px;
+    font-size: 0.72rem;
+    color: #777;
+    line-height: 1.5;
+  }
+  nav {
+    margin-bottom: 16px;
+    font-size: 0.8rem;
+  }
+  nav a {
+    color: #6ab7ff;
+    margin-right: 12px;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
-  <h1>準備中です</h1>
-  <p>GitHub Actionsの初回実行がまだ完了していません。Actionsタブから "update-dashboard" を手動実行(Run workflow)してください。</p>
+  <nav><a href="#">セクター強度</a></nav>
+  <h1>セクター強度ランキング（TOPIX比・相対強度）</h1>
+  <div class="updated">最終更新: 2026-08-13 21:18 JST</div>
+  <table>
+    <thead>
+      <tr><th>業種</th><th>1週間</th><th>2週間</th><th>1ヶ月</th><th>3ヶ月</th><th>6ヶ月</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class='sector-name'>鉄鋼</td><td><span class="neg">-2.5</span></td><td><span class="neg">-4.2</span></td><td><span class="pos">+16.8</span></td><td><span class="pos">+13.9</span></td><td><span class="neg">-11.9</span></td></tr>
+<tr><td class='sector-name'>海運業</td><td><span class="pos">+2.8</span></td><td><span class="neg">-1.6</span></td><td><span class="pos">+13.0</span></td><td><span class="pos">+2.3</span></td><td><span class="pos">+10.7</span></td></tr>
+<tr><td class='sector-name'>ゴム製品</td><td><span class="pos">+2.0</span></td><td><span class="neg">-4.7</span></td><td><span class="pos">+11.2</span></td><td><span class="pos">+14.9</span></td><td><span class="neg">-1.2</span></td></tr>
+<tr><td class='sector-name'>その他製品</td><td><span class="pos">+6.1</span></td><td><span class="neg">-0.2</span></td><td><span class="pos">+10.4</span></td><td><span class="pos">+14.0</span></td><td><span class="pos">+2.8</span></td></tr>
+<tr><td class='sector-name'>精密機器</td><td><span class="pos">+7.2</span></td><td><span class="pos">+6.0</span></td><td><span class="pos">+8.8</span></td><td><span class="pos">+7.4</span></td><td><span class="neg">-1.5</span></td></tr>
+<tr><td class='sector-name'>サービス業</td><td><span class="pos">+5.7</span></td><td><span class="neg">-1.5</span></td><td><span class="pos">+8.1</span></td><td><span class="pos">+38.0</span></td><td><span class="pos">+29.5</span></td></tr>
+<tr><td class='sector-name'>卸売業</td><td><span class="neg">-0.3</span></td><td><span class="neg">-2.0</span></td><td><span class="pos">+6.1</span></td><td><span class="neg">-17.9</span></td><td><span class="neg">-9.6</span></td></tr>
+<tr><td class='sector-name'>食料品</td><td><span class="pos">+1.8</span></td><td><span class="neg">-1.9</span></td><td><span class="pos">+3.0</span></td><td><span class="pos">+5.0</span></td><td><span class="pos">+10.8</span></td></tr>
+<tr><td class='sector-name'>輸送用機器</td><td><span class="neg">-1.3</span></td><td><span class="neg">-12.5</span></td><td><span class="pos">+1.0</span></td><td><span class="pos">+1.6</span></td><td><span class="neg">-23.4</span></td></tr>
+<tr><td class='sector-name'>医薬品</td><td><span class="pos">+2.5</span></td><td><span class="neg">-6.0</span></td><td><span class="pos">+0.8</span></td><td><span class="neg">-7.5</span></td><td><span class="neg">-17.5</span></td></tr>
+<tr><td class='sector-name'>保険業</td><td><span class="neg">-3.5</span></td><td><span class="neg">-9.8</span></td><td><span class="pos">+0.4</span></td><td><span class="pos">+4.4</span></td><td><span class="pos">+6.7</span></td></tr>
+<tr><td class='sector-name'>非鉄金属</td><td><span class="pos">+2.6</span></td><td><span class="pos">+28.0</span></td><td><span class="pos">+0.3</span></td><td><span class="neg">-24.0</span></td><td><span class="pos">+28.2</span></td></tr>
+<tr><td class='sector-name'>電気機器</td><td><span class="neg">-1.2</span></td><td><span class="pos">+9.7</span></td><td><span class="neg">-0.1</span></td><td><span class="pos">+5.3</span></td><td><span class="pos">+24.0</span></td></tr>
+<tr><td class='sector-name'>銀行業</td><td><span class="pos">+1.0</span></td><td><span class="neg">-1.1</span></td><td><span class="neg">-1.4</span></td><td><span class="pos">+14.6</span></td><td><span class="pos">+10.0</span></td></tr>
+<tr><td class='sector-name'>情報・通信業</td><td><span class="neg">-0.5</span></td><td><span class="neg">-4.3</span></td><td><span class="neg">-1.6</span></td><td><span class="pos">+1.9</span></td><td><span class="pos">+1.6</span></td></tr>
+<tr><td class='sector-name'>証券、商品先物取引業</td><td><span class="neg">-1.9</span></td><td><span class="neg">-4.4</span></td><td><span class="neg">-1.7</span></td><td><span class="pos">+17.1</span></td><td><span class="pos">+3.8</span></td></tr>
+<tr><td class='sector-name'>空運業</td><td><span class="neg">-5.3</span></td><td><span class="neg">-9.1</span></td><td><span class="neg">-1.8</span></td><td><span class="pos">+3.6</span></td><td><span class="neg">-19.8</span></td></tr>
+<tr><td class='sector-name'>石油・石炭製品</td><td><span class="neg">-3.4</span></td><td><span class="neg">-7.1</span></td><td><span class="neg">-2.0</span></td><td><span class="neg">-10.4</span></td><td><span class="neg">-20.0</span></td></tr>
+<tr><td class='sector-name'>機械</td><td><span class="neg">-0.8</span></td><td><span class="pos">+3.3</span></td><td><span class="neg">-2.0</span></td><td><span class="neg">-9.9</span></td><td><span class="neg">-8.1</span></td></tr>
+<tr><td class='sector-name'>その他金融業</td><td><span class="neg">-4.7</span></td><td><span class="neg">-5.9</span></td><td><span class="neg">-2.3</span></td><td><span class="pos">+10.5</span></td><td><span class="pos">+21.9</span></td></tr>
+<tr><td class='sector-name'>建設業</td><td><span class="neg">-1.2</span></td><td><span class="neg">-11.4</span></td><td><span class="neg">-3.2</span></td><td><span class="neg">-6.1</span></td><td><span class="neg">-24.0</span></td></tr>
+<tr><td class='sector-name'>陸運業</td><td><span class="neg">-2.6</span></td><td><span class="neg">-15.7</span></td><td><span class="neg">-4.2</span></td><td><span class="neg">-5.9</span></td><td><span class="neg">-29.9</span></td></tr>
+<tr><td class='sector-name'>化学</td><td><span class="neg">-1.1</span></td><td><span class="neg">-5.7</span></td><td><span class="neg">-5.3</span></td><td><span class="neg">-2.3</span></td><td><span class="neg">-4.6</span></td></tr>
+<tr><td class='sector-name'>小売業</td><td><span class="neg">-0.4</span></td><td><span class="neg">-10.3</span></td><td><span class="neg">-5.4</span></td><td><span class="neg">-3.4</span></td><td><span class="neg">-24.1</span></td></tr>
+<tr><td class='sector-name'>不動産業</td><td><span class="neg">-5.6</span></td><td><span class="neg">-14.6</span></td><td><span class="neg">-12.2</span></td><td><span class="neg">-21.8</span></td><td><span class="neg">-35.1</span></td></tr>
+
+    </tbody>
+  </table>
+  <div class="note">
+    ・数値はTOPIX（代理:1306.T）に対する相対リターン（ポイント差、単純平均）です。プラスがTOPIXより強い、マイナスが弱いことを示します。<br>
+    ・対象は東証プライム市場の中〜大型株（TOPIX Core30/Large70/Mid400相当）のみ。<br>
+    ・1ヶ月の強さ順に並んでいます。
+  </div>
 </body>
 </html>
