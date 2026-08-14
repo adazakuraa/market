@@ -79,11 +79,23 @@ def main():
   nav a {{ color: #6ab7ff; margin-right: 12px; text-decoration: none; }}
   nav a.active {{ color: #e8e8e8; font-weight: 600; text-decoration: underline; }}
 
-  .table-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
-  table {{ border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 720px; }}
-  th, td {{ padding: 7px 6px; text-align: right; border-bottom: 1px solid #2a2d34; white-space: nowrap; }}
-  th:first-child, td:first-child {{ text-align: left; position: sticky; left: 0; background: #0f1115; }}
-  td.name-cell {{ font-weight: 600; }}
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 720px; table-layout: fixed; }
+  th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid #2a2d34; white-space: nowrap; }
+  th:first-child, td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: #0f1115;
+    width: 92px;
+    max-width: 92px;
+  }
+  td.name-cell {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ticker {{ color: #888; font-weight: 400; font-size: 0.68rem; }}
   th {{ color: #aaa; font-weight: 500; font-size: 0.68rem; }}
   .na {{ color: #666; }}
