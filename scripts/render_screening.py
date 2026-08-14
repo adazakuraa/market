@@ -122,6 +122,7 @@ def main():
   <nav>
     <a href="index.html">セクター強度</a>
     <a href="screening.html" class="active">スクリーニング</a>
+    <a href="stock.html">銘柄詳細</a>
   </nav>
   <h1>銘柄スクリーニング</h1>
   <div class="updated">最終更新: {now}</div>
