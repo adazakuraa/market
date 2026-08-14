@@ -39,7 +39,7 @@ def main():
     for s in stocks:
         obv_mark = "◯" if s["obv_confirm"] else "-"
         rows_html += f"""<tr data-ticker="{s['ticker']}">
-  <td class="name-cell">{s['name']}<br><span class="ticker">{s['ticker'].replace('.T','')}</span></td>
+  <td class="name-cell"><a href="stock.html?ticker={s['ticker']}">{s['name']}<br><span class="ticker">{s['ticker'].replace('.T','')}</span></a></td>
   <td>{s['sector33']}</td>
   <td>{fmt_num(s['price'])}</td>
   <td>{cross_badge(s['cross_status'])}</td>
@@ -95,6 +95,10 @@ def main():
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }}
+  td.name-cell a {{
+    color: #e8e8e8;
+    text-decoration: none;
   }}
   .ticker {{ color: #888; font-weight: 400; font-size: 0.68rem; }}
   th {{ color: #aaa; font-weight: 500; font-size: 0.68rem; }}
