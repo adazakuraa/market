@@ -137,6 +137,11 @@ def main():
     margin-right: 12px;
     text-decoration: none;
   }}
+  nav a.active {
+    color: #e8e8e8;
+    font-weight: 600;
+    text-decoration: underline;
+  }
   .chart-box {{
     background: #171a20;
     border-radius: 10px;
@@ -183,7 +188,10 @@ def main():
 </style>
 </head>
 <body>
-  <nav><a href="#">セクター強度</a></nav>
+  <nav>
+    <a href="index.html" class="active">セクター強度</a>
+    <a href="screening.html">スクリーニング</a>
+  </nav>
   <h1>セクター強度ランキング（TOPIX比・相対強度）</h1>
   <div class="updated">最終更新: {now}</div>
 
