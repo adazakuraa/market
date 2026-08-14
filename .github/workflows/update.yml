@@ -32,6 +32,11 @@ jobs:
 
       - name: Render site
         run: python scripts/render_site.py
+      - name: Screen stocks
+        run: python scripts/screen_stocks.py
+
+      - name: Render screening page
+        run: python scripts/render_screening.py
 
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
