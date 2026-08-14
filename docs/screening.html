@@ -18,6 +18,15 @@
   nav a { color: #6ab7ff; margin-right: 12px; text-decoration: none; }
   nav a.active { color: #e8e8e8; font-weight: 600; text-decoration: underline; }
 
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    font-size: 0.78rem; flex-wrap: wrap;
+  }
+  .filter-bar .sector-badge {
+    background: #1b2a3a; color: #6ab7ff; padding: 4px 10px; border-radius: 12px;
+  }
+  .filter-bar a.clear-link { color: #ff8a65; text-decoration: none; }
+
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 720px; table-layout: fixed; }
   th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid #2a2d34; white-space: nowrap; }
@@ -59,6 +68,7 @@
   }
   .calc-result .highlight { color: #4caf50; font-weight: 700; font-size: 0.95rem; }
   .calc-result .warn { color: #ffb74d; }
+  .empty-note { font-size: 0.8rem; color: #999; padding: 20px 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -68,11 +78,9 @@
     <a href="stock.html">銘柄詳細</a>
   </nav>
   <h1>銘柄スクリーニング</h1>
-  <div class="updated">最終更新: 2026-08-14 18:27 JST</div>
-  <div class="sub-note">
-    対象セクター（相対強度上位）: その他製品、鉄鋼、海運業、精密機器、ゴム製品、サービス業、卸売業、食料品、非鉄金属、輸送用機器、電気機器、医薬品、情報・通信業、空運業、保険業<br>
-    スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。
-  </div>
+  <div class="updated">最終更新: 2026-08-14 18:45 JST</div>
+  <div class="filter-bar" id="filter-bar"></div>
+  <div class="sub-note" id="sub-note"></div>
 
   <div class="table-scroll">
     <table>
@@ -83,617 +91,15 @@
           <th>ATR14</th><th>スコア</th>
         </tr>
       </thead>
-      <tbody>
-        <tr data-ticker="9434.T">
-  <td class="name-cell"><a href="stock.html?ticker=9434.T">ソフトバンク<br><span class="ticker">9434</span></a></td>
-  <td>情報・通信業</td>
-  <td>234.9</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>37.4</td>
-  <td>◯</td>
-  <td>63.1</td>
-  <td>0.35</td>
-  <td>5.0</td>
-  <td>6.50</td>
-</tr>
-<tr data-ticker="6501.T">
-  <td class="name-cell"><a href="stock.html?ticker=6501.T">日立製作所<br><span class="ticker">6501</span></a></td>
-  <td>電気機器</td>
-  <td>5767.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>36.9</td>
-  <td>◯</td>
-  <td>79.4</td>
-  <td>56.88</td>
-  <td>158.0</td>
-  <td>6.48</td>
-</tr>
-<tr data-ticker="9432.T">
-  <td class="name-cell"><a href="stock.html?ticker=9432.T">ＮＴＴ<br><span class="ticker">9432</span></a></td>
-  <td>情報・通信業</td>
-  <td>162.7</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>31.4</td>
-  <td>◯</td>
-  <td>67.1</td>
-  <td>0.70</td>
-  <td>2.9</td>
-  <td>6.26</td>
-</tr>
-<tr data-ticker="9104.T">
-  <td class="name-cell"><a href="stock.html?ticker=9104.T">商船三井<br><span class="ticker">9104</span></a></td>
-  <td>海運業</td>
-  <td>6471.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>30.9</td>
-  <td>◯</td>
-  <td>71.8</td>
-  <td>42.98</td>
-  <td>162.1</td>
-  <td>6.24</td>
-</tr>
-<tr data-ticker="8001.T">
-  <td class="name-cell"><a href="stock.html?ticker=8001.T">伊藤忠商事<br><span class="ticker">8001</span></a></td>
-  <td>卸売業</td>
-  <td>2064.5</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>29.8</td>
-  <td>◯</td>
-  <td>63.9</td>
-  <td>5.69</td>
-  <td>46.1</td>
-  <td>6.19</td>
-</tr>
-<tr data-ticker="7974.T">
-  <td class="name-cell"><a href="stock.html?ticker=7974.T">任天堂<br><span class="ticker">7974</span></a></td>
-  <td>その他製品</td>
-  <td>8900.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>29.7</td>
-  <td>◯</td>
-  <td>72.1</td>
-  <td>121.21</td>
-  <td>295.4</td>
-  <td>6.19</td>
-</tr>
-<tr data-ticker="8015.T">
-  <td class="name-cell"><a href="stock.html?ticker=8015.T">豊田通商<br><span class="ticker">8015</span></a></td>
-  <td>卸売業</td>
-  <td>7325.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>28.9</td>
-  <td>◯</td>
-  <td>67.9</td>
-  <td>53.43</td>
-  <td>240.8</td>
-  <td>6.16</td>
-</tr>
-<tr data-ticker="9101.T">
-  <td class="name-cell"><a href="stock.html?ticker=9101.T">日本郵船<br><span class="ticker">9101</span></a></td>
-  <td>海運業</td>
-  <td>6400.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>28.2</td>
-  <td>◯</td>
-  <td>70.4</td>
-  <td>18.30</td>
-  <td>157.1</td>
-  <td>6.13</td>
-</tr>
-<tr data-ticker="4503.T">
-  <td class="name-cell"><a href="stock.html?ticker=4503.T">アステラス製薬<br><span class="ticker">4503</span></a></td>
-  <td>医薬品</td>
-  <td>2356.5</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>22.4</td>
-  <td>◯</td>
-  <td>64.3</td>
-  <td>15.79</td>
-  <td>61.8</td>
-  <td>5.90</td>
-</tr>
-<tr data-ticker="6702.T">
-  <td class="name-cell"><a href="stock.html?ticker=6702.T">富士通<br><span class="ticker">6702</span></a></td>
-  <td>電気機器</td>
-  <td>3841.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>18.8</td>
-  <td>◯</td>
-  <td>64.4</td>
-  <td>22.29</td>
-  <td>134.3</td>
-  <td>5.75</td>
-</tr>
-<tr data-ticker="7832.T">
-  <td class="name-cell"><a href="stock.html?ticker=7832.T">バンダイナムコホールディングス<br><span class="ticker">7832</span></a></td>
-  <td>その他製品</td>
-  <td>5435.0</td>
-  <td><span class="na">-</span></td>
-  <td>51.9</td>
-  <td>◯</td>
-  <td>75.3</td>
-  <td>77.59</td>
-  <td>204.4</td>
-  <td>5.00</td>
-</tr>
-<tr data-ticker="5401.T">
-  <td class="name-cell"><a href="stock.html?ticker=5401.T">日本製鉄<br><span class="ticker">5401</span></a></td>
-  <td>鉄鋼</td>
-  <td>676.3</td>
-  <td><span class="na">-</span></td>
-  <td>49.9</td>
-  <td>◯</td>
-  <td>67.1</td>
-  <td>0.83</td>
-  <td>16.2</td>
-  <td>5.00</td>
-</tr>
-<tr data-ticker="7203.T">
-  <td class="name-cell"><a href="stock.html?ticker=7203.T">トヨタ自動車<br><span class="ticker">7203</span></a></td>
-  <td>輸送用機器</td>
-  <td>3020.0</td>
-  <td><span class="badge badge-gc">GC済</span></td>
-  <td>22.0</td>
-  <td>-</td>
-  <td>55.9</td>
-  <td>-3.84</td>
-  <td>78.3</td>
-  <td>4.88</td>
-</tr>
-<tr data-ticker="2914.T">
-  <td class="name-cell"><a href="stock.html?ticker=2914.T">日本たばこ産業<br><span class="ticker">2914</span></a></td>
-  <td>食料品</td>
-  <td>7132.0</td>
-  <td><span class="na">-</span></td>
-  <td>43.6</td>
-  <td>◯</td>
-  <td>68.7</td>
-  <td>15.83</td>
-  <td>163.1</td>
-  <td>4.74</td>
-</tr>
-<tr data-ticker="6098.T">
-  <td class="name-cell"><a href="stock.html?ticker=6098.T">リクルートホールディングス<br><span class="ticker">6098</span></a></td>
-  <td>サービス業</td>
-  <td>16455.0</td>
-  <td><span class="na">-</span></td>
-  <td>43.2</td>
-  <td>◯</td>
-  <td>79.1</td>
-  <td>409.11</td>
-  <td>643.3</td>
-  <td>4.73</td>
-</tr>
-<tr data-ticker="5108.T">
-  <td class="name-cell"><a href="stock.html?ticker=5108.T">ブリヂストン<br><span class="ticker">5108</span></a></td>
-  <td>ゴム製品</td>
-  <td>4133.0</td>
-  <td><span class="na">-</span></td>
-  <td>38.4</td>
-  <td>◯</td>
-  <td>63.3</td>
-  <td>10.37</td>
-  <td>112.9</td>
-  <td>4.54</td>
-</tr>
-<tr data-ticker="7309.T">
-  <td class="name-cell"><a href="stock.html?ticker=7309.T">シマノ<br><span class="ticker">7309</span></a></td>
-  <td>輸送用機器</td>
-  <td>20130.0</td>
-  <td><span class="na">-</span></td>
-  <td>37.8</td>
-  <td>◯</td>
-  <td>62.7</td>
-  <td>-28.20</td>
-  <td>599.0</td>
-  <td>4.51</td>
-</tr>
-<tr data-ticker="4689.T">
-  <td class="name-cell"><a href="stock.html?ticker=4689.T">ＬＩＮＥヤフー<br><span class="ticker">4689</span></a></td>
-  <td>情報・通信業</td>
-  <td>506.3</td>
-  <td><span class="na">-</span></td>
-  <td>37.2</td>
-  <td>◯</td>
-  <td>75.2</td>
-  <td>4.57</td>
-  <td>14.3</td>
-  <td>4.49</td>
-</tr>
-<tr data-ticker="4661.T">
-  <td class="name-cell"><a href="stock.html?ticker=4661.T">オリエンタルランド<br><span class="ticker">4661</span></a></td>
-  <td>サービス業</td>
-  <td>2966.5</td>
-  <td><span class="na">-</span></td>
-  <td>35.8</td>
-  <td>◯</td>
-  <td>58.2</td>
-  <td>-11.41</td>
-  <td>99.4</td>
-  <td>4.43</td>
-</tr>
-<tr data-ticker="6701.T">
-  <td class="name-cell"><a href="stock.html?ticker=6701.T">日本電気<br><span class="ticker">6701</span></a></td>
-  <td>電気機器</td>
-  <td>5168.0</td>
-  <td><span class="na">-</span></td>
-  <td>32.1</td>
-  <td>◯</td>
-  <td>71.1</td>
-  <td>34.16</td>
-  <td>185.9</td>
-  <td>4.28</td>
-</tr>
-<tr data-ticker="2502.T">
-  <td class="name-cell"><a href="stock.html?ticker=2502.T">アサヒグループホールディングス<br><span class="ticker">2502</span></a></td>
-  <td>食料品</td>
-  <td>1743.5</td>
-  <td><span class="na">-</span></td>
-  <td>30.4</td>
-  <td>◯</td>
-  <td>64.1</td>
-  <td>-0.14</td>
-  <td>45.5</td>
-  <td>4.22</td>
-</tr>
-<tr data-ticker="7267.T">
-  <td class="name-cell"><a href="stock.html?ticker=7267.T">本田技研工業<br><span class="ticker">7267</span></a></td>
-  <td>輸送用機器</td>
-  <td>1658.0</td>
-  <td><span class="na">-</span></td>
-  <td>29.6</td>
-  <td>◯</td>
-  <td>59.4</td>
-  <td>0.01</td>
-  <td>46.1</td>
-  <td>4.18</td>
-</tr>
-<tr data-ticker="8630.T">
-  <td class="name-cell"><a href="stock.html?ticker=8630.T">ＳＯＭＰＯホールディングス<br><span class="ticker">8630</span></a></td>
-  <td>保険業</td>
-  <td>7011.0</td>
-  <td><span class="na">-</span></td>
-  <td>29.3</td>
-  <td>◯</td>
-  <td>56.3</td>
-  <td>-33.36</td>
-  <td>155.8</td>
-  <td>4.17</td>
-</tr>
-<tr data-ticker="6758.T">
-  <td class="name-cell"><a href="stock.html?ticker=6758.T">ソニーグループ<br><span class="ticker">6758</span></a></td>
-  <td>電気機器</td>
-  <td>3912.0</td>
-  <td><span class="na">-</span></td>
-  <td>26.7</td>
-  <td>◯</td>
-  <td>67.9</td>
-  <td>16.11</td>
-  <td>124.5</td>
-  <td>4.07</td>
-</tr>
-<tr data-ticker="7733.T">
-  <td class="name-cell"><a href="stock.html?ticker=7733.T">オリンパス<br><span class="ticker">7733</span></a></td>
-  <td>精密機器</td>
-  <td>2110.5</td>
-  <td><span class="na">-</span></td>
-  <td>26.3</td>
-  <td>◯</td>
-  <td>75.7</td>
-  <td>30.70</td>
-  <td>64.3</td>
-  <td>4.05</td>
-</tr>
-<tr data-ticker="8729.T">
-  <td class="name-cell"><a href="stock.html?ticker=8729.T">ソニーフィナンシャルグループ<br><span class="ticker">8729</span></a></td>
-  <td>保険業</td>
-  <td>155.8</td>
-  <td><span class="na">-</span></td>
-  <td>26.2</td>
-  <td>◯</td>
-  <td>54.1</td>
-  <td>-0.69</td>
-  <td>3.6</td>
-  <td>4.05</td>
-</tr>
-<tr data-ticker="8053.T">
-  <td class="name-cell"><a href="stock.html?ticker=8053.T">住友商事<br><span class="ticker">8053</span></a></td>
-  <td>卸売業</td>
-  <td>1791.0</td>
-  <td><span class="badge badge-near">接近中</span></td>
-  <td>25.5</td>
-  <td>◯</td>
-  <td>71.2</td>
-  <td>17.11</td>
-  <td>51.5</td>
-  <td>4.02</td>
-</tr>
-<tr data-ticker="7751.T">
-  <td class="name-cell"><a href="stock.html?ticker=7751.T">キヤノン<br><span class="ticker">7751</span></a></td>
-  <td>電気機器</td>
-  <td>4656.0</td>
-  <td><span class="na">-</span></td>
-  <td>25.4</td>
-  <td>◯</td>
-  <td>60.7</td>
-  <td>2.14</td>
-  <td>98.0</td>
-  <td>4.02</td>
-</tr>
-<tr data-ticker="4543.T">
-  <td class="name-cell"><a href="stock.html?ticker=4543.T">テルモ<br><span class="ticker">4543</span></a></td>
-  <td>精密機器</td>
-  <td>2672.5</td>
-  <td><span class="na">-</span></td>
-  <td>25.0</td>
-  <td>◯</td>
-  <td>74.5</td>
-  <td>39.88</td>
-  <td>81.9</td>
-  <td>4.00</td>
-</tr>
-<tr data-ticker="6861.T">
-  <td class="name-cell"><a href="stock.html?ticker=6861.T">キーエンス<br><span class="ticker">6861</span></a></td>
-  <td>電気機器</td>
-  <td>87660.0</td>
-  <td><span class="na">-</span></td>
-  <td>24.5</td>
-  <td>◯</td>
-  <td>66.7</td>
-  <td>980.24</td>
-  <td>2849.7</td>
-  <td>3.98</td>
-</tr>
-<tr data-ticker="8725.T">
-  <td class="name-cell"><a href="stock.html?ticker=8725.T">ＭＳ＆ＡＤインシュアランスグループホールディングス<br><span class="ticker">8725</span></a></td>
-  <td>保険業</td>
-  <td>4836.0</td>
-  <td><span class="na">-</span></td>
-  <td>21.1</td>
-  <td>◯</td>
-  <td>56.4</td>
-  <td>-19.70</td>
-  <td>103.7</td>
-  <td>3.84</td>
-</tr>
-<tr data-ticker="7936.T">
-  <td class="name-cell"><a href="stock.html?ticker=7936.T">アシックス<br><span class="ticker">7936</span></a></td>
-  <td>その他製品</td>
-  <td>5281.0</td>
-  <td><span class="na">-</span></td>
-  <td>20.5</td>
-  <td>◯</td>
-  <td>65.3</td>
-  <td>12.13</td>
-  <td>199.7</td>
-  <td>3.82</td>
-</tr>
-<tr data-ticker="7269.T">
-  <td class="name-cell"><a href="stock.html?ticker=7269.T">スズキ<br><span class="ticker">7269</span></a></td>
-  <td>輸送用機器</td>
-  <td>2086.5</td>
-  <td><span class="na">-</span></td>
-  <td>17.9</td>
-  <td>◯</td>
-  <td>56.9</td>
-  <td>-1.06</td>
-  <td>71.8</td>
-  <td>3.72</td>
-</tr>
-<tr data-ticker="9202.T">
-  <td class="name-cell"><a href="stock.html?ticker=9202.T">ＡＮＡホールディングス<br><span class="ticker">9202</span></a></td>
-  <td>空運業</td>
-  <td>3126.0</td>
-  <td><span class="na">-</span></td>
-  <td>16.8</td>
-  <td>◯</td>
-  <td>54.8</td>
-  <td>-6.24</td>
-  <td>63.9</td>
-  <td>3.67</td>
-</tr>
-<tr data-ticker="4307.T">
-  <td class="name-cell"><a href="stock.html?ticker=4307.T">野村総合研究所<br><span class="ticker">4307</span></a></td>
-  <td>情報・通信業</td>
-  <td>5131.0</td>
-  <td><span class="na">-</span></td>
-  <td>13.8</td>
-  <td>◯</td>
-  <td>56.4</td>
-  <td>-2.86</td>
-  <td>209.9</td>
-  <td>3.55</td>
-</tr>
-<tr data-ticker="8058.T">
-  <td class="name-cell"><a href="stock.html?ticker=8058.T">三菱商事<br><span class="ticker">8058</span></a></td>
-  <td>卸売業</td>
-  <td>4769.0</td>
-  <td><span class="badge badge-near">接近中</span></td>
-  <td>12.1</td>
-  <td>◯</td>
-  <td>52.0</td>
-  <td>2.88</td>
-  <td>130.1</td>
-  <td>3.48</td>
-</tr>
-<tr data-ticker="4578.T">
-  <td class="name-cell"><a href="stock.html?ticker=4578.T">大塚ホールディングス<br><span class="ticker">4578</span></a></td>
-  <td>医薬品</td>
-  <td>12030.0</td>
-  <td><span class="na">-</span></td>
-  <td>30.5</td>
-  <td>-</td>
-  <td>56.4</td>
-  <td>64.35</td>
-  <td>428.7</td>
-  <td>3.22</td>
-</tr>
-<tr data-ticker="2503.T">
-  <td class="name-cell"><a href="stock.html?ticker=2503.T">キリンホールディングス<br><span class="ticker">2503</span></a></td>
-  <td>食料品</td>
-  <td>3108.0</td>
-  <td><span class="na">-</span></td>
-  <td>29.9</td>
-  <td>-</td>
-  <td>62.5</td>
-  <td>7.38</td>
-  <td>87.2</td>
-  <td>3.20</td>
-</tr>
-<tr data-ticker="6981.T">
-  <td class="name-cell"><a href="stock.html?ticker=6981.T">村田製作所<br><span class="ticker">6981</span></a></td>
-  <td>電気機器</td>
-  <td>8235.0</td>
-  <td><span class="na">-</span></td>
-  <td>27.2</td>
-  <td>◯</td>
-  <td>51.2</td>
-  <td>164.42</td>
-  <td>713.2</td>
-  <td>3.09</td>
-</tr>
-<tr data-ticker="4502.T">
-  <td class="name-cell"><a href="stock.html?ticker=4502.T">武田薬品工業<br><span class="ticker">4502</span></a></td>
-  <td>医薬品</td>
-  <td>5611.0</td>
-  <td><span class="na">-</span></td>
-  <td>24.3</td>
-  <td>-</td>
-  <td>57.3</td>
-  <td>-8.24</td>
-  <td>123.2</td>
-  <td>2.97</td>
-</tr>
-<tr data-ticker="6762.T">
-  <td class="name-cell"><a href="stock.html?ticker=6762.T">ＴＤＫ<br><span class="ticker">6762</span></a></td>
-  <td>電気機器</td>
-  <td>3210.0</td>
-  <td><span class="na">-</span></td>
-  <td>22.7</td>
-  <td>◯</td>
-  <td>52.3</td>
-  <td>45.60</td>
-  <td>166.4</td>
-  <td>2.91</td>
-</tr>
-<tr data-ticker="6752.T">
-  <td class="name-cell"><a href="stock.html?ticker=6752.T">パナソニック　ホールディングス<br><span class="ticker">6752</span></a></td>
-  <td>電気機器</td>
-  <td>4721.0</td>
-  <td><span class="na">-</span></td>
-  <td>19.9</td>
-  <td>-</td>
-  <td>63.3</td>
-  <td>74.85</td>
-  <td>232.7</td>
-  <td>2.80</td>
-</tr>
-<tr data-ticker="8035.T">
-  <td class="name-cell"><a href="stock.html?ticker=8035.T">東京エレクトロン<br><span class="ticker">8035</span></a></td>
-  <td>電気機器</td>
-  <td>59130.0</td>
-  <td><span class="na">-</span></td>
-  <td>19.6</td>
-  <td>◯</td>
-  <td>47.0</td>
-  <td>395.93</td>
-  <td>3869.3</td>
-  <td>2.78</td>
-</tr>
-<tr data-ticker="7270.T">
-  <td class="name-cell"><a href="stock.html?ticker=7270.T">ＳＵＢＡＲＵ<br><span class="ticker">7270</span></a></td>
-  <td>輸送用機器</td>
-  <td>2583.0</td>
-  <td><span class="na">-</span></td>
-  <td>17.9</td>
-  <td>◯</td>
-  <td>50.5</td>
-  <td>-13.09</td>
-  <td>81.2</td>
-  <td>2.72</td>
-</tr>
-<tr data-ticker="7741.T">
-  <td class="name-cell"><a href="stock.html?ticker=7741.T">ＨＯＹＡ<br><span class="ticker">7741</span></a></td>
-  <td>精密機器</td>
-  <td>26645.0</td>
-  <td><span class="na">-</span></td>
-  <td>17.2</td>
-  <td>◯</td>
-  <td>61.0</td>
-  <td>255.57</td>
-  <td>778.0</td>
-  <td>2.69</td>
-</tr>
-<tr data-ticker="5803.T">
-  <td class="name-cell"><a href="stock.html?ticker=5803.T">フジクラ<br><span class="ticker">5803</span></a></td>
-  <td>非鉄金属</td>
-  <td>5665.0</td>
-  <td><span class="na">-</span></td>
-  <td>16.8</td>
-  <td>◯</td>
-  <td>60.0</td>
-  <td>189.83</td>
-  <td>431.4</td>
-  <td>2.67</td>
-</tr>
-<tr data-ticker="8750.T">
-  <td class="name-cell"><a href="stock.html?ticker=8750.T">第一ライフグループ<br><span class="ticker">8750</span></a></td>
-  <td>保険業</td>
-  <td>1874.0</td>
-  <td><span class="na">-</span></td>
-  <td>16.3</td>
-  <td>◯</td>
-  <td>50.5</td>
-  <td>-10.16</td>
-  <td>49.2</td>
-  <td>2.65</td>
-</tr>
-<tr data-ticker="8766.T">
-  <td class="name-cell"><a href="stock.html?ticker=8766.T">東京海上ホールディングス<br><span class="ticker">8766</span></a></td>
-  <td>保険業</td>
-  <td>7540.0</td>
-  <td><span class="na">-</span></td>
-  <td>15.8</td>
-  <td>◯</td>
-  <td>42.5</td>
-  <td>-73.71</td>
-  <td>194.0</td>
-  <td>2.63</td>
-</tr>
-<tr data-ticker="8031.T">
-  <td class="name-cell"><a href="stock.html?ticker=8031.T">三井物産<br><span class="ticker">8031</span></a></td>
-  <td>卸売業</td>
-  <td>4825.0</td>
-  <td><span class="na">-</span></td>
-  <td>15.3</td>
-  <td>◯</td>
-  <td>49.0</td>
-  <td>0.81</td>
-  <td>124.7</td>
-  <td>2.61</td>
-</tr>
-<tr data-ticker="8002.T">
-  <td class="name-cell"><a href="stock.html?ticker=8002.T">丸紅<br><span class="ticker">8002</span></a></td>
-  <td>卸売業</td>
-  <td>4930.0</td>
-  <td><span class="badge badge-near">接近中</span></td>
-  <td>14.9</td>
-  <td>◯</td>
-  <td>44.2</td>
-  <td>-28.45</td>
-  <td>156.4</td>
-  <td>2.60</td>
-</tr>
-
-      </tbody>
+      <tbody id="table-body"></tbody>
     </table>
   </div>
 
   <h2>ポジションサイズ・ストップ計算（ATRベース）</h2>
   <div class="calc-box">
     <div class="calc-row">
-      <label>銘柄を選択</label>
-      <select id="calc-ticker"><option value="9434.T">ソフトバンク(9434)</option><option value="6501.T">日立製作所(6501)</option><option value="9432.T">ＮＴＴ(9432)</option><option value="9104.T">商船三井(9104)</option><option value="8001.T">伊藤忠商事(8001)</option><option value="7974.T">任天堂(7974)</option><option value="8015.T">豊田通商(8015)</option><option value="9101.T">日本郵船(9101)</option><option value="4503.T">アステラス製薬(4503)</option><option value="6702.T">富士通(6702)</option><option value="7832.T">バンダイナムコホールディングス(7832)</option><option value="5401.T">日本製鉄(5401)</option><option value="7203.T">トヨタ自動車(7203)</option><option value="2914.T">日本たばこ産業(2914)</option><option value="6098.T">リクルートホールディングス(6098)</option><option value="5108.T">ブリヂストン(5108)</option><option value="7309.T">シマノ(7309)</option><option value="4689.T">ＬＩＮＥヤフー(4689)</option><option value="4661.T">オリエンタルランド(4661)</option><option value="6701.T">日本電気(6701)</option><option value="2502.T">アサヒグループホールディングス(2502)</option><option value="7267.T">本田技研工業(7267)</option><option value="8630.T">ＳＯＭＰＯホールディングス(8630)</option><option value="6758.T">ソニーグループ(6758)</option><option value="7733.T">オリンパス(7733)</option><option value="8729.T">ソニーフィナンシャルグループ(8729)</option><option value="8053.T">住友商事(8053)</option><option value="7751.T">キヤノン(7751)</option><option value="4543.T">テルモ(4543)</option><option value="6861.T">キーエンス(6861)</option><option value="8725.T">ＭＳ＆ＡＤインシュアランスグループホールディングス(8725)</option><option value="7936.T">アシックス(7936)</option><option value="7269.T">スズキ(7269)</option><option value="9202.T">ＡＮＡホールディングス(9202)</option><option value="4307.T">野村総合研究所(4307)</option><option value="8058.T">三菱商事(8058)</option><option value="4578.T">大塚ホールディングス(4578)</option><option value="2503.T">キリンホールディングス(2503)</option><option value="6981.T">村田製作所(6981)</option><option value="4502.T">武田薬品工業(4502)</option><option value="6762.T">ＴＤＫ(6762)</option><option value="6752.T">パナソニック　ホールディングス(6752)</option><option value="8035.T">東京エレクトロン(8035)</option><option value="7270.T">ＳＵＢＡＲＵ(7270)</option><option value="7741.T">ＨＯＹＡ(7741)</option><option value="5803.T">フジクラ(5803)</option><option value="8750.T">第一ライフグループ(8750)</option><option value="8766.T">東京海上ホールディングス(8766)</option><option value="8031.T">三井物産(8031)</option><option value="8002.T">丸紅(8002)</option></select>
+      <label>銘柄を選択（上の表に表示中の銘柄）</label>
+      <select id="calc-ticker"></select>
     </div>
     <div class="calc-row">
       <label>総資金（円）</label>
@@ -711,13 +117,84 @@
   </div>
 
   <script>
-    const STOCKS = [{"ticker": "9434.T", "name": "ソフトバンク", "sector33": "情報・通信業", "price": 234.9, "ma25": 224.6, "ma75": 218.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 37.4, "plus_di": 35.0, "minus_di": 13.1, "obv_confirm": true, "rsi14": 63.1, "macd": 4.19, "macd_signal": 3.85, "macd_hist": 0.35, "atr14": 5.0, "score": 6.5}, {"ticker": "6501.T", "name": "日立製作所", "sector33": "電気機器", "price": 5767.0, "ma25": 5123.2, "ma75": 4955.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 36.9, "plus_di": 37.1, "minus_di": 9.4, "obv_confirm": true, "rsi14": 79.4, "macd": 241.27, "macd_signal": 184.39, "macd_hist": 56.88, "atr14": 158.0, "score": 6.48}, {"ticker": "9432.T", "name": "ＮＴＴ", "sector33": "情報・通信業", "price": 162.7, "ma25": 153.7, "ma75": 150.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 31.4, "plus_di": 40.0, "minus_di": 14.4, "obv_confirm": true, "rsi14": 67.1, "macd": 2.82, "macd_signal": 2.12, "macd_hist": 0.7, "atr14": 2.9, "score": 6.26}, {"ticker": "9104.T", "name": "商船三井", "sector33": "海運業", "price": 6471.0, "ma25": 5850.8, "ma75": 5671.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 30.9, "plus_di": 40.3, "minus_di": 12.6, "obv_confirm": true, "rsi14": 71.8, "macd": 202.47, "macd_signal": 159.5, "macd_hist": 42.98, "atr14": 162.1, "score": 6.24}, {"ticker": "8001.T", "name": "伊藤忠商事", "sector33": "卸売業", "price": 2064.5, "ma25": 1984.6, "ma75": 1935.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 29.8, "plus_di": 30.2, "minus_di": 13.3, "obv_confirm": true, "rsi14": 63.9, "macd": 44.03, "macd_signal": 38.34, "macd_hist": 5.69, "atr14": 46.1, "score": 6.19}, {"ticker": "7974.T", "name": "任天堂", "sector33": "その他製品", "price": 8900.0, "ma25": 7551.9, "ma75": 7339.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 29.7, "plus_di": 47.5, "minus_di": 14.3, "obv_confirm": true, "rsi14": 72.1, "macd": 340.36, "macd_signal": 219.15, "macd_hist": 121.21, "atr14": 295.4, "score": 6.19}, {"ticker": "8015.T", "name": "豊田通商", "sector33": "卸売業", "price": 7325.0, "ma25": 6656.1, "ma75": 6549.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 28.9, "plus_di": 35.4, "minus_di": 16.2, "obv_confirm": true, "rsi14": 67.9, "macd": 277.03, "macd_signal": 223.6, "macd_hist": 53.43, "atr14": 240.8, "score": 6.16}, {"ticker": "9101.T", "name": "日本郵船", "sector33": "海運業", "price": 6400.0, "ma25": 5878.7, "ma75": 5573.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 28.2, "plus_di": 37.1, "minus_di": 14.8, "obv_confirm": true, "rsi14": 70.4, "macd": 182.53, "macd_signal": 164.23, "macd_hist": 18.3, "atr14": 157.1, "score": 6.13}, {"ticker": "4503.T", "name": "アステラス製薬", "sector33": "医薬品", "price": 2356.5, "ma25": 2217.5, "ma75": 2215.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 22.4, "plus_di": 29.9, "minus_di": 13.9, "obv_confirm": true, "rsi14": 64.3, "macd": 43.97, "macd_signal": 28.19, "macd_hist": 15.79, "atr14": 61.8, "score": 5.9}, {"ticker": "6702.T", "name": "富士通", "sector33": "電気機器", "price": 3841.0, "ma25": 3504.5, "ma75": 3404.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 18.8, "plus_di": 39.2, "minus_di": 19.4, "obv_confirm": true, "rsi14": 64.4, "macd": 103.59, "macd_signal": 81.3, "macd_hist": 22.29, "atr14": 134.3, "score": 5.75}, {"ticker": "7832.T", "name": "バンダイナムコホールディングス", "sector33": "その他製品", "price": 5435.0, "ma25": 4533.5, "ma75": 3995.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 51.9, "plus_di": 47.5, "minus_di": 11.5, "obv_confirm": true, "rsi14": 75.3, "macd": 354.39, "macd_signal": 276.8, "macd_hist": 77.59, "atr14": 204.4, "score": 5.0}, {"ticker": "5401.T", "name": "日本製鉄", "sector33": "鉄鋼", "price": 676.3, "ma25": 630.0, "ma75": 579.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 49.9, "plus_di": 39.5, "minus_di": 13.3, "obv_confirm": true, "rsi14": 67.1, "macd": 29.29, "macd_signal": 28.46, "macd_hist": 0.83, "atr14": 16.2, "score": 5.0}, {"ticker": "7203.T", "name": "トヨタ自動車", "sector33": "輸送用機器", "price": 3020.0, "ma25": 2953.7, "ma75": 2911.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 22.0, "plus_di": 31.6, "minus_di": 19.5, "obv_confirm": false, "rsi14": 55.9, "macd": 29.73, "macd_signal": 33.57, "macd_hist": -3.84, "atr14": 78.3, "score": 4.88}, {"ticker": "2914.T", "name": "日本たばこ産業", "sector33": "食料品", "price": 7132.0, "ma25": 6629.6, "ma75": 6188.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 43.6, "plus_di": 38.5, "minus_di": 14.1, "obv_confirm": true, "rsi14": 68.7, "macd": 243.54, "macd_signal": 227.72, "macd_hist": 15.83, "atr14": 163.1, "score": 4.74}, {"ticker": "6098.T", "name": "リクルートホールディングス", "sector33": "サービス業", "price": 16455.0, "ma25": 13227.0, "ma75": 11099.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 43.2, "plus_di": 51.2, "minus_di": 14.0, "obv_confirm": true, "rsi14": 79.1, "macd": 1106.2, "macd_signal": 697.09, "macd_hist": 409.11, "atr14": 643.3, "score": 4.73}, {"ticker": "5108.T", "name": "ブリヂストン", "sector33": "ゴム製品", "price": 4133.0, "ma25": 3883.0, "ma75": 3527.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 38.4, "plus_di": 40.6, "minus_di": 18.9, "obv_confirm": true, "rsi14": 63.3, "macd": 155.39, "macd_signal": 145.03, "macd_hist": 10.37, "atr14": 112.9, "score": 4.54}, {"ticker": "7309.T", "name": "シマノ", "sector33": "輸送用機器", "price": 20130.0, "ma25": 19078.8, "ma75": 17449.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 37.8, "plus_di": 34.8, "minus_di": 17.4, "obv_confirm": true, "rsi14": 62.7, "macd": 647.76, "macd_signal": 675.96, "macd_hist": -28.2, "atr14": 599.0, "score": 4.51}, {"ticker": "4689.T", "name": "ＬＩＮＥヤフー", "sector33": "情報・通信業", "price": 506.3, "ma25": 459.3, "ma75": 431.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 37.2, "plus_di": 45.4, "minus_di": 14.1, "obv_confirm": true, "rsi14": 75.2, "macd": 16.56, "macd_signal": 11.99, "macd_hist": 4.57, "atr14": 14.3, "score": 4.49}, {"ticker": "4661.T", "name": "オリエンタルランド", "sector33": "サービス業", "price": 2966.5, "ma25": 2841.0, "ma75": 2475.8, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 35.8, "plus_di": 30.3, "minus_di": 16.3, "obv_confirm": true, "rsi14": 58.2, "macd": 112.02, "macd_signal": 123.43, "macd_hist": -11.41, "atr14": 99.4, "score": 4.43}, {"ticker": "6701.T", "name": "日本電気", "sector33": "電気機器", "price": 5168.0, "ma25": 4581.0, "ma75": 4258.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 32.1, "plus_di": 38.6, "minus_di": 13.8, "obv_confirm": true, "rsi14": 71.1, "macd": 196.41, "macd_signal": 162.25, "macd_hist": 34.16, "atr14": 185.9, "score": 4.28}, {"ticker": "2502.T", "name": "アサヒグループホールディングス", "sector33": "食料品", "price": 1743.5, "ma25": 1655.0, "ma75": 1560.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 30.4, "plus_di": 39.8, "minus_di": 17.0, "obv_confirm": true, "rsi14": 64.1, "macd": 30.25, "macd_signal": 30.4, "macd_hist": -0.14, "atr14": 45.5, "score": 4.22}, {"ticker": "7267.T", "name": "本田技研工業", "sector33": "輸送用機器", "price": 1658.0, "ma25": 1590.7, "ma75": 1466.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.6, "plus_di": 27.6, "minus_di": 17.3, "obv_confirm": true, "rsi14": 59.4, "macd": 41.46, "macd_signal": 41.45, "macd_hist": 0.01, "atr14": 46.1, "score": 4.18}, {"ticker": "8630.T", "name": "ＳＯＭＰＯホールディングス", "sector33": "保険業", "price": 7011.0, "ma25": 6914.6, "ma75": 6359.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.3, "plus_di": 32.3, "minus_di": 20.8, "obv_confirm": true, "rsi14": 56.3, "macd": 115.44, "macd_signal": 148.8, "macd_hist": -33.36, "atr14": 155.8, "score": 4.17}, {"ticker": "6758.T", "name": "ソニーグループ", "sector33": "電気機器", "price": 3912.0, "ma25": 3574.6, "ma75": 3449.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.7, "plus_di": 35.8, "minus_di": 14.8, "obv_confirm": true, "rsi14": 67.9, "macd": 96.82, "macd_signal": 80.7, "macd_hist": 16.11, "atr14": 124.5, "score": 4.07}, {"ticker": "7733.T", "name": "オリンパス", "sector33": "精密機器", "price": 2110.5, "ma25": 1839.5, "ma75": 1760.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.3, "plus_di": 44.4, "minus_di": 14.8, "obv_confirm": true, "rsi14": 75.7, "macd": 83.43, "macd_signal": 52.74, "macd_hist": 30.7, "atr14": 64.3, "score": 4.05}, {"ticker": "8729.T", "name": "ソニーフィナンシャルグループ", "sector33": "保険業", "price": 155.8, "ma25": 155.4, "ma75": 146.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.2, "plus_di": 26.2, "minus_di": 14.5, "obv_confirm": true, "rsi14": 54.1, "macd": 1.29, "macd_signal": 1.98, "macd_hist": -0.69, "atr14": 3.6, "score": 4.05}, {"ticker": "8053.T", "name": "住友商事", "sector33": "卸売業", "price": 1791.0, "ma25": 1644.7, "ma75": 1662.7, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 25.5, "plus_di": 31.5, "minus_di": 9.9, "obv_confirm": true, "rsi14": 71.2, "macd": 50.87, "macd_signal": 33.76, "macd_hist": 17.11, "atr14": 51.5, "score": 4.02}, {"ticker": "7751.T", "name": "キヤノン", "sector33": "電気機器", "price": 4656.0, "ma25": 4498.4, "ma75": 4272.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 25.4, "plus_di": 34.1, "minus_di": 15.4, "obv_confirm": true, "rsi14": 60.7, "macd": 68.59, "macd_signal": 66.44, "macd_hist": 2.14, "atr14": 98.0, "score": 4.02}, {"ticker": "4543.T", "name": "テルモ", "sector33": "精密機器", "price": 2672.5, "ma25": 2320.5, "ma75": 2243.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 25.0, "plus_di": 43.6, "minus_di": 13.1, "obv_confirm": true, "rsi14": 74.5, "macd": 92.45, "macd_signal": 52.57, "macd_hist": 39.88, "atr14": 81.9, "score": 4.0}, {"ticker": "6861.T", "name": "キーエンス", "sector33": "電気機器", "price": 87660.0, "ma25": 78608.4, "ma75": 77551.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 24.5, "plus_di": 35.2, "minus_di": 20.7, "obv_confirm": true, "rsi14": 66.7, "macd": 3018.65, "macd_signal": 2038.41, "macd_hist": 980.24, "atr14": 2849.7, "score": 3.98}, {"ticker": "8725.T", "name": "ＭＳ＆ＡＤインシュアランスグループホールディングス", "sector33": "保険業", "price": 4836.0, "ma25": 4768.5, "ma75": 4484.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 21.1, "plus_di": 31.5, "minus_di": 23.8, "obv_confirm": true, "rsi14": 56.4, "macd": 72.66, "macd_signal": 92.37, "macd_hist": -19.7, "atr14": 103.7, "score": 3.84}, {"ticker": "7936.T", "name": "アシックス", "sector33": "その他製品", "price": 5281.0, "ma25": 4857.9, "ma75": 4613.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 20.5, "plus_di": 38.4, "minus_di": 20.1, "obv_confirm": true, "rsi14": 65.3, "macd": 89.44, "macd_signal": 77.32, "macd_hist": 12.13, "atr14": 199.7, "score": 3.82}, {"ticker": "7269.T", "name": "スズキ", "sector33": "輸送用機器", "price": 2086.5, "ma25": 2028.2, "ma75": 1935.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.9, "plus_di": 27.3, "minus_di": 24.4, "obv_confirm": true, "rsi14": 56.9, "macd": 3.25, "macd_signal": 4.31, "macd_hist": -1.06, "atr14": 71.8, "score": 3.72}, {"ticker": "9202.T", "name": "ＡＮＡホールディングス", "sector33": "空運業", "price": 3126.0, "ma25": 3078.1, "ma75": 2944.8, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.8, "plus_di": 27.0, "minus_di": 22.5, "obv_confirm": true, "rsi14": 54.8, "macd": 26.59, "macd_signal": 32.84, "macd_hist": -6.24, "atr14": 63.9, "score": 3.67}, {"ticker": "4307.T", "name": "野村総合研究所", "sector33": "情報・通信業", "price": 5131.0, "ma25": 5000.2, "ma75": 4735.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 13.8, "plus_di": 34.0, "minus_di": 26.4, "obv_confirm": true, "rsi14": 56.4, "macd": 23.64, "macd_signal": 26.5, "macd_hist": -2.86, "atr14": 209.9, "score": 3.55}, {"ticker": "8058.T", "name": "三菱商事", "sector33": "卸売業", "price": 4769.0, "ma25": 4711.5, "ma75": 4850.8, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 12.1, "plus_di": 23.3, "minus_di": 20.0, "obv_confirm": true, "rsi14": 52.0, "macd": 46.0, "macd_signal": 43.12, "macd_hist": 2.88, "atr14": 130.1, "score": 3.48}, {"ticker": "4578.T", "name": "大塚ホールディングス", "sector33": "医薬品", "price": 12030.0, "ma25": 11496.4, "ma75": 11112.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 30.5, "plus_di": 29.0, "minus_di": 16.3, "obv_confirm": false, "rsi14": 56.4, "macd": 352.0, "macd_signal": 287.65, "macd_hist": 64.35, "atr14": 428.7, "score": 3.22}, {"ticker": "2503.T", "name": "キリンホールディングス", "sector33": "食料品", "price": 3108.0, "ma25": 2943.8, "ma75": 2750.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.9, "plus_di": 37.1, "minus_di": 18.1, "obv_confirm": false, "rsi14": 62.5, "macd": 56.91, "macd_signal": 49.53, "macd_hist": 7.38, "atr14": 87.2, "score": 3.2}, {"ticker": "6981.T", "name": "村田製作所", "sector33": "電気機器", "price": 8235.0, "ma25": 7972.3, "ma75": 8431.8, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 27.2, "plus_di": 24.6, "minus_di": 29.8, "obv_confirm": true, "rsi14": 51.2, "macd": -352.0, "macd_signal": -516.42, "macd_hist": 164.42, "atr14": 713.2, "score": 3.09}, {"ticker": "4502.T", "name": "武田薬品工業", "sector33": "医薬品", "price": 5611.0, "ma25": 5504.3, "ma75": 5258.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 24.3, "plus_di": 34.2, "minus_di": 21.5, "obv_confirm": false, "rsi14": 57.3, "macd": 55.22, "macd_signal": 63.47, "macd_hist": -8.24, "atr14": 123.2, "score": 2.97}, {"ticker": "6762.T", "name": "ＴＤＫ", "sector33": "電気機器", "price": 3210.0, "ma25": 3089.1, "ma75": 3348.7, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 22.7, "plus_di": 24.6, "minus_di": 24.4, "obv_confirm": true, "rsi14": 52.3, "macd": -54.8, "macd_signal": -100.41, "macd_hist": 45.6, "atr14": 166.4, "score": 2.91}, {"ticker": "6752.T", "name": "パナソニック　ホールディングス", "sector33": "電気機器", "price": 4721.0, "ma25": 4206.2, "ma75": 3941.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.9, "plus_di": 39.2, "minus_di": 20.4, "obv_confirm": false, "rsi14": 63.3, "macd": 125.04, "macd_signal": 50.2, "macd_hist": 74.85, "atr14": 232.7, "score": 2.8}, {"ticker": "8035.T", "name": "東京エレクトロン", "sector33": "電気機器", "price": 59130.0, "ma25": 61916.4, "ma75": 60834.4, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.6, "plus_di": 27.8, "minus_di": 31.0, "obv_confirm": true, "rsi14": 47.0, "macd": -2470.7, "macd_signal": -2866.63, "macd_hist": 395.93, "atr14": 3869.3, "score": 2.78}, {"ticker": "7270.T", "name": "ＳＵＢＡＲＵ", "sector33": "輸送用機器", "price": 2583.0, "ma25": 2586.6, "ma75": 2496.2, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.9, "plus_di": 24.6, "minus_di": 24.8, "obv_confirm": true, "rsi14": 50.5, "macd": 11.25, "macd_signal": 24.34, "macd_hist": -13.09, "atr14": 81.2, "score": 2.72}, {"ticker": "7741.T", "name": "ＨＯＹＡ", "sector33": "精密機器", "price": 26645.0, "ma25": 25226.0, "ma75": 26257.0, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 17.2, "plus_di": 35.3, "minus_di": 19.6, "obv_confirm": true, "rsi14": 61.0, "macd": 213.81, "macd_signal": -41.77, "macd_hist": 255.57, "atr14": 778.0, "score": 2.69}, {"ticker": "5803.T", "name": "フジクラ", "sector33": "非鉄金属", "price": 5665.0, "ma25": 4785.7, "ma75": 5197.6, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 16.8, "plus_di": 34.4, "minus_di": 22.2, "obv_confirm": true, "rsi14": 60.0, "macd": 161.63, "macd_signal": -28.21, "macd_hist": 189.83, "atr14": 431.4, "score": 2.67}, {"ticker": "8750.T", "name": "第一ライフグループ", "sector33": "保険業", "price": 1874.0, "ma25": 1886.9, "ma75": 1739.3, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.3, "plus_di": 22.3, "minus_di": 22.8, "obv_confirm": true, "rsi14": 50.5, "macd": 16.23, "macd_signal": 26.39, "macd_hist": -10.16, "atr14": 49.2, "score": 2.65}, {"ticker": "8766.T", "name": "東京海上ホールディングス", "sector33": "保険業", "price": 7540.0, "ma25": 7862.9, "ma75": 7488.9, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 15.8, "plus_di": 23.8, "minus_di": 28.2, "obv_confirm": true, "rsi14": 42.5, "macd": 14.4, "macd_signal": 88.12, "macd_hist": -73.71, "atr14": 194.0, "score": 2.63}, {"ticker": "8031.T", "name": "三井物産", "sector33": "卸売業", "price": 4825.0, "ma25": 4822.7, "ma75": 5055.0, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.3, "plus_di": 23.2, "minus_di": 19.9, "obv_confirm": true, "rsi14": 49.0, "macd": 16.54, "macd_signal": 15.73, "macd_hist": 0.81, "atr14": 124.7, "score": 2.61}, {"ticker": "8002.T", "name": "丸紅", "sector33": "卸売業", "price": 4930.0, "ma25": 5082.3, "ma75": 5146.8, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 14.9, "plus_di": 18.2, "minus_di": 22.8, "obv_confirm": true, "rsi14": 44.2, "macd": -24.17, "macd_signal": 4.27, "macd_hist": -28.45, "atr14": 156.4, "score": 2.6}];
+    const ALL_STOCKS = [{"ticker": "9434.T", "name": "ソフトバンク", "sector33": "情報・通信業", "price": 234.9, "ma25": 224.6, "ma75": 218.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 37.4, "plus_di": 35.0, "minus_di": 13.1, "obv_confirm": true, "rsi14": 63.1, "macd": 4.19, "macd_signal": 3.85, "macd_hist": 0.35, "atr14": 5.0, "score": 6.5}, {"ticker": "6501.T", "name": "日立製作所", "sector33": "電気機器", "price": 5767.0, "ma25": 5123.2, "ma75": 4955.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 36.9, "plus_di": 37.1, "minus_di": 9.4, "obv_confirm": true, "rsi14": 79.4, "macd": 241.27, "macd_signal": 184.39, "macd_hist": 56.88, "atr14": 158.0, "score": 6.48}, {"ticker": "9432.T", "name": "ＮＴＴ", "sector33": "情報・通信業", "price": 162.7, "ma25": 153.7, "ma75": 150.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 31.4, "plus_di": 40.0, "minus_di": 14.4, "obv_confirm": true, "rsi14": 67.1, "macd": 2.82, "macd_signal": 2.12, "macd_hist": 0.7, "atr14": 2.9, "score": 6.26}, {"ticker": "9104.T", "name": "商船三井", "sector33": "海運業", "price": 6471.0, "ma25": 5850.8, "ma75": 5671.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 30.9, "plus_di": 40.3, "minus_di": 12.6, "obv_confirm": true, "rsi14": 71.8, "macd": 202.47, "macd_signal": 159.5, "macd_hist": 42.98, "atr14": 162.1, "score": 6.24}, {"ticker": "8001.T", "name": "伊藤忠商事", "sector33": "卸売業", "price": 2064.5, "ma25": 1984.6, "ma75": 1935.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 29.8, "plus_di": 30.2, "minus_di": 13.3, "obv_confirm": true, "rsi14": 63.9, "macd": 44.03, "macd_signal": 38.34, "macd_hist": 5.69, "atr14": 46.1, "score": 6.19}, {"ticker": "7974.T", "name": "任天堂", "sector33": "その他製品", "price": 8900.0, "ma25": 7551.9, "ma75": 7339.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 29.7, "plus_di": 47.5, "minus_di": 14.3, "obv_confirm": true, "rsi14": 72.1, "macd": 340.36, "macd_signal": 219.15, "macd_hist": 121.21, "atr14": 295.4, "score": 6.19}, {"ticker": "8015.T", "name": "豊田通商", "sector33": "卸売業", "price": 7325.0, "ma25": 6656.1, "ma75": 6549.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 28.9, "plus_di": 35.4, "minus_di": 16.2, "obv_confirm": true, "rsi14": 67.9, "macd": 277.03, "macd_signal": 223.6, "macd_hist": 53.43, "atr14": 240.8, "score": 6.16}, {"ticker": "9101.T", "name": "日本郵船", "sector33": "海運業", "price": 6400.0, "ma25": 5878.7, "ma75": 5573.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 28.2, "plus_di": 37.1, "minus_di": 14.8, "obv_confirm": true, "rsi14": 70.4, "macd": 182.53, "macd_signal": 164.23, "macd_hist": 18.3, "atr14": 157.1, "score": 6.13}, {"ticker": "6301.T", "name": "小松製作所", "sector33": "機械", "price": 7302.0, "ma25": 6833.4, "ma75": 6643.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 25.8, "plus_di": 33.5, "minus_di": 16.4, "obv_confirm": true, "rsi14": 60.7, "macd": 220.44, "macd_signal": 182.26, "macd_hist": 38.17, "atr14": 225.0, "score": 6.03}, {"ticker": "4503.T", "name": "アステラス製薬", "sector33": "医薬品", "price": 2356.5, "ma25": 2217.5, "ma75": 2215.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 22.4, "plus_di": 29.9, "minus_di": 13.9, "obv_confirm": true, "rsi14": 64.3, "macd": 43.97, "macd_signal": 28.19, "macd_hist": 15.79, "atr14": 61.8, "score": 5.9}, {"ticker": "6702.T", "name": "富士通", "sector33": "電気機器", "price": 3841.0, "ma25": 3504.5, "ma75": 3404.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 18.8, "plus_di": 39.2, "minus_di": 19.4, "obv_confirm": true, "rsi14": 64.4, "macd": 103.59, "macd_signal": 81.3, "macd_hist": 22.29, "atr14": 134.3, "score": 5.75}, {"ticker": "5401.T", "name": "日本製鉄", "sector33": "鉄鋼", "price": 676.3, "ma25": 630.0, "ma75": 579.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 49.9, "plus_di": 39.5, "minus_di": 13.3, "obv_confirm": true, "rsi14": 67.1, "macd": 29.29, "macd_signal": 28.46, "macd_hist": 0.83, "atr14": 16.2, "score": 5.0}, {"ticker": "7832.T", "name": "バンダイナムコホールディングス", "sector33": "その他製品", "price": 5435.0, "ma25": 4533.5, "ma75": 3995.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 51.9, "plus_di": 47.5, "minus_di": 11.5, "obv_confirm": true, "rsi14": 75.3, "macd": 354.39, "macd_signal": 276.8, "macd_hist": 77.59, "atr14": 204.4, "score": 5.0}, {"ticker": "7203.T", "name": "トヨタ自動車", "sector33": "輸送用機器", "price": 3020.0, "ma25": 2953.7, "ma75": 2911.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 22.0, "plus_di": 31.6, "minus_di": 19.5, "obv_confirm": false, "rsi14": 55.9, "macd": 29.73, "macd_signal": 33.57, "macd_hist": -3.84, "atr14": 78.3, "score": 4.88}, {"ticker": "2914.T", "name": "日本たばこ産業", "sector33": "食料品", "price": 7132.0, "ma25": 6629.6, "ma75": 6188.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 43.6, "plus_di": 38.5, "minus_di": 14.1, "obv_confirm": true, "rsi14": 68.7, "macd": 243.54, "macd_signal": 227.72, "macd_hist": 15.83, "atr14": 163.1, "score": 4.74}, {"ticker": "6098.T", "name": "リクルートホールディングス", "sector33": "サービス業", "price": 16455.0, "ma25": 13227.0, "ma75": 11099.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 43.2, "plus_di": 51.2, "minus_di": 14.0, "obv_confirm": true, "rsi14": 79.1, "macd": 1106.2, "macd_signal": 697.09, "macd_hist": 409.11, "atr14": 643.3, "score": 4.73}, {"ticker": "5108.T", "name": "ブリヂストン", "sector33": "ゴム製品", "price": 4133.0, "ma25": 3883.0, "ma75": 3527.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 38.4, "plus_di": 40.6, "minus_di": 18.9, "obv_confirm": true, "rsi14": 63.3, "macd": 155.39, "macd_signal": 145.03, "macd_hist": 10.37, "atr14": 112.9, "score": 4.54}, {"ticker": "5020.T", "name": "ＥＮＥＯＳホールディングス", "sector33": "石油・石炭製品", "price": 1291.0, "ma25": 1291.9, "ma75": 1279.7, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "ゴールデンクロス済み", "adx14": 12.7, "plus_di": 19.7, "minus_di": 17.8, "obv_confirm": true, "rsi14": 50.8, "macd": 5.93, "macd_signal": 9.83, "macd_hist": -3.9, "atr14": 37.3, "score": 4.51}, {"ticker": "7309.T", "name": "シマノ", "sector33": "輸送用機器", "price": 20130.0, "ma25": 19078.8, "ma75": 17449.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 37.8, "plus_di": 34.8, "minus_di": 17.4, "obv_confirm": true, "rsi14": 62.7, "macd": 647.76, "macd_signal": 675.96, "macd_hist": -28.2, "atr14": 599.0, "score": 4.51}, {"ticker": "4689.T", "name": "ＬＩＮＥヤフー", "sector33": "情報・通信業", "price": 506.3, "ma25": 459.3, "ma75": 431.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 37.2, "plus_di": 45.4, "minus_di": 14.1, "obv_confirm": true, "rsi14": 75.2, "macd": 16.56, "macd_signal": 11.99, "macd_hist": 4.57, "atr14": 14.3, "score": 4.49}, {"ticker": "4661.T", "name": "オリエンタルランド", "sector33": "サービス業", "price": 2966.5, "ma25": 2841.0, "ma75": 2475.8, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 35.8, "plus_di": 30.3, "minus_di": 16.3, "obv_confirm": true, "rsi14": 58.2, "macd": 112.02, "macd_signal": 123.43, "macd_hist": -11.41, "atr14": 99.4, "score": 4.43}, {"ticker": "6701.T", "name": "日本電気", "sector33": "電気機器", "price": 5168.0, "ma25": 4581.0, "ma75": 4258.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 32.1, "plus_di": 38.6, "minus_di": 13.8, "obv_confirm": true, "rsi14": 71.1, "macd": 196.41, "macd_signal": 162.25, "macd_hist": 34.16, "atr14": 185.9, "score": 4.28}, {"ticker": "4452.T", "name": "花王", "sector33": "化学", "price": 3533.0, "ma25": 3355.2, "ma75": 3129.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 30.7, "plus_di": 42.1, "minus_di": 23.0, "obv_confirm": true, "rsi14": 59.1, "macd": 106.13, "macd_signal": 83.01, "macd_hist": 23.12, "atr14": 101.3, "score": 4.23}, {"ticker": "2502.T", "name": "アサヒグループホールディングス", "sector33": "食料品", "price": 1743.5, "ma25": 1655.0, "ma75": 1560.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 30.4, "plus_di": 39.8, "minus_di": 17.0, "obv_confirm": true, "rsi14": 64.1, "macd": 30.25, "macd_signal": 30.4, "macd_hist": -0.14, "atr14": 45.5, "score": 4.22}, {"ticker": "7267.T", "name": "本田技研工業", "sector33": "輸送用機器", "price": 1658.0, "ma25": 1590.7, "ma75": 1466.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.6, "plus_di": 27.6, "minus_di": 17.3, "obv_confirm": true, "rsi14": 59.4, "macd": 41.46, "macd_signal": 41.45, "macd_hist": 0.01, "atr14": 46.1, "score": 4.18}, {"ticker": "8630.T", "name": "ＳＯＭＰＯホールディングス", "sector33": "保険業", "price": 7011.0, "ma25": 6914.6, "ma75": 6359.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.3, "plus_di": 32.3, "minus_di": 20.8, "obv_confirm": true, "rsi14": 56.3, "macd": 115.44, "macd_signal": 148.8, "macd_hist": -33.36, "atr14": 155.8, "score": 4.17}, {"ticker": "9022.T", "name": "東海旅客鉄道", "sector33": "陸運業", "price": 3861.0, "ma25": 3854.1, "ma75": 3626.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 28.8, "plus_di": 29.4, "minus_di": 20.2, "obv_confirm": true, "rsi14": 53.2, "macd": 50.8, "macd_signal": 79.84, "macd_hist": -29.05, "atr14": 99.6, "score": 4.15}, {"ticker": "6758.T", "name": "ソニーグループ", "sector33": "電気機器", "price": 3912.0, "ma25": 3574.6, "ma75": 3449.3, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.7, "plus_di": 35.8, "minus_di": 14.8, "obv_confirm": true, "rsi14": 67.9, "macd": 96.82, "macd_signal": 80.7, "macd_hist": 16.11, "atr14": 124.5, "score": 4.07}, {"ticker": "7733.T", "name": "オリンパス", "sector33": "精密機器", "price": 2110.5, "ma25": 1839.5, "ma75": 1760.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.3, "plus_di": 44.4, "minus_di": 14.8, "obv_confirm": true, "rsi14": 75.7, "macd": 83.43, "macd_signal": 52.74, "macd_hist": 30.7, "atr14": 64.3, "score": 4.05}, {"ticker": "8729.T", "name": "ソニーフィナンシャルグループ", "sector33": "保険業", "price": 155.8, "ma25": 155.4, "ma75": 146.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 26.2, "plus_di": 26.2, "minus_di": 14.5, "obv_confirm": true, "rsi14": 54.1, "macd": 1.29, "macd_signal": 1.98, "macd_hist": -0.69, "atr14": 3.6, "score": 4.05}, {"ticker": "8053.T", "name": "住友商事", "sector33": "卸売業", "price": 1791.0, "ma25": 1644.7, "ma75": 1662.7, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 25.5, "plus_di": 31.5, "minus_di": 9.9, "obv_confirm": true, "rsi14": 71.2, "macd": 50.87, "macd_signal": 33.76, "macd_hist": 17.11, "atr14": 51.5, "score": 4.02}, {"ticker": "7751.T", "name": "キヤノン", "sector33": "電気機器", "price": 4656.0, "ma25": 4498.4, "ma75": 4272.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 25.4, "plus_di": 34.1, "minus_di": 15.4, "obv_confirm": true, "rsi14": 60.7, "macd": 68.59, "macd_signal": 66.44, "macd_hist": 2.14, "atr14": 98.0, "score": 4.02}, {"ticker": "4188.T", "name": "三菱ケミカルグループ", "sector33": "化学", "price": 1208.5, "ma25": 1187.0, "ma75": 1101.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 24.9, "plus_di": 30.3, "minus_di": 14.5, "obv_confirm": true, "rsi14": 54.6, "macd": 18.7, "macd_signal": 15.53, "macd_hist": 3.16, "atr14": 41.8, "score": 4.0}, {"ticker": "4543.T", "name": "テルモ", "sector33": "精密機器", "price": 2672.5, "ma25": 2320.5, "ma75": 2243.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 25.0, "plus_di": 43.6, "minus_di": 13.1, "obv_confirm": true, "rsi14": 74.5, "macd": 92.45, "macd_signal": 52.57, "macd_hist": 39.88, "atr14": 81.9, "score": 4.0}, {"ticker": "6861.T", "name": "キーエンス", "sector33": "電気機器", "price": 87660.0, "ma25": 78608.4, "ma75": 77551.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 24.5, "plus_di": 35.2, "minus_di": 20.7, "obv_confirm": true, "rsi14": 66.7, "macd": 3018.65, "macd_signal": 2038.41, "macd_hist": 980.24, "atr14": 2849.7, "score": 3.98}, {"ticker": "8309.T", "name": "三井住友トラストグループ", "sector33": "銀行業", "price": 1737.0, "ma25": 1679.7, "ma75": 1526.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 22.0, "plus_di": 29.5, "minus_di": 17.1, "obv_confirm": true, "rsi14": 63.8, "macd": 31.48, "macd_signal": 30.88, "macd_hist": 0.59, "atr14": 43.0, "score": 3.88}, {"ticker": "8725.T", "name": "ＭＳ＆ＡＤインシュアランスグループホールディングス", "sector33": "保険業", "price": 4836.0, "ma25": 4768.5, "ma75": 4484.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 21.1, "plus_di": 31.5, "minus_di": 23.8, "obv_confirm": true, "rsi14": 56.4, "macd": 72.66, "macd_signal": 92.37, "macd_hist": -19.7, "atr14": 103.7, "score": 3.84}, {"ticker": "7936.T", "name": "アシックス", "sector33": "その他製品", "price": 5281.0, "ma25": 4857.9, "ma75": 4613.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 20.5, "plus_di": 38.4, "minus_di": 20.1, "obv_confirm": true, "rsi14": 65.3, "macd": 89.44, "macd_signal": 77.32, "macd_hist": 12.13, "atr14": 199.7, "score": 3.82}, {"ticker": "8308.T", "name": "りそなホールディングス", "sector33": "銀行業", "price": 2454.0, "ma25": 2315.2, "ma75": 2168.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 20.6, "plus_di": 38.9, "minus_di": 17.2, "obv_confirm": true, "rsi14": 62.8, "macd": 37.34, "macd_signal": 23.34, "macd_hist": 14.0, "atr14": 77.2, "score": 3.82}, {"ticker": "8306.T", "name": "三菱ＵＦＪフィナンシャル・グループ", "sector33": "銀行業", "price": 3686.0, "ma25": 3599.9, "ma75": 3270.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 18.3, "plus_di": 31.9, "minus_di": 21.8, "obv_confirm": true, "rsi14": 58.9, "macd": 53.52, "macd_signal": 59.96, "macd_hist": -6.44, "atr14": 100.0, "score": 3.73}, {"ticker": "7269.T", "name": "スズキ", "sector33": "輸送用機器", "price": 2086.5, "ma25": 2028.2, "ma75": 1935.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.9, "plus_di": 27.3, "minus_di": 24.4, "obv_confirm": true, "rsi14": 56.9, "macd": 3.25, "macd_signal": 4.31, "macd_hist": -1.06, "atr14": 71.8, "score": 3.72}, {"ticker": "9202.T", "name": "ＡＮＡホールディングス", "sector33": "空運業", "price": 3126.0, "ma25": 3078.1, "ma75": 2944.8, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.8, "plus_di": 27.0, "minus_di": 22.5, "obv_confirm": true, "rsi14": 54.8, "macd": 26.59, "macd_signal": 32.84, "macd_hist": -6.24, "atr14": 63.9, "score": 3.67}, {"ticker": "7011.T", "name": "三菱重工業", "sector33": "機械", "price": 4254.0, "ma25": 3902.2, "ma75": 3938.8, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 16.5, "plus_di": 34.8, "minus_di": 16.1, "obv_confirm": true, "rsi14": 66.4, "macd": 90.63, "macd_signal": 49.31, "macd_hist": 41.32, "atr14": 153.8, "score": 3.66}, {"ticker": "4307.T", "name": "野村総合研究所", "sector33": "情報・通信業", "price": 5131.0, "ma25": 5000.2, "ma75": 4735.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 13.8, "plus_di": 34.0, "minus_di": 26.4, "obv_confirm": true, "rsi14": 56.4, "macd": 23.64, "macd_signal": 26.5, "macd_hist": -2.86, "atr14": 209.9, "score": 3.55}, {"ticker": "8058.T", "name": "三菱商事", "sector33": "卸売業", "price": 4769.0, "ma25": 4711.5, "ma75": 4850.8, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 12.1, "plus_di": 23.3, "minus_di": 20.0, "obv_confirm": true, "rsi14": 52.0, "macd": 46.0, "macd_signal": 43.12, "macd_hist": 2.88, "atr14": 130.1, "score": 3.48}, {"ticker": "4901.T", "name": "富士フイルムホールディングス", "sector33": "化学", "price": 3329.0, "ma25": 3613.7, "ma75": 3409.7, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 34.1, "plus_di": 21.5, "minus_di": 35.9, "obv_confirm": true, "rsi14": 40.2, "macd": -66.25, "macd_signal": 2.95, "macd_hist": -69.2, "atr14": 124.9, "score": 3.36}, {"ticker": "4578.T", "name": "大塚ホールディングス", "sector33": "医薬品", "price": 12030.0, "ma25": 11496.4, "ma75": 11112.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 30.5, "plus_di": 29.0, "minus_di": 16.3, "obv_confirm": false, "rsi14": 56.4, "macd": 352.0, "macd_signal": 287.65, "macd_hist": 64.35, "atr14": 428.7, "score": 3.22}, {"ticker": "2503.T", "name": "キリンホールディングス", "sector33": "食料品", "price": 3108.0, "ma25": 2943.8, "ma75": 2750.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 29.9, "plus_di": 37.1, "minus_di": 18.1, "obv_confirm": false, "rsi14": 62.5, "macd": 56.91, "macd_signal": 49.53, "macd_hist": 7.38, "atr14": 87.2, "score": 3.2}, {"ticker": "6981.T", "name": "村田製作所", "sector33": "電気機器", "price": 8235.0, "ma25": 7972.3, "ma75": 8431.8, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 27.2, "plus_di": 24.6, "minus_di": 29.8, "obv_confirm": true, "rsi14": 51.2, "macd": -352.0, "macd_signal": -516.42, "macd_hist": 164.42, "atr14": 713.2, "score": 3.09}, {"ticker": "4502.T", "name": "武田薬品工業", "sector33": "医薬品", "price": 5611.0, "ma25": 5504.3, "ma75": 5258.1, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 24.3, "plus_di": 34.2, "minus_di": 21.5, "obv_confirm": false, "rsi14": 57.3, "macd": 55.22, "macd_signal": 63.47, "macd_hist": -8.24, "atr14": 123.2, "score": 2.97}, {"ticker": "6762.T", "name": "ＴＤＫ", "sector33": "電気機器", "price": 3210.0, "ma25": 3089.1, "ma75": 3348.7, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 22.7, "plus_di": 24.6, "minus_di": 24.4, "obv_confirm": true, "rsi14": 52.3, "macd": -54.8, "macd_signal": -100.41, "macd_hist": 45.6, "atr14": 166.4, "score": 2.91}, {"ticker": "9021.T", "name": "西日本旅客鉄道", "sector33": "陸運業", "price": 2920.0, "ma25": 2967.2, "ma75": 2783.1, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 21.7, "plus_di": 27.5, "minus_di": 31.2, "obv_confirm": true, "rsi14": 50.4, "macd": 9.09, "macd_signal": 34.47, "macd_hist": -25.38, "atr14": 73.5, "score": 2.87}, {"ticker": "6752.T", "name": "パナソニック　ホールディングス", "sector33": "電気機器", "price": 4721.0, "ma25": 4206.2, "ma75": 3941.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.9, "plus_di": 39.2, "minus_di": 20.4, "obv_confirm": false, "rsi14": 63.3, "macd": 125.04, "macd_signal": 50.2, "macd_hist": 74.85, "atr14": 232.7, "score": 2.8}, {"ticker": "8035.T", "name": "東京エレクトロン", "sector33": "電気機器", "price": 59130.0, "ma25": 61916.4, "ma75": 60834.4, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.6, "plus_di": 27.8, "minus_di": 31.0, "obv_confirm": true, "rsi14": 47.0, "macd": -2470.7, "macd_signal": -2866.63, "macd_hist": 395.93, "atr14": 3869.3, "score": 2.78}, {"ticker": "8604.T", "name": "野村ホールディングス", "sector33": "証券、商品先物取引業", "price": 1570.0, "ma25": 1562.3, "ma75": 1417.5, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.1, "plus_di": 29.5, "minus_di": 22.3, "obv_confirm": false, "rsi14": 55.0, "macd": 18.96, "macd_signal": 22.62, "macd_hist": -3.66, "atr14": 42.1, "score": 2.76}, {"ticker": "7182.T", "name": "ゆうちょ銀行", "sector33": "銀行業", "price": 3275.0, "ma25": 3248.1, "ma75": 3107.7, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 18.4, "plus_di": 29.3, "minus_di": 29.0, "obv_confirm": false, "rsi14": 54.4, "macd": -7.63, "macd_signal": -4.54, "macd_hist": -3.09, "atr14": 99.3, "score": 2.74}, {"ticker": "8113.T", "name": "ユニ・チャーム", "sector33": "化学", "price": 987.5, "ma25": 986.0, "ma75": 945.0, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 18.3, "plus_di": 25.3, "minus_di": 21.9, "obv_confirm": false, "rsi14": 50.5, "macd": 11.9, "macd_signal": 15.03, "macd_hist": -3.13, "atr14": 28.6, "score": 2.73}, {"ticker": "1928.T", "name": "積水ハウス", "sector33": "建設業", "price": 3444.0, "ma25": 3458.2, "ma75": 3343.4, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 18.2, "plus_di": 30.8, "minus_di": 26.6, "obv_confirm": true, "rsi14": 51.9, "macd": 8.24, "macd_signal": 20.59, "macd_hist": -12.35, "atr14": 58.3, "score": 2.73}, {"ticker": "7270.T", "name": "ＳＵＢＡＲＵ", "sector33": "輸送用機器", "price": 2583.0, "ma25": 2586.6, "ma75": 2496.2, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.9, "plus_di": 24.6, "minus_di": 24.8, "obv_confirm": true, "rsi14": 50.5, "macd": 11.25, "macd_signal": 24.34, "macd_hist": -13.09, "atr14": 81.2, "score": 2.72}, {"ticker": "7741.T", "name": "ＨＯＹＡ", "sector33": "精密機器", "price": 26645.0, "ma25": 25226.0, "ma75": 26257.0, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 17.2, "plus_di": 35.3, "minus_di": 19.6, "obv_confirm": true, "rsi14": 61.0, "macd": 213.81, "macd_signal": -41.77, "macd_hist": 255.57, "atr14": 778.0, "score": 2.69}, {"ticker": "8411.T", "name": "みずほフィナンシャルグループ", "sector33": "銀行業", "price": 8620.0, "ma25": 8375.2, "ma75": 7741.8, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.8, "plus_di": 33.4, "minus_di": 22.8, "obv_confirm": false, "rsi14": 56.9, "macd": 126.61, "macd_signal": 108.02, "macd_hist": 18.59, "atr14": 276.9, "score": 2.67}, {"ticker": "5803.T", "name": "フジクラ", "sector33": "非鉄金属", "price": 5665.0, "ma25": 4785.7, "ma75": 5197.6, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 16.8, "plus_di": 34.4, "minus_di": 22.2, "obv_confirm": true, "rsi14": 60.0, "macd": 161.63, "macd_signal": -28.21, "macd_hist": 189.83, "atr14": 431.4, "score": 2.67}, {"ticker": "6273.T", "name": "ＳＭＣ", "sector33": "機械", "price": 76430.0, "ma25": 72676.4, "ma75": 71435.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.6, "plus_di": 30.8, "minus_di": 18.4, "obv_confirm": false, "rsi14": 57.0, "macd": 1578.62, "macd_signal": 865.16, "macd_hist": 713.46, "atr14": 3600.9, "score": 2.66}, {"ticker": "8750.T", "name": "第一ライフグループ", "sector33": "保険業", "price": 1874.0, "ma25": 1886.9, "ma75": 1739.3, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.3, "plus_di": 22.3, "minus_di": 22.8, "obv_confirm": true, "rsi14": 50.5, "macd": 16.23, "macd_signal": 26.39, "macd_hist": -10.16, "atr14": 49.2, "score": 2.65}, {"ticker": "8316.T", "name": "三井住友フィナンシャルグループ", "sector33": "銀行業", "price": 6969.0, "ma25": 6881.2, "ma75": 6369.9, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.3, "plus_di": 29.3, "minus_di": 24.3, "obv_confirm": false, "rsi14": 56.3, "macd": 43.92, "macd_signal": 50.5, "macd_hist": -6.58, "atr14": 187.2, "score": 2.65}, {"ticker": "8766.T", "name": "東京海上ホールディングス", "sector33": "保険業", "price": 7540.0, "ma25": 7862.9, "ma75": 7488.9, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 15.8, "plus_di": 23.8, "minus_di": 28.2, "obv_confirm": true, "rsi14": 42.5, "macd": 14.4, "macd_signal": 88.12, "macd_hist": -73.71, "atr14": 194.0, "score": 2.63}, {"ticker": "8031.T", "name": "三井物産", "sector33": "卸売業", "price": 4825.0, "ma25": 4822.7, "ma75": 5055.0, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.3, "plus_di": 23.2, "minus_di": 19.9, "obv_confirm": true, "rsi14": 49.0, "macd": 16.54, "macd_signal": 15.73, "macd_hist": 0.81, "atr14": 124.7, "score": 2.61}, {"ticker": "9983.T", "name": "ファーストリテイリング", "sector33": "小売業", "price": 77120.0, "ma25": 79062.4, "ma75": 78730.3, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 14.9, "plus_di": 18.5, "minus_di": 25.8, "obv_confirm": true, "rsi14": 42.7, "macd": -797.75, "macd_signal": -712.24, "macd_hist": -85.51, "atr14": 2122.4, "score": 2.6}, {"ticker": "9984.T", "name": "ソフトバンクグループ", "sector33": "情報・通信業", "price": 5739.0, "ma25": 5635.0, "ma75": 6218.4, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.1, "plus_di": 26.4, "minus_di": 24.9, "obv_confirm": true, "rsi14": 50.9, "macd": -124.67, "macd_signal": -200.07, "macd_hist": 75.4, "atr14": 405.6, "score": 2.6}, {"ticker": "8002.T", "name": "丸紅", "sector33": "卸売業", "price": 4930.0, "ma25": 5082.3, "ma75": 5146.8, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 14.9, "plus_di": 18.2, "minus_di": 22.8, "obv_confirm": true, "rsi14": 44.2, "macd": -24.17, "macd_signal": 4.27, "macd_hist": -28.45, "atr14": 156.4, "score": 2.6}, {"ticker": "6971.T", "name": "京セラ", "sector33": "電気機器", "price": 3908.0, "ma25": 3714.8, "ma75": 3469.2, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 13.7, "plus_di": 29.3, "minus_di": 20.3, "obv_confirm": false, "rsi14": 59.3, "macd": 61.9, "macd_signal": 44.07, "macd_hist": 17.83, "atr14": 140.1, "score": 2.55}, {"ticker": "8267.T", "name": "イオン", "sector33": "小売業", "price": 1374.0, "ma25": 1379.1, "ma75": 1405.2, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 13.2, "plus_di": 24.6, "minus_di": 19.4, "obv_confirm": true, "rsi14": 48.9, "macd": -1.27, "macd_signal": -3.4, "macd_hist": 2.12, "atr14": 43.1, "score": 2.53}, {"ticker": "8697.T", "name": "日本取引所グループ", "sector33": "その他金融業", "price": 2244.0, "ma25": 2229.0, "ma75": 2075.6, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 12.9, "plus_di": 26.1, "minus_di": 20.1, "obv_confirm": false, "rsi14": 52.7, "macd": 30.07, "macd_signal": 32.95, "macd_hist": -2.87, "atr14": 69.4, "score": 2.52}, {"ticker": "6503.T", "name": "三菱電機", "sector33": "電気機器", "price": 6153.0, "ma25": 5691.7, "ma75": 5950.5, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 13.1, "plus_di": 34.1, "minus_di": 23.4, "obv_confirm": true, "rsi14": 60.2, "macd": 57.48, "macd_signal": -11.68, "macd_hist": 69.16, "atr14": 242.9, "score": 2.52}, {"ticker": "4507.T", "name": "塩野義製薬", "sector33": "医薬品", "price": 2831.5, "ma25": 2862.8, "ma75": 2906.3, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "接近中", "adx14": 12.8, "plus_di": 20.3, "minus_di": 21.6, "obv_confirm": true, "rsi14": 47.5, "macd": -12.39, "macd_signal": -4.55, "macd_hist": -7.85, "atr14": 75.7, "score": 2.51}, {"ticker": "6857.T", "name": "アドバンテスト", "sector33": "電気機器", "price": 36870.0, "ma25": 30704.6, "ma75": 29309.4, "price_above_ma25": true, "ma25_above_ma75": true, "cross_status": "-", "adx14": 11.4, "plus_di": 34.5, "minus_di": 20.1, "obv_confirm": false, "rsi14": 65.0, "macd": 1618.91, "macd_signal": 889.21, "macd_hist": 729.7, "atr14": 2388.1, "score": 2.46}, {"ticker": "3407.T", "name": "旭化成", "sector33": "化学", "price": 1702.0, "ma25": 1780.5, "ma75": 1748.1, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 11.6, "plus_di": 23.6, "minus_di": 23.1, "obv_confirm": true, "rsi14": 43.9, "macd": -33.18, "macd_signal": -28.73, "macd_hist": -4.45, "atr14": 54.1, "score": 2.46}, {"ticker": "6367.T", "name": "ダイキン工業", "sector33": "機械", "price": 21255.0, "ma25": 23600.2, "ma75": 23783.1, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 35.9, "plus_di": 9.9, "minus_di": 42.6, "obv_confirm": true, "rsi14": 24.3, "macd": -754.7, "macd_signal": -501.8, "macd_hist": -252.9, "atr14": 593.2, "score": 2.44}, {"ticker": "6326.T", "name": "クボタ", "sector33": "機械", "price": 2751.5, "ma25": 2740.4, "ma75": 2743.3, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 9.4, "plus_di": 23.0, "minus_di": 15.9, "obv_confirm": true, "rsi14": 51.2, "macd": -5.3, "macd_signal": -6.84, "macd_hist": 1.54, "atr14": 92.3, "score": 2.38}, {"ticker": "8802.T", "name": "三菱地所", "sector33": "不動産業", "price": 3677.0, "ma25": 3987.0, "ma75": 4096.4, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 27.6, "plus_di": 15.6, "minus_di": 38.1, "obv_confirm": true, "rsi14": 35.7, "macd": -116.94, "macd_signal": -90.34, "macd_hist": -26.6, "atr14": 112.6, "score": 2.1}, {"ticker": "9433.T", "name": "ＫＤＤＩ", "sector33": "情報・通信業", "price": 2877.5, "ma25": 2890.6, "ma75": 2746.5, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 21.9, "plus_di": 26.5, "minus_di": 24.4, "obv_confirm": false, "rsi14": 51.1, "macd": 16.46, "macd_signal": 34.54, "macd_hist": -18.08, "atr14": 78.2, "score": 1.88}, {"ticker": "6146.T", "name": "ディスコ", "sector33": "機械", "price": 65470.0, "ma25": 64115.2, "ma75": 70478.0, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 19.9, "plus_di": 27.6, "minus_di": 29.9, "obv_confirm": false, "rsi14": 50.7, "macd": -2018.32, "macd_signal": -3175.73, "macd_hist": 1157.41, "atr14": 4518.3, "score": 1.8}, {"ticker": "8830.T", "name": "住友不動産", "sector33": "不動産業", "price": 3382.0, "ma25": 3653.1, "ma75": 3828.1, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 20.1, "plus_di": 17.7, "minus_di": 33.1, "obv_confirm": true, "rsi14": 32.5, "macd": -92.0, "macd_signal": -65.25, "macd_hist": -26.75, "atr14": 97.2, "score": 1.8}, {"ticker": "4568.T", "name": "第一三共", "sector33": "医薬品", "price": 2729.0, "ma25": 2736.4, "ma75": 2646.8, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 19.3, "plus_di": 28.5, "minus_di": 22.2, "obv_confirm": false, "rsi14": 51.1, "macd": 14.84, "macd_signal": 14.06, "macd_hist": 0.78, "atr14": 87.6, "score": 1.77}, {"ticker": "2802.T", "name": "味の素", "sector33": "食料品", "price": 5566.0, "ma25": 5268.0, "ma75": 5327.4, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 17.4, "plus_di": 33.4, "minus_di": 21.1, "obv_confirm": false, "rsi14": 58.5, "macd": 2.61, "macd_signal": -73.97, "macd_hist": 76.58, "atr14": 228.8, "score": 1.7}, {"ticker": "9735.T", "name": "セコム", "sector33": "サービス業", "price": 6511.0, "ma25": 6727.7, "ma75": 6433.2, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.2, "plus_di": 19.0, "minus_di": 26.1, "obv_confirm": false, "rsi14": 44.6, "macd": -19.98, "macd_signal": 35.13, "macd_hist": -55.1, "atr14": 179.5, "score": 1.69}, {"ticker": "1925.T", "name": "大和ハウス工業", "sector33": "建設業", "price": 4609.0, "ma25": 4618.4, "ma75": 4515.9, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 17.2, "plus_di": 25.4, "minus_di": 21.5, "obv_confirm": false, "rsi14": 51.5, "macd": 16.64, "macd_signal": 31.2, "macd_hist": -14.57, "atr14": 83.2, "score": 1.69}, {"ticker": "4063.T", "name": "信越化学工業", "sector33": "化学", "price": 6372.0, "ma25": 6571.6, "ma75": 7003.8, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 17.1, "plus_di": 26.4, "minus_di": 29.7, "obv_confirm": true, "rsi14": 46.5, "macd": -195.23, "macd_signal": -252.88, "macd_hist": 57.64, "atr14": 239.1, "score": 1.68}, {"ticker": "6178.T", "name": "日本郵政", "sector33": "サービス業", "price": 2376.0, "ma25": 2394.3, "ma75": 2198.1, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 16.8, "plus_di": 25.8, "minus_di": 26.8, "obv_confirm": false, "rsi14": 51.8, "macd": 16.56, "macd_signal": 29.85, "macd_hist": -13.29, "atr14": 60.1, "score": 1.67}, {"ticker": "6902.T", "name": "デンソー", "sector33": "輸送用機器", "price": 1955.0, "ma25": 1976.4, "ma75": 1919.3, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 15.9, "plus_di": 28.1, "minus_di": 28.7, "obv_confirm": false, "rsi14": 49.5, "macd": -6.31, "macd_signal": 5.8, "macd_hist": -12.11, "atr14": 52.3, "score": 1.64}, {"ticker": "6723.T", "name": "ルネサスエレクトロニクス", "sector33": "電気機器", "price": 3746.0, "ma25": 3939.4, "ma75": 4136.2, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.5, "plus_di": 22.8, "minus_di": 27.9, "obv_confirm": true, "rsi14": 44.3, "macd": -152.87, "macd_signal": -184.2, "macd_hist": 31.32, "atr14": 273.6, "score": 1.62}, {"ticker": "9020.T", "name": "東日本旅客鉄道", "sector33": "陸運業", "price": 3511.0, "ma25": 3574.1, "ma75": 3515.8, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 15.6, "plus_di": 27.8, "minus_di": 26.5, "obv_confirm": false, "rsi14": 48.6, "macd": -20.52, "macd_signal": 0.64, "macd_hist": -21.16, "atr14": 91.3, "score": 1.62}, {"ticker": "5802.T", "name": "住友電気工業", "sector33": "非鉄金属", "price": 2386.0, "ma25": 2312.7, "ma75": 2705.6, "price_above_ma25": true, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.3, "plus_di": 30.3, "minus_di": 31.7, "obv_confirm": false, "rsi14": 50.9, "macd": -89.31, "macd_signal": -128.08, "macd_hist": 38.77, "atr14": 170.4, "score": 1.61}, {"ticker": "8801.T", "name": "三井不動産", "sector33": "不動産業", "price": 1457.0, "ma25": 1529.3, "ma75": 1541.5, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 15.1, "plus_di": 21.0, "minus_di": 29.6, "obv_confirm": true, "rsi14": 39.7, "macd": -20.93, "macd_signal": -9.56, "macd_hist": -11.38, "atr14": 37.0, "score": 1.6}, {"ticker": "8591.T", "name": "オリックス", "sector33": "その他金融業", "price": 6376.0, "ma25": 6440.9, "ma75": 6166.8, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 13.0, "plus_di": 24.2, "minus_di": 25.1, "obv_confirm": false, "rsi14": 49.6, "macd": 4.6, "macd_signal": 25.98, "macd_hist": -21.38, "atr14": 163.1, "score": 1.52}, {"ticker": "3382.T", "name": "セブン＆アイ・ホールディングス", "sector33": "小売業", "price": 2070.5, "ma25": 2077.8, "ma75": 1966.0, "price_above_ma25": false, "ma25_above_ma75": true, "cross_status": "-", "adx14": 12.0, "plus_di": 25.3, "minus_di": 24.0, "obv_confirm": false, "rsi14": 51.0, "macd": 12.08, "macd_signal": 24.05, "macd_hist": -11.97, "atr14": 58.1, "score": 1.48}, {"ticker": "4519.T", "name": "中外製薬", "sector33": "医薬品", "price": 6933.0, "ma25": 7089.7, "ma75": 7461.2, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 16.7, "plus_di": 22.9, "minus_di": 26.4, "obv_confirm": false, "rsi14": 44.6, "macd": -96.66, "macd_signal": -129.44, "macd_hist": 32.77, "atr14": 215.9, "score": 0.67}, {"ticker": "6954.T", "name": "ファナック", "sector33": "電気機器", "price": 6435.0, "ma25": 6678.1, "ma75": 7209.1, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 16.4, "plus_di": 24.8, "minus_di": 31.2, "obv_confirm": false, "rsi14": 45.0, "macd": -150.57, "macd_signal": -170.41, "macd_hist": 19.84, "atr14": 340.6, "score": 0.66}, {"ticker": "6920.T", "name": "レーザーテック", "sector33": "電気機器", "price": 38820.0, "ma25": 41856.0, "ma75": 43460.8, "price_above_ma25": false, "ma25_above_ma75": false, "cross_status": "-", "adx14": 11.0, "plus_di": 26.4, "minus_di": 30.4, "obv_confirm": false, "rsi14": 45.1, "macd": -1368.2, "macd_signal": -1368.34, "macd_hist": 0.14, "atr14": 3628.3, "score": 0.44}];
+    const STRONG_SECTORS = ["その他製品", "鉄鋼", "海運業", "精密機器", "ゴム製品", "サービス業", "卸売業", "食料品", "非鉄金属", "輸送用機器", "電気機器", "医薬品", "情報・通信業", "空運業", "保険業"];
+    const MAX_DEFAULT = 50;
 
     const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(window.location.search);
+    const sectorFilter = params.get('sector');
+
+    function fmtNum(v, digits) {
+      if (v === null || v === undefined) return '<span class="na">-</span>';
+      return Number(v).toFixed(digits === undefined ? 1 : digits);
+    }
+
+    function crossBadge(status) {
+      if (status === 'ゴールデンクロス済み') return '<span class="badge badge-gc">GC済</span>';
+      if (status === '接近中') return '<span class="badge badge-near">接近中</span>';
+      return '<span class="na">-</span>';
+    }
+
+    function getFilteredStocks() {
+      let list;
+      if (sectorFilter) {
+        list = ALL_STOCKS.filter(s => s.sector33 === sectorFilter);
+        list.sort((a, b) => b.score - a.score);
+      } else {
+        list = ALL_STOCKS.filter(s => STRONG_SECTORS.includes(s.sector33));
+        list.sort((a, b) => b.score - a.score);
+        list = list.slice(0, MAX_DEFAULT);
+      }
+      return list;
+    }
+
+    function renderFilterBar() {
+      const bar = $('filter-bar');
+      const note = $('sub-note');
+      if (sectorFilter) {
+        bar.innerHTML = `<span class="sector-badge">セクター: ${sectorFilter}</span><a class="clear-link" href="screening.html">✕ 絞り込み解除(全セクター表示)</a>`;
+        note.textContent = `「${sectorFilter}」セクターの銘柄をスコア順に全件表示しています。`;
+      } else {
+        bar.innerHTML = '';
+        note.textContent = '対象セクター（相対強度上位）: ' + STRONG_SECTORS.join('、') + '。スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。';
+      }
+    }
+
+    function renderTable(list) {
+      const tbody = $('table-body');
+      if (list.length === 0) {
+        tbody.innerHTML = '';
+        $('table-body').closest('table').style.display = 'none';
+        return;
+      }
+      tbody.parentElement.style.display = '';
+      tbody.innerHTML = list.map(s => {
+        const obvMark = s.obv_confirm ? '◯' : '-';
+        return `<tr>
+          <td class="name-cell"><a href="stock.html?ticker=${s.ticker}">${s.name}<br><span class="ticker">${s.ticker.replace('.T','')}</span></a></td>
+          <td><a href="screening.html?sector=${encodeURIComponent(s.sector33)}" style="color:#888;text-decoration:none;">${s.sector33}</a></td>
+          <td>${fmtNum(s.price)}</td>
+          <td>${crossBadge(s.cross_status)}</td>
+          <td>${fmtNum(s.adx14)}</td>
+          <td>${obvMark}</td>
+          <td>${fmtNum(s.rsi14)}</td>
+          <td>${fmtNum(s.macd_hist, 2)}</td>
+          <td>${fmtNum(s.atr14)}</td>
+          <td>${fmtNum(s.score, 2)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderCalcOptions(list) {
+      const sel = $('calc-ticker');
+      sel.innerHTML = list.map(s => `<option value="${s.ticker}">${s.name}(${s.ticker.replace('.T','')})</option>`).join('');
+    }
 
     function recalc() {
+      const list = getFilteredStocks();
       const ticker = $('calc-ticker').value;
-      const stock = STOCKS.find(s => s.ticker === ticker);
+      const stock = list.find(s => s.ticker === ticker) || ALL_STOCKS.find(s => s.ticker === ticker);
       const equity = parseFloat($('calc-equity').value) || 0;
       const riskPct = parseFloat($('calc-risk-pct').value) || 0;
       const atrMult = parseFloat($('calc-atr-mult').value) || 0;
@@ -729,9 +206,9 @@
       }
 
       const price = stock.price;
-      const atr = stock.atr14;
-      const stopPrice = price - atr * atrMult;
-      const riskPerShare = atr * atrMult;
+      const atrVal = stock.atr14;
+      const stopPrice = price - atrVal * atrMult;
+      const riskPerShare = atrVal * atrMult;
       const riskBudget = equity * (riskPct / 100);
 
       if (riskPerShare <= 0 || riskBudget <= 0) {
@@ -739,7 +216,7 @@
         return;
       }
 
-      let shares = Math.floor((riskBudget / riskPerShare) / 100) * 100; // 単元株(100株)単位に切り捨て
+      let shares = Math.floor((riskBudget / riskPerShare) / 100) * 100;
       if (shares < 0) shares = 0;
       const positionValue = shares * price;
       const positionPct = equity > 0 ? (positionValue / equity) * 100 : 0;
@@ -751,8 +228,8 @@
       }
 
       resultEl.innerHTML = `
-        現在値: ${price.toLocaleString()}円 / ATR14: ${atr.toLocaleString()}<br>
-        想定ストップ価格: <b>${stopPrice.toFixed(1).toLocaleString()}円</b><br>
+        現在値: ${price.toLocaleString()}円 / ATR14: ${atrVal.toLocaleString()}<br>
+        想定ストップ価格: <b>${stopPrice.toFixed(1)}円</b><br>
         1株あたり許容損失: ${riskPerShare.toFixed(1)}円<br>
         推奨株数: <span class="highlight">${shares.toLocaleString()}株</span>（単元株=100株単位）<br>
         建玉金額: ${positionValue.toLocaleString()}円（総資金の${positionPct.toFixed(1)}%）<br>
@@ -761,11 +238,20 @@
       `;
     }
 
+    function init() {
+      renderFilterBar();
+      const list = getFilteredStocks();
+      renderTable(list);
+      renderCalcOptions(list);
+      recalc();
+    }
+
     ['calc-ticker', 'calc-equity', 'calc-risk-pct', 'calc-atr-mult'].forEach(id => {
       $(id).addEventListener('input', recalc);
       $(id).addEventListener('change', recalc);
     });
-    recalc();
+
+    init();
   </script>
 </body>
 </html>
