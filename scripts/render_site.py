@@ -4,6 +4,7 @@ data/sector_strength.csv から、スマホ表示用の静的HTML(docs/index.htm
 """
 import os
 import json
+from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
 import pandas as pd
 
@@ -51,7 +52,8 @@ def main():
     rows_html = ""
     for sector, row in df.iterrows():
         cells = "".join(f"<td>{fmt(row[p])}</td>" for p in PERIOD_LABELS.keys())
-        rows_html += f"<tr><td class='sector-name'>{sector}</td>{cells}</tr>\n"
+        sector_url = f"screening.html?sector={quote(sector)}"
+        rows_html += f"<tr><td class='sector-name'><a href='{sector_url}'>{sector}</a></td>{cells}</tr>\n"
 
     header_cells = "".join(f"<th>{label}</th>" for label in PERIOD_LABELS.values())
 
@@ -113,6 +115,11 @@ def main():
   }}
   td.sector-name {{
     font-weight: 600;
+  }}
+  td.sector-name a {{
+    color: #e8e8e8;
+    text-decoration: none;
+    border-bottom: 1px dotted #555;
   }}
   th {{
     color: #aaa;
