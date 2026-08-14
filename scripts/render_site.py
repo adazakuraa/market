@@ -137,11 +137,11 @@ def main():
     margin-right: 12px;
     text-decoration: none;
   }}
-  nav a.active {
+  nav a.active {{
     color: #e8e8e8;
     font-weight: 600;
     text-decoration: underline;
-  }
+  }}
   .chart-box {{
     background: #171a20;
     border-radius: 10px;
