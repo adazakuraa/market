@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-data/sector_strength.csv で相対的に強いセクターに属する銘柄を対象に、
+data/master.csv の全銘柄(全セクター)を対象に、
 - MAの並び(ゴールデンクロス/接近中)
 - ADXでトレンドの強さ
 - OBVが値動きに追従しているか
 - RSI・MACD
 - ATR(ストップ位置・ポジションサイズ計算用)
-を計算し、上位(最大50銘柄)を data/screening.json / screening.csv に出力する。
+を計算する。
+
+出力:
+- data/screening_all.csv        : 全銘柄の指標スナップショット(CSV, 手元確認用)
+- data/screening_all.json       : 全銘柄の指標スナップショット + 強いセクター一覧(画面表示用)
+- docs/timeseries/<コード>.json  : 銘柄ごとの指標の時系列(詳細ページが必要な分だけfetchする)
+
+セクターでの絞り込みは screening.html 側(JavaScript)で行うため、
+ここでは銘柄を絞り込まず全セクター分を計算する。
 """
 import os
 import time
@@ -20,14 +28,13 @@ from indicators import sma, rsi, macd, atr, adx, obv
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 MASTER_PATH = os.path.join(BASE_DIR, "data", "master.csv")
 SECTOR_STRENGTH_PATH = os.path.join(BASE_DIR, "data", "sector_strength.csv")
-OUT_JSON_PATH = os.path.join(BASE_DIR, "data", "screening.json")
-OUT_CSV_PATH = os.path.join(BASE_DIR, "data", "screening.csv")
-STOCK_TIMESERIES_PATH = os.path.join(BASE_DIR, "data", "stock_timeseries.json")
+OUT_JSON_PATH = os.path.join(BASE_DIR, "data", "screening_all.json")
+OUT_CSV_PATH = os.path.join(BASE_DIR, "data", "screening_all.csv")
+TIMESERIES_DIR = os.path.join(BASE_DIR, "docs", "timeseries")
 
 CHUNK_SIZE = 100
 LOOKBACK_PERIOD = "1y"  # MA75やADXの計算に十分な期間を確保
-TOP_N_SECTORS = 15      # 強いセクター上位いくつまでを対象にするか
-MAX_RESULTS = 50        # 出力する銘柄数の上限
+TOP_N_SECTORS = 15      # 「強いセクター」上位いくつを既定表示の対象にするか
 
 GC_LOOKBACK_DAYS = 10       # 直近何日以内のゴールデンクロスを「済み」とみなすか
 GC_APPROACH_PCT = 0.03      # MA75に対してこの割合以内に接近していたら「接近中」
@@ -38,11 +45,8 @@ def chunked(lst, n):
         yield lst[i:i + n]
 
 
-def select_universe(master, sector_strength):
-    """相対強度が高い上位セクターに属する銘柄だけに絞り込む"""
-    strong_sectors = sector_strength.sort_values("1m", ascending=False).head(TOP_N_SECTORS).index.tolist()
-    universe = master[master["sector33"].isin(strong_sectors)].copy()
-    return universe, strong_sectors
+def get_strong_sectors(sector_strength):
+    return sector_strength.sort_values("1m", ascending=False).head(TOP_N_SECTORS).index.tolist()
 
 
 def download_ohlcv(tickers):
@@ -66,7 +70,6 @@ def download_ohlcv(tickers):
                     if not sub.empty:
                         result[t] = sub
         else:
-            # 銘柄が1つしかない場合
             sub = df[["Open", "High", "Low", "Close", "Volume"]].dropna(how="all")
             if not sub.empty:
                 result[chunk[0]] = sub
@@ -123,21 +126,54 @@ def compute_score(row):
     return score
 
 
+def ticker_code(ticker):
+    return ticker.replace(".T", "")
+
+
+def save_timeseries_file(ticker, s):
+    """銘柄1つぶんの時系列をdocs/timeseries/<コード>.jsonに保存する"""
+    dates = [d.strftime("%Y-%m-%d") for d in s["close"].index]
+
+    def series_list(key, digits=2):
+        return [None if pd.isna(v) else round(float(v), digits) for v in s[key]]
+
+    payload = {
+        "dates": dates,
+        "close": series_list("close", 1),
+        "ma25": series_list("ma25", 1),
+        "ma75": series_list("ma75", 1),
+        "volume": [None if pd.isna(v) else int(v) for v in s["volume"]],
+        "rsi14": series_list("rsi14", 1),
+        "macd": series_list("macd", 2),
+        "macd_signal": series_list("macd_signal", 2),
+        "macd_hist": series_list("macd_hist", 2),
+        "adx14": series_list("adx14", 1),
+        "plus_di": series_list("plus_di", 1),
+        "minus_di": series_list("minus_di", 1),
+        "atr14": series_list("atr14", 1),
+        "obv": [None if pd.isna(v) else int(v) for v in s["obv"]],
+    }
+    path = os.path.join(TIMESERIES_DIR, f"{ticker_code(ticker)}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+
+
 def main():
     master = pd.read_csv(MASTER_PATH, dtype=str)
     sector_strength = pd.read_csv(SECTOR_STRENGTH_PATH, index_col=0)
+    strong_sectors = get_strong_sectors(sector_strength)
 
-    universe, strong_sectors = select_universe(master, sector_strength)
-    print(f"対象セクター({len(strong_sectors)}): {strong_sectors}")
-    print(f"対象銘柄数: {len(universe)}")
+    os.makedirs(TIMESERIES_DIR, exist_ok=True)
 
-    ohlcv = download_ohlcv(universe["ticker"].tolist())
+    all_tickers = master["ticker"].tolist()
+    print(f"対象銘柄数(全セクター): {len(all_tickers)}")
+
+    ohlcv = download_ohlcv(all_tickers)
 
     ticker_to_name = dict(zip(master["ticker"], master["name"]))
     ticker_to_sector = dict(zip(master["ticker"], master["sector33"]))
 
     records = []
-    series_cache = {}
     for ticker, df in ohlcv.items():
         if len(df) < 90:  # MA75等の計算に足りない銘柄は除外
             continue
@@ -166,13 +202,6 @@ def main():
         if pd.isna(latest_ma75):
             continue
 
-        series_cache[ticker] = {
-            "close": close, "ma25": ma25, "ma75": ma75,
-            "rsi14": rsi14, "macd": macd_line, "macd_signal": macd_signal, "macd_hist": macd_hist,
-            "atr14": atr14, "adx14": adx14, "plus_di": plus_di, "minus_di": minus_di,
-            "obv": obv_series, "volume": volume,
-        }
-
         row = {
             "ticker": ticker,
             "name": ticker_to_name.get(ticker, ticker),
@@ -196,16 +225,22 @@ def main():
         row["score"] = round(compute_score(row), 2)
         records.append(row)
 
+        save_timeseries_file(ticker, {
+            "close": close, "ma25": ma25, "ma75": ma75,
+            "rsi14": rsi14, "macd": macd_line, "macd_signal": macd_signal, "macd_hist": macd_hist,
+            "atr14": atr14, "adx14": adx14, "plus_di": plus_di, "minus_di": minus_di,
+            "obv": obv_series, "volume": volume,
+        })
+
     result_df = pd.DataFrame(records)
     if result_df.empty:
         raise RuntimeError("スクリーニング結果が0件でした。データ取得に失敗している可能性があります。")
 
-    result_df = result_df.sort_values("score", ascending=False).head(MAX_RESULTS).reset_index(drop=True)
-
+    result_df = result_df.sort_values("score", ascending=False).reset_index(drop=True)
     result_df.to_csv(OUT_CSV_PATH, index=False, encoding="utf-8-sig")
 
     payload = {
-        "target_sectors": strong_sectors,
+        "strong_sectors": strong_sectors,
         "generated_count": len(result_df),
         "stocks": result_df.to_dict(orient="records"),
     }
@@ -213,44 +248,7 @@ def main():
         json.dump(payload, f, ensure_ascii=False)
 
     print(f"Saved {len(result_df)} stocks -> {OUT_JSON_PATH}")
-
-    build_stock_timeseries(result_df["ticker"].tolist(), series_cache, ticker_to_name, ticker_to_sector)
-
-
-def build_stock_timeseries(tickers, series_cache, ticker_to_name, ticker_to_sector):
-    """個別銘柄詳細ページ用に、選抜された銘柄の指標の時系列をJSONで出力する"""
-    out = {}
-    for ticker in tickers:
-        s = series_cache.get(ticker)
-        if s is None:
-            continue
-        dates = [d.strftime("%Y-%m-%d") for d in s["close"].index]
-
-        def series_list(key, digits=2):
-            return [None if pd.isna(v) else round(float(v), digits) for v in s[key]]
-
-        out[ticker] = {
-            "name": ticker_to_name.get(ticker, ticker),
-            "sector33": ticker_to_sector.get(ticker, "-"),
-            "dates": dates,
-            "close": series_list("close", 1),
-            "ma25": series_list("ma25", 1),
-            "ma75": series_list("ma75", 1),
-            "volume": [None if pd.isna(v) else int(v) for v in s["volume"]],
-            "rsi14": series_list("rsi14", 1),
-            "macd": series_list("macd", 2),
-            "macd_signal": series_list("macd_signal", 2),
-            "macd_hist": series_list("macd_hist", 2),
-            "adx14": series_list("adx14", 1),
-            "plus_di": series_list("plus_di", 1),
-            "minus_di": series_list("minus_di", 1),
-            "atr14": series_list("atr14", 1),
-            "obv": [None if pd.isna(v) else int(v) for v in s["obv"]],
-        }
-
-    with open(STOCK_TIMESERIES_PATH, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False)
-    print(f"Saved stock timeseries for {len(out)} tickers -> {STOCK_TIMESERIES_PATH}")
+    print(f"Saved {len(records)} timeseries files -> {TIMESERIES_DIR}")
 
 
 if __name__ == "__main__":
