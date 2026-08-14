@@ -1,63 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-data/screening.json から、スマホ表示用の静的HTML(docs/screening.html)を生成する。
+data/screening_all.json から、スマホ表示用の静的HTML(docs/screening.html)を生成する。
+
+URLパラメータ ?sector=セクター名 を付けると、そのセクターの銘柄だけを
+全件(スコア順)表示する。パラメータがなければ、相対強度上位セクターの
+銘柄から上位50件を表示する(従来の挙動)。
+絞り込みはこのHTML内のJavaScriptで行うため、Python側は全データを埋め込むだけ。
 """
 import os
 import json
 from datetime import datetime, timezone, timedelta
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
-IN_PATH = os.path.join(BASE_DIR, "data", "screening.json")
+IN_PATH = os.path.join(BASE_DIR, "data", "screening_all.json")
 OUT_PATH = os.path.join(BASE_DIR, "docs", "screening.html")
 
 JST = timezone(timedelta(hours=9))
-
-
-def fmt_num(v, digits=1):
-    if v is None:
-        return '<span class="na">-</span>'
-    return f"{v:.{digits}f}"
-
-
-def cross_badge(status):
-    if status == "ゴールデンクロス済み":
-        return '<span class="badge badge-gc">GC済</span>'
-    if status == "接近中":
-        return '<span class="badge badge-near">接近中</span>'
-    return '<span class="na">-</span>'
 
 
 def main():
     with open(IN_PATH, "r", encoding="utf-8") as f:
         payload = json.load(f)
 
-    stocks = payload["stocks"]
     now = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
-    target_sectors = "、".join(payload["target_sectors"])
-
-    rows_html = ""
-    for s in stocks:
-        obv_mark = "◯" if s["obv_confirm"] else "-"
-        rows_html += f"""<tr data-ticker="{s['ticker']}">
-  <td class="name-cell"><a href="stock.html?ticker={s['ticker']}">{s['name']}<br><span class="ticker">{s['ticker'].replace('.T','')}</span></a></td>
-  <td>{s['sector33']}</td>
-  <td>{fmt_num(s['price'])}</td>
-  <td>{cross_badge(s['cross_status'])}</td>
-  <td>{fmt_num(s['adx14'])}</td>
-  <td>{obv_mark}</td>
-  <td>{fmt_num(s['rsi14'])}</td>
-  <td>{fmt_num(s['macd_hist'], 2)}</td>
-  <td>{fmt_num(s['atr14'])}</td>
-  <td>{fmt_num(s['score'], 2)}</td>
-</tr>
-"""
-
-    options_html = "".join(
-        f'<option value="{s["ticker"]}">{s["name"]}({s["ticker"].replace(".T","")})</option>'
-        for s in stocks
-    )
-
-    stocks_json = json.dumps(stocks, ensure_ascii=False)
+    stocks_json = json.dumps(payload["stocks"], ensure_ascii=False)
+    strong_sectors_json = json.dumps(payload["strong_sectors"], ensure_ascii=False)
 
     html = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -78,6 +45,15 @@ def main():
   nav {{ margin-bottom: 16px; font-size: 0.8rem; }}
   nav a {{ color: #6ab7ff; margin-right: 12px; text-decoration: none; }}
   nav a.active {{ color: #e8e8e8; font-weight: 600; text-decoration: underline; }}
+
+  .filter-bar {{
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    font-size: 0.78rem; flex-wrap: wrap;
+  }}
+  .filter-bar .sector-badge {{
+    background: #1b2a3a; color: #6ab7ff; padding: 4px 10px; border-radius: 12px;
+  }}
+  .filter-bar a.clear-link {{ color: #ff8a65; text-decoration: none; }}
 
   .table-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
   table {{ border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 720px; table-layout: fixed; }}
@@ -120,6 +96,7 @@ def main():
   }}
   .calc-result .highlight {{ color: #4caf50; font-weight: 700; font-size: 0.95rem; }}
   .calc-result .warn {{ color: #ffb74d; }}
+  .empty-note {{ font-size: 0.8rem; color: #999; padding: 20px 0; text-align: center; }}
 </style>
 </head>
 <body>
@@ -130,10 +107,8 @@ def main():
   </nav>
   <h1>銘柄スクリーニング</h1>
   <div class="updated">最終更新: {now}</div>
-  <div class="sub-note">
-    対象セクター（相対強度上位）: {target_sectors}<br>
-    スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。
-  </div>
+  <div class="filter-bar" id="filter-bar"></div>
+  <div class="sub-note" id="sub-note"></div>
 
   <div class="table-scroll">
     <table>
@@ -144,17 +119,15 @@ def main():
           <th>ATR14</th><th>スコア</th>
         </tr>
       </thead>
-      <tbody>
-        {rows_html}
-      </tbody>
+      <tbody id="table-body"></tbody>
     </table>
   </div>
 
   <h2>ポジションサイズ・ストップ計算（ATRベース）</h2>
   <div class="calc-box">
     <div class="calc-row">
-      <label>銘柄を選択</label>
-      <select id="calc-ticker">{options_html}</select>
+      <label>銘柄を選択（上の表に表示中の銘柄）</label>
+      <select id="calc-ticker"></select>
     </div>
     <div class="calc-row">
       <label>総資金（円）</label>
@@ -172,13 +145,84 @@ def main():
   </div>
 
   <script>
-    const STOCKS = {stocks_json};
+    const ALL_STOCKS = {stocks_json};
+    const STRONG_SECTORS = {strong_sectors_json};
+    const MAX_DEFAULT = 50;
 
     const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(window.location.search);
+    const sectorFilter = params.get('sector');
+
+    function fmtNum(v, digits) {{
+      if (v === null || v === undefined) return '<span class="na">-</span>';
+      return Number(v).toFixed(digits === undefined ? 1 : digits);
+    }}
+
+    function crossBadge(status) {{
+      if (status === 'ゴールデンクロス済み') return '<span class="badge badge-gc">GC済</span>';
+      if (status === '接近中') return '<span class="badge badge-near">接近中</span>';
+      return '<span class="na">-</span>';
+    }}
+
+    function getFilteredStocks() {{
+      let list;
+      if (sectorFilter) {{
+        list = ALL_STOCKS.filter(s => s.sector33 === sectorFilter);
+        list.sort((a, b) => b.score - a.score);
+      }} else {{
+        list = ALL_STOCKS.filter(s => STRONG_SECTORS.includes(s.sector33));
+        list.sort((a, b) => b.score - a.score);
+        list = list.slice(0, MAX_DEFAULT);
+      }}
+      return list;
+    }}
+
+    function renderFilterBar() {{
+      const bar = $('filter-bar');
+      const note = $('sub-note');
+      if (sectorFilter) {{
+        bar.innerHTML = `<span class="sector-badge">セクター: ${{sectorFilter}}</span><a class="clear-link" href="screening.html">✕ 絞り込み解除(全セクター表示)</a>`;
+        note.textContent = `「${{sectorFilter}}」セクターの銘柄をスコア順に全件表示しています。`;
+      }} else {{
+        bar.innerHTML = '';
+        note.textContent = '対象セクター（相対強度上位）: ' + STRONG_SECTORS.join('、') + '。スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。';
+      }}
+    }}
+
+    function renderTable(list) {{
+      const tbody = $('table-body');
+      if (list.length === 0) {{
+        tbody.innerHTML = '';
+        $('table-body').closest('table').style.display = 'none';
+        return;
+      }}
+      tbody.parentElement.style.display = '';
+      tbody.innerHTML = list.map(s => {{
+        const obvMark = s.obv_confirm ? '◯' : '-';
+        return `<tr>
+          <td class="name-cell"><a href="stock.html?ticker=${{s.ticker}}">${{s.name}}<br><span class="ticker">${{s.ticker.replace('.T','')}}</span></a></td>
+          <td><a href="screening.html?sector=${{encodeURIComponent(s.sector33)}}" style="color:#888;text-decoration:none;">${{s.sector33}}</a></td>
+          <td>${{fmtNum(s.price)}}</td>
+          <td>${{crossBadge(s.cross_status)}}</td>
+          <td>${{fmtNum(s.adx14)}}</td>
+          <td>${{obvMark}}</td>
+          <td>${{fmtNum(s.rsi14)}}</td>
+          <td>${{fmtNum(s.macd_hist, 2)}}</td>
+          <td>${{fmtNum(s.atr14)}}</td>
+          <td>${{fmtNum(s.score, 2)}}</td>
+        </tr>`;
+      }}).join('');
+    }}
+
+    function renderCalcOptions(list) {{
+      const sel = $('calc-ticker');
+      sel.innerHTML = list.map(s => `<option value="${{s.ticker}}">${{s.name}}(${{s.ticker.replace('.T','')}})</option>`).join('');
+    }}
 
     function recalc() {{
+      const list = getFilteredStocks();
       const ticker = $('calc-ticker').value;
-      const stock = STOCKS.find(s => s.ticker === ticker);
+      const stock = list.find(s => s.ticker === ticker) || ALL_STOCKS.find(s => s.ticker === ticker);
       const equity = parseFloat($('calc-equity').value) || 0;
       const riskPct = parseFloat($('calc-risk-pct').value) || 0;
       const atrMult = parseFloat($('calc-atr-mult').value) || 0;
@@ -190,9 +234,9 @@ def main():
       }}
 
       const price = stock.price;
-      const atr = stock.atr14;
-      const stopPrice = price - atr * atrMult;
-      const riskPerShare = atr * atrMult;
+      const atrVal = stock.atr14;
+      const stopPrice = price - atrVal * atrMult;
+      const riskPerShare = atrVal * atrMult;
       const riskBudget = equity * (riskPct / 100);
 
       if (riskPerShare <= 0 || riskBudget <= 0) {{
@@ -200,7 +244,7 @@ def main():
         return;
       }}
 
-      let shares = Math.floor((riskBudget / riskPerShare) / 100) * 100; // 単元株(100株)単位に切り捨て
+      let shares = Math.floor((riskBudget / riskPerShare) / 100) * 100;
       if (shares < 0) shares = 0;
       const positionValue = shares * price;
       const positionPct = equity > 0 ? (positionValue / equity) * 100 : 0;
@@ -212,8 +256,8 @@ def main():
       }}
 
       resultEl.innerHTML = `
-        現在値: ${{price.toLocaleString()}}円 / ATR14: ${{atr.toLocaleString()}}<br>
-        想定ストップ価格: <b>${{stopPrice.toFixed(1).toLocaleString()}}円</b><br>
+        現在値: ${{price.toLocaleString()}}円 / ATR14: ${{atrVal.toLocaleString()}}<br>
+        想定ストップ価格: <b>${{stopPrice.toFixed(1)}}円</b><br>
         1株あたり許容損失: ${{riskPerShare.toFixed(1)}}円<br>
         推奨株数: <span class="highlight">${{shares.toLocaleString()}}株</span>（単元株=100株単位）<br>
         建玉金額: ${{positionValue.toLocaleString()}}円（総資金の${{positionPct.toFixed(1)}}%）<br>
@@ -222,11 +266,20 @@ def main():
       `;
     }}
 
+    function init() {{
+      renderFilterBar();
+      const list = getFilteredStocks();
+      renderTable(list);
+      renderCalcOptions(list);
+      recalc();
+    }}
+
     ['calc-ticker', 'calc-equity', 'calc-risk-pct', 'calc-atr-mult'].forEach(id => {{
       $(id).addEventListener('input', recalc);
       $(id).addEventListener('change', recalc);
     }});
-    recalc();
+
+    init();
   </script>
 </body>
 </html>
