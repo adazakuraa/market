@@ -96,12 +96,6 @@ def main():
     text-overflow: ellipsis;
     white-space: nowrap;
   }}
-  td.name-cell {
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .ticker {{ color: #888; font-weight: 400; font-size: 0.68rem; }}
   th {{ color: #aaa; font-weight: 500; font-size: 0.68rem; }}
   .na {{ color: #666; }}
