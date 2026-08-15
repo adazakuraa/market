@@ -113,6 +113,7 @@ def main():
     <a href="screening.html" class="active">スクリーニング</a>
     <a href="stock.html">銘柄詳細</a>
     <a href="watch.html">ウォッチリスト</a>
+    <a href="news.html">ニュース</a>
   </nav>
   <h1>銘柄スクリーニング</h1>
   <div class="updated">最終更新: {now}</div>
@@ -369,3 +370,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
