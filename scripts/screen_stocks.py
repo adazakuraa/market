@@ -41,6 +41,10 @@ GC_APPROACH_PCT = 0.03      # MA75に対してこの割合以内に接近して�
 
 SMALL_CAP_SIZE_CODE = "4"        # 小型株(Small1)の規模コード
 SMALL_CAP_MIN_VOLATILITY = 0.02  # 小型株を対象に含める最低ボラティリティ(ATR14/株価が2%以上)
+# 「ADX初動」シグナル: 無トレンド状態から上昇トレンドが生まれ始めた銘柄を検知する
+EARLY_TREND_LOOKBACK = 10   # 何営業日前のADXと比較するか
+ADX_LOW_THRESHOLD = 20      # この水準未満は「無トレンド」とみなす基準
+ADX_EARLY_MAX = 35          # これを超えるとすでに「走り出した後」とみなし初動から除外
 
 
 def chunked(lst, n):
@@ -110,6 +114,31 @@ def obv_confirms_trend(close, obv_series, lookback=20):
     price_change = close.iloc[-1] - close.iloc[-lookback]
     obv_change = obv_series.iloc[-1] - obv_series.iloc[-lookback]
     return (price_change > 0 and obv_change > 0) or (price_change < 0 and obv_change < 0)
+
+def adx_early_signal(adx14, plus_di, minus_di, lookback=EARLY_TREND_LOOKBACK):
+    """
+    ADXが低水準(無トレンド)から立ち上がってきた「トレンド初動」を検知する。
+    - lookback日前のADXがADX_LOW_THRESHOLD未満だった(無トレンドだった)
+    - 現在のADXがそれより上昇している
+    - 現在のADXがADX_EARLY_MAX以下(まだ初期段階、走り出した後ではない)
+    - +DIが-DIを上回っている(上昇方向)
+    """
+    adx_clean = adx14.dropna()
+    if len(adx_clean) < lookback + 1:
+        return False
+    latest_adx = adx_clean.iloc[-1]
+    past_adx = adx_clean.iloc[-(lookback + 1)]
+    if pd.isna(latest_adx) or pd.isna(past_adx):
+        return False
+    if pd.isna(plus_di.iloc[-1]) or pd.isna(minus_di.iloc[-1]):
+        return False
+
+    was_low = past_adx < ADX_LOW_THRESHOLD
+    is_rising = latest_adx > past_adx
+    still_early = latest_adx <= ADX_EARLY_MAX
+    bullish = plus_di.iloc[-1] > minus_di.iloc[-1]
+
+    return bool(was_low and is_rising and still_early and bullish)
 
 
 def compute_score(row):
@@ -198,6 +227,7 @@ def main():
 
         cross_status, _ = golden_cross_status(ma25, ma75)
         obv_confirm = obv_confirms_trend(close, obv_series)
+        early_signal = adx_early_signal(adx14, plus_di, minus_di)
 
         latest_price = close.iloc[-1]
         latest_ma25 = ma25.iloc[-1]
@@ -229,6 +259,7 @@ def main():
             "plus_di": round(float(plus_di.iloc[-1]), 1) if pd.notna(plus_di.iloc[-1]) else None,
             "minus_di": round(float(minus_di.iloc[-1]), 1) if pd.notna(minus_di.iloc[-1]) else None,
             "obv_confirm": bool(obv_confirm),
+            "adx_early_signal": bool(early_signal),
             "rsi14": round(float(rsi14.iloc[-1]), 1) if pd.notna(rsi14.iloc[-1]) else None,
             "macd": round(float(macd_line.iloc[-1]), 2) if pd.notna(macd_line.iloc[-1]) else None,
             "macd_signal": round(float(macd_signal.iloc[-1]), 2) if pd.notna(macd_signal.iloc[-1]) else None,
