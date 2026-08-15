@@ -175,6 +175,7 @@ def main():
 
     ticker_to_name = dict(zip(master["ticker"], master["name"]))
     ticker_to_sector = dict(zip(master["ticker"], master["sector33"]))
+    ticker_to_size = dict(zip(master["ticker"], master["size_code"]))
 
     records = []
     for ticker, df in ohlcv.items():
@@ -204,6 +205,15 @@ def main():
 
         if pd.isna(latest_ma75):
             continue
+
+        latest_atr = atr14.iloc[-1]
+        size_code = ticker_to_size.get(ticker)
+        if size_code == SMALL_CAP_SIZE_CODE:
+            if pd.isna(latest_atr) or latest_price <= 0:
+                continue
+            volatility_ratio = latest_atr / latest_price
+            if volatility_ratio < SMALL_CAP_MIN_VOLATILITY:
+                continue  # ボラティリティが低い小型株は対象から除外
 
         row = {
             "ticker": ticker,
