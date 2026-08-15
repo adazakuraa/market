@@ -42,6 +42,9 @@ jobs:
       - name: Render stock detail page
         run: python scripts/render_stock_detail.py
 
+      - name: Render watchlist page
+        run: python scripts/render_watchlist.py
+
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
