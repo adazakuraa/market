@@ -49,13 +49,16 @@ def main():
 
     now = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
-    rows_html = ""
-    for sector, row in df.iterrows():
-        cells = "".join(f"<td>{fmt(row[p])}</td>" for p in PERIOD_LABELS.keys())
-        sector_url = f"screening.html?sector={quote(sector)}"
-        rows_html += f"<tr><td class='sector-name'><a href='{sector_url}'>{sector}</a></td>{cells}</tr>\n"
+    header_cells = "".join(
+        f'<th class="sortable" data-period="{key}">{label}</th>'
+        for key, label in PERIOD_LABELS.items()
+    )
 
-    header_cells = "".join(f"<th>{label}</th>" for label in PERIOD_LABELS.values())
+    sector_rows_json = json.dumps(
+        [{"sector": sector, **{p: (None if pd.isna(row[p]) else round(float(row[p]), 2)) for p in PERIOD_LABELS.keys()}}
+         for sector, row in df.iterrows()],
+        ensure_ascii=False,
+    )
 
     # チェックボックス一覧（表と同じ、1ヶ月の強い順）。上位5つをデフォルトでON
     default_checked = set(df.index[:5])
@@ -125,6 +128,14 @@ def main():
     color: #aaa;
     font-weight: 500;
     font-size: 0.72rem;
+  }}
+  th.sortable {{
+    cursor: pointer;
+    user-select: none;
+  }}
+  th.sortable.active-sort {{
+    color: #6ab7ff;
+    font-weight: 700;
   }}
   .pos {{ color: #4caf50; font-weight: 600; }}
   .neg {{ color: #f44336; font-weight: 600; }}
@@ -218,14 +229,12 @@ def main():
     <thead>
       <tr><th>業種</th>{header_cells}</tr>
     </thead>
-    <tbody>
-      {rows_html}
-    </tbody>
+    <tbody id="strength-table-body"></tbody>
   </table>
   <div class="note">
     ・数値はTOPIX（代理:1306.T）に対する相対リターン（ポイント差、単純平均）です。プラスがTOPIXより強い、マイナスが弱いことを示します。<br>
     ・対象は東証プライム市場の中〜大型株（TOPIX Core30/Large70/Mid400相当）のみ。<br>
-    ・1ヶ月の強さ順に並んでいます。<br>
+    ・見出し（1週間〜6ヶ月）をタップすると、その期間の強さ順に並び替えられます（初期表示は1ヶ月）。<br>
     ・グラフは取得期間の最初の日を0とした、TOPIX対比の累積相対強度（ポイント）の推移です。
   </div>
 
@@ -234,6 +243,46 @@ def main():
     const TIMESERIES = {timeseries_json};
     const COLORS = {colors_json};
     const sectorOrder = {json.dumps(list(df.index))};
+    const SECTOR_ROWS = {sector_rows_json};
+    const PERIOD_LABELS = {json.dumps(PERIOD_LABELS, ensure_ascii=False)};
+
+    function fmtCell(v) {{
+      if (v === null || v === undefined) return '<span class="na">-</span>';
+      const cls = v > 0 ? 'pos' : (v < 0 ? 'neg' : 'zero');
+      const sign = v > 0 ? '+' : '';
+      return `<span class="${{cls}}">${{sign}}${{v.toFixed(1)}}</span>`;
+    }}
+
+    let currentSort = '1m';
+
+    function renderTable() {{
+      const sorted = [...SECTOR_ROWS].sort((a, b) => {{
+        const av = a[currentSort], bv = b[currentSort];
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return bv - av;
+      }});
+      const tbody = document.getElementById('strength-table-body');
+      tbody.innerHTML = sorted.map(row => {{
+        const url = `screening.html?sector=${{encodeURIComponent(row.sector)}}`;
+        const cells = Object.keys(PERIOD_LABELS).map(p => `<td>${{fmtCell(row[p])}}</td>`).join('');
+        return `<tr><td class="sector-name"><a href="${{url}}">${{row.sector}}</a></td>${{cells}}</tr>`;
+      }}).join('');
+
+      document.querySelectorAll('th.sortable').forEach(th => {{
+        th.classList.toggle('active-sort', th.dataset.period === currentSort);
+      }});
+    }}
+
+    document.querySelectorAll('th.sortable').forEach(th => {{
+      th.addEventListener('click', () => {{
+        currentSort = th.dataset.period;
+        renderTable();
+      }});
+    }});
+
+    renderTable();
 
     const colorOf = (sector) => {{
       const idx = sectorOrder.indexOf(sector);
