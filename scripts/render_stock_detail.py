@@ -56,6 +56,12 @@ def main():
   .stat-chip {{ background: #171a20; border-radius: 8px; padding: 6px 10px; }}
   .stat-chip b {{ display: block; font-size: 0.95rem; margin-top: 2px; }}
   .loading {{ font-size: 0.8rem; color: #999; padding: 20px 0; text-align: center; }}
+  .star-btn {{
+    display: block; width: 100%; margin-bottom: 12px;
+    background: #171a20; color: #ffd54f; border: 1px solid #333;
+    border-radius: 8px; padding: 10px; font-size: 0.85rem; cursor: pointer;
+  }}
+  .star-btn.active {{ background: #3a2f1b; border-color: #ffd54f; }}
 </style>
 </head>
 <body>
@@ -63,11 +69,13 @@ def main():
     <a href="index.html">セクター強度</a>
     <a href="screening.html">スクリーニング</a>
     <a href="stock.html" class="active">銘柄詳細</a>
+    <a href="watch.html">ウォッチリスト</a>
   </nav>
   <h1>銘柄詳細</h1>
   <div class="updated">最終更新: {now}</div>
 
   <select id="ticker-select"></select>
+  <button id="star-btn" class="star-btn">★ ウォッチに追加</button>
 
   <div class="stat-row" id="stat-row"></div>
   <div id="loading" class="loading" style="display:none;">読み込み中...</div>
@@ -89,6 +97,7 @@ def main():
     <div class="chart-box"><canvas id="adxChart" height="140"></canvas></div>
   </div>
 
+  <script src="watchlist.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
     const INDEX = {index_json};
@@ -102,6 +111,22 @@ def main():
     if (initialTicker && INDEX.some(s => s.ticker === initialTicker)) {{
       select.value = initialTicker;
     }}
+
+    const starBtn = document.getElementById('star-btn');
+    function updateStarBtn() {{
+      const ticker = select.value;
+      if (isWatched(ticker)) {{
+        starBtn.textContent = '★ ウォッチ済み(タップで解除)';
+        starBtn.classList.add('active');
+      }} else {{
+        starBtn.textContent = '☆ ウォッチに追加';
+        starBtn.classList.remove('active');
+      }}
+    }}
+    starBtn.addEventListener('click', () => {{
+      toggleWatch(select.value);
+      updateStarBtn();
+    }});
 
     const commonOptions = (yTitle) => ({{
       responsive: true,
@@ -192,9 +217,13 @@ def main():
       ], d.dates, '');
     }}
 
-    select.addEventListener('change', () => loadAndRender(select.value));
+    select.addEventListener('change', () => {{
+      loadAndRender(select.value);
+      updateStarBtn();
+    }});
     if (INDEX.length > 0) {{
       loadAndRender(select.value || INDEX[0].ticker);
+      updateStarBtn();
     }}
   </script>
 </body>
@@ -208,3 +237,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
