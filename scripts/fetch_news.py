@@ -171,7 +171,6 @@ def build_domestic_sources(buckets):
     sources = {
         "NHKニュース": "https://www3.nhk.or.jp/rss/news/cat0.xml",
         "JCASTニュース": "https://www.j-cast.com/index.xml",
-        "AFPBB News": "http://feeds.afpbb.com/rss/afpbb/afpbbnews",
         "CNN.co.jp": "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf",
         "朝日新聞デジタル": "http://rss.asahi.com/rss/asahi/newsheadlines.rdf",
         "毎日新聞": "https://mainichi.jp/rss/etc/mainichi-flash.rss",
