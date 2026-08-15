@@ -19,7 +19,9 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 OUT_PATH = os.path.join(OUT_DIR, "master.csv")
 
 # 規模コード: 1=TOPIX Core30, 2=Large70, 3=Mid400, 4=Small1, 5=Small2, 6=対象外/その他
-TARGET_SIZE_CODES = {"1", "2", "3"}
+# Small1(小型株)まで対象に含める。Small2はさらに流動性が乏しくなりがちなため除外。
+# 小型株のボラティリティ条件はscreen_stocks.py側で別途フィルタする。
+TARGET_SIZE_CODES = {"1", "2", "3", "4"}
 
 
 def main():
