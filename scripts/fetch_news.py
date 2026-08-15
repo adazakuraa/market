@@ -162,6 +162,8 @@ def build_domestic_sources(buckets):
     sources = {
         "NHKニュース": "https://www3.nhk.or.jp/rss/news/cat0.xml",
         "JCASTニュース": "https://www.j-cast.com/index.xml",
+        "AFPBB News": "http://feeds.afpbb.com/rss/afpbb/afpbbnews",
+        "CNN.co.jp": "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf",
     }
     for name, url in sources.items():
         entries = fetch_feed(url)
