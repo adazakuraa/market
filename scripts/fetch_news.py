@@ -37,18 +37,22 @@ DOMESTIC_CATEGORY_KEYWORDS = {
     "政治": [
         "首相", "国会", "衆院", "参院", "内閣", "与党", "野党", "選挙", "法案",
         "自民党", "立憲", "公明党", "維新", "国民民主", "共産党", "外相", "官房長官",
-        "防衛相", "財務相", "党首", "総裁選", "国会議員", "知事選",
+        "防衛相", "財務相", "党首", "総裁選", "国会議員", "知事選", "政府", "閣議",
+        "会談", "法改正", "デジタル庁", "省庁", "国政", "議員", "市長選",
     ],
     "経済": [
         "円安", "円高", "株価", "日経平均", "物価", "GDP", "賃上げ", "賃金",
         "決算", "貿易", "輸出", "輸入", "金利", "インフレ", "デフレ", "景気",
         "企業", "経済産業省", "財務省", "税制", "消費税", "半導体", "日銀",
-        "倒産", "上場", "投資", "為替",
+        "倒産", "上場", "投資", "為替", "値上げ", "原油高", "株安", "株高",
+        "補正予算", "増税", "減税", "経営", "業績", "赤字", "黒字",
     ],
     "国際": [
         "米大統領", "トランプ", "米国", "アメリカ", "中国", "ロシア", "ウクライナ",
-        "EU", "欧州", "韓国", "北朝鮮", "台湾", "中東", "イスラエル", "国連",
+        "EU", "欧州", "欧州連合", "韓国", "北朝鮮", "台湾", "中東", "イスラエル", "国連",
         "首脳会談", "外交", "プーチン", "ゼレンスキー", "パレスチナ", "ガザ",
+        "サミット", "G7", "G20", "安保理", "NATO", "関税", "制裁", "紛争", "停戦",
+        "難民", "大使館", "WTO", "IMF", "世界銀行",
     ],
     "社会": [
         "逮捕", "事件", "事故", "裁判", "災害", "地震", "台風", "大雨", "避難",
@@ -166,6 +170,14 @@ def build_domestic_sources(buckets):
         add_items(buckets, items, category_fn=classify_domestic)
 
 
+def build_nikkei_business(buckets):
+    """日経ビジネス電子版の公式RSS。経済ニュースとしてそのまま採用"""
+    entries = fetch_feed("https://business.nikkei.com/rss/sns/nb.rdf")
+    print(f"日経ビジネス: {len(entries)}件取得")
+    items = [make_item(e, "日経ビジネス") for e in entries]
+    add_items(buckets, items, fixed_category="経済")
+
+
 def build_tech_sources(buckets):
     sources = {
         "ITmedia NEWS": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml",
@@ -236,6 +248,7 @@ def finalize(buckets):
 def main():
     buckets = {}
     build_domestic_sources(buckets)
+    build_nikkei_business(buckets)
     build_tech_sources(buckets)
     build_gigazine(buckets)
     build_science_fixed_sources(buckets)
