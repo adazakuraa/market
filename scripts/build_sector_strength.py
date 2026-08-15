@@ -150,6 +150,9 @@ def build_timeseries(close_df, master):
 
 def main():
     master = pd.read_csv(MASTER_PATH, dtype=str)
+    # セクター指数の算出は、指数のブレを抑えるため中〜大型株のみを対象にする
+    # (小型株はscreen_stocks.py側のスクリーニング候補としてのみ別途対象に含める)
+    master = master[master["size_code"].isin(["1", "2", "3"])].copy()
     tickers = master["ticker"].tolist()
     all_tickers = tickers + [TOPIX_PROXY_TICKER]
 
