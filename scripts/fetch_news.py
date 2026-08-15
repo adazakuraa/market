@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-NHKニュース(全件RSS)と日本銀行(公式RSS)からニュースを取得し、
-タイトルのキーワードで「政治・経済・国際・社会・日銀」に分類する。
-スポーツ・芸能に該当するキーワードを含む記事は除外する。
+複数のRSSソースからニュースを取得し、「政治・経済・国際・社会・IT・AI・科学・論文」
+に分類する。スポーツ・芸能は除外する。
 
-出典URL:
-- NHKニュース(全件): https://news.web.nhk/n-data/conf/na/rss/cat0.xml
-- 日本銀行 新着情報: https://www.boj.or.jp/rss/whatsnew.xml
+国内ニュース系(NHK, JCAST)はタイトルのキーワードでジャンル判定。
+IT系サイト(ITmedia, はてなブックマーク, 窓の杜, INTERNET Watch, Publickey, Qiita, wired.jp)
+は「AI関連キーワードを含むか」だけ判定し、AI/ITに振り分ける。
+GIGAZINEは話題が幅広いため、AI/科学/除外/ITの順で判定する。
+ナゾロジー・Science Japanは科学サイトなのでそのまま科学に分類。
+論文はarXivの複数分野のRSSから取得する。
+
+各ソースは個別にtry/exceptで囲み、1つ失敗しても他のソースの取得は継続する。
 """
 import os
 import json
@@ -16,14 +20,10 @@ from datetime import datetime, timezone, timedelta
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 OUT_PATH = os.path.join(BASE_DIR, "data", "news.json")
 
-NHK_RSS_URL = "https://news.web.nhk/n-data/conf/na/rss/cat0.xml"
-BOJ_RSS_URL = "https://www.boj.or.jp/rss/whatsnew.xml"
-
 JST = timezone(timedelta(hours=9))
+MAX_ITEMS_PER_CATEGORY = 25
 
-MAX_ITEMS_PER_CATEGORY = 20
-
-# 除外キーワード(スポーツ・芸能)。これに1つでも該当したら分類対象から外す。
+# ==== 除外キーワード(スポーツ・芸能) ====
 EXCLUDE_KEYWORDS = [
     "野球", "サッカー", "Jリーグ", "プロ野球", "大相撲", "高校野球", "五輪", "オリンピック",
     "パラリンピック", "ワールドカップ", "W杯", "テニス", "ゴルフ", "バレー", "バスケ",
@@ -32,112 +32,216 @@ EXCLUDE_KEYWORDS = [
     "紅白歌合戦", "お笑い", "コンサート", "ライブ", "アニメ映画",
 ]
 
-# カテゴリ判定キーワード(優先順に判定。最初にヒットしたカテゴリを採用)
-CATEGORY_KEYWORDS = {
+# ==== 国内ニュース(政治/経済/国際/社会)のジャンル判定キーワード ====
+DOMESTIC_CATEGORY_KEYWORDS = {
     "政治": [
         "首相", "国会", "衆院", "参院", "内閣", "与党", "野党", "選挙", "法案",
         "自民党", "立憲", "公明党", "維新", "国民民主", "共産党", "外相", "官房長官",
-        "防衛相", "財務相", "党首", "総裁選",
+        "防衛相", "財務相", "党首", "総裁選", "国会議員", "知事選",
     ],
     "経済": [
         "円安", "円高", "株価", "日経平均", "物価", "GDP", "賃上げ", "賃金",
         "決算", "貿易", "輸出", "輸入", "金利", "インフレ", "デフレ", "景気",
-        "企業", "経済産業省", "財務省", "税制", "消費税", "半導体",
+        "企業", "経済産業省", "財務省", "税制", "消費税", "半導体", "日銀",
+        "倒産", "上場", "投資", "為替",
     ],
     "国際": [
         "米大統領", "トランプ", "米国", "アメリカ", "中国", "ロシア", "ウクライナ",
         "EU", "欧州", "韓国", "北朝鮮", "台湾", "中東", "イスラエル", "国連",
-        "首脳会談", "外交", "プーチン", "ゼレンスキー",
+        "首脳会談", "外交", "プーチン", "ゼレンスキー", "パレスチナ", "ガザ",
     ],
     "社会": [
         "逮捕", "事件", "事故", "裁判", "災害", "地震", "台風", "大雨", "避難",
         "教育", "医療", "感染", "厚生労働省", "文部科学省",
         "火災", "死亡", "遺体", "行方不明", "詐欺", "汚職", "不祥事", "不明",
+        "学校", "子ども", "高齢者", "労働", "少子化",
     ],
 }
 
+# ==== AI関連キーワード ====
+AI_KEYWORDS = [
+    "AI", "人工知能", "ChatGPT", "GPT", "LLM", "生成AI", "機械学習",
+    "深層学習", "ディープラーニング", "OpenAI", "Anthropic", "Claude",
+    "Gemini", "Copilot", "大規模言語モデル", "エージェントAI", "AIモデル",
+]
 
-def fetch_feed(url):
-    feed = feedparser.parse(url)
-    return feed.entries
+# ==== 科学関連キーワード(GIGAZINEの分類用) ====
+SCIENCE_KEYWORDS = [
+    "宇宙", "天文", "物理学", "化学", "生物学", "考古学", "医学研究", "脳科学",
+    "心理学", "進化", "恐竜", "量子", "ゲノム", "遺伝子", "天体", "惑星",
+    "ブラックホール", "古生物", "人類学", "言語学", "生態系", "微生物", "NASA",
+]
 
 
-def classify(title):
-    for kw in EXCLUDE_KEYWORDS:
-        if kw in title:
-            return None
-    for category, keywords in CATEGORY_KEYWORDS.items():
-        for kw in keywords:
-            if kw in title:
-                return category
-    return None
+def fetch_feed(url, timeout=15):
+    try:
+        feed = feedparser.parse(url)
+        return feed.entries or []
+    except Exception as e:
+        print(f"[warn] フィード取得失敗: {url} ({e})")
+        return []
 
 
 def parse_published(entry):
     for key in ("published_parsed", "updated_parsed"):
         t = entry.get(key)
         if t:
-            dt = datetime(*t[:6], tzinfo=timezone.utc).astimezone(JST)
-            return dt
+            try:
+                dt = datetime(*t[:6], tzinfo=timezone.utc).astimezone(JST)
+                return dt
+            except Exception:
+                pass
     return None
 
 
-def build_nhk_news():
-    entries = fetch_feed(NHK_RSS_URL)
-    print(f"NHK RSS: {len(entries)}件取得")
+def make_item(entry, source_name):
+    title = entry.get("title", "").strip()
+    if not title:
+        return None
+    dt = parse_published(entry)
+    return {
+        "title": title,
+        "link": entry.get("link", ""),
+        "source": source_name,
+        "published": dt.strftime("%Y-%m-%d %H:%M") if dt else None,
+        "published_sort": dt.isoformat() if dt else "",
+    }
 
-    buckets = {cat: [] for cat in CATEGORY_KEYWORDS.keys()}
-    for e in entries:
-        title = e.get("title", "").strip()
-        if not title:
+
+def classify_domestic(title):
+    for kw in EXCLUDE_KEYWORDS:
+        if kw in title:
+            return None
+    for category, keywords in DOMESTIC_CATEGORY_KEYWORDS.items():
+        for kw in keywords:
+            if kw in title:
+                return category
+    return None
+
+
+def classify_tech(title):
+    """IT系サイト向け: AIキーワードがあればAI、なければIT"""
+    for kw in AI_KEYWORDS:
+        if kw in title:
+            return "AI"
+    return "IT"
+
+
+def classify_gigazine(title):
+    """GIGAZINEは話題が幅広いため、除外->AI->科学->ITの順で判定"""
+    for kw in EXCLUDE_KEYWORDS:
+        if kw in title:
+            return None
+    for kw in AI_KEYWORDS:
+        if kw in title:
+            return "AI"
+    for kw in SCIENCE_KEYWORDS:
+        if kw in title:
+            return "科学"
+    return "IT"
+
+
+def add_items(buckets, items, category_fn=None, fixed_category=None):
+    for item in items:
+        if item is None:
             continue
-        category = classify(title)
+        if fixed_category:
+            category = fixed_category
+        else:
+            category = category_fn(item["title"])
         if category is None:
             continue
-        dt = parse_published(e)
-        buckets[category].append({
-            "title": title,
-            "link": e.get("link", ""),
-            "published": dt.strftime("%Y-%m-%d %H:%M") if dt else None,
-            "published_sort": dt.isoformat() if dt else "",
-        })
+        buckets.setdefault(category, []).append(item)
 
-    for cat in buckets:
-        buckets[cat].sort(key=lambda x: x["published_sort"], reverse=True)
-        buckets[cat] = buckets[cat][:MAX_ITEMS_PER_CATEGORY]
-        for item in buckets[cat]:
+
+def build_domestic_sources(buckets):
+    sources = {
+        "NHKニュース": "https://www3.nhk.or.jp/rss/news/cat0.xml",
+        "JCASTニュース": "https://www.j-cast.com/index.xml",
+    }
+    for name, url in sources.items():
+        entries = fetch_feed(url)
+        print(f"{name}: {len(entries)}件取得")
+        items = [make_item(e, name) for e in entries]
+        add_items(buckets, items, category_fn=classify_domestic)
+
+
+def build_tech_sources(buckets):
+    sources = {
+        "ITmedia NEWS": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml",
+        "はてなブックマーク(テクノロジー)": "https://b.hatena.ne.jp/entrylist/it.rss",
+        "窓の杜": "https://forest.watch.impress.co.jp/data/rss/1.0/wf/feed.rdf",
+        "INTERNET Watch": "https://internet.watch.impress.co.jp/data/rss/1.0/iw/feed.rdf",
+        "Publickey": "https://www.publickey1.jp/atom.xml",
+        "Qiita人気記事": "https://qiita.com/popular-items/feed",
+        "WIRED.jp": "https://wired.jp/feed/rss",
+    }
+    for name, url in sources.items():
+        entries = fetch_feed(url)
+        print(f"{name}: {len(entries)}件取得")
+        items = [make_item(e, name) for e in entries]
+        add_items(buckets, items, category_fn=classify_tech)
+
+
+def build_gigazine(buckets):
+    entries = fetch_feed("https://gigazine.net/news/rss_2.0/")
+    print(f"GIGAZINE: {len(entries)}件取得")
+    items = [make_item(e, "GIGAZINE") for e in entries]
+    add_items(buckets, items, category_fn=classify_gigazine)
+
+
+def build_science_fixed_sources(buckets):
+    sources = {
+        "ナゾロジー": "https://nazology.kusuguru.co.jp/feed",
+        "Science Japan(JST)": "https://sj.jst.go.jp/feed/rss.xml",
+    }
+    for name, url in sources.items():
+        entries = fetch_feed(url)
+        print(f"{name}: {len(entries)}件取得")
+        items = [make_item(e, name) for e in entries]
+        add_items(buckets, items, fixed_category="科学")
+
+
+def build_arxiv_papers(buckets):
+    # 分野を問わず主要カテゴリをいくつか組み合わせる
+    categories = {
+        "cs.AI": "AI",
+        "cs.LG": "機械学習",
+        "physics": "物理学",
+        "q-bio": "生物学",
+        "econ": "経済学",
+    }
+    for cat, label in categories.items():
+        url = f"https://export.arxiv.org/rss/{cat}"
+        entries = fetch_feed(url)
+        print(f"arXiv({label}): {len(entries)}件取得")
+        items = []
+        for e in entries[:8]:  # 分野ごとに件数を絞って偏りを防ぐ
+            item = make_item(e, f"arXiv({label})")
+            items.append(item)
+        add_items(buckets, items, fixed_category="論文")
+
+
+def finalize(buckets):
+    result = {}
+    for category, items in buckets.items():
+        items.sort(key=lambda x: x["published_sort"], reverse=True)
+        items = items[:MAX_ITEMS_PER_CATEGORY]
+        for item in items:
             item.pop("published_sort", None)
-
-    return buckets
-
-
-def build_boj_news():
-    entries = fetch_feed(BOJ_RSS_URL)
-    print(f"日銀 RSS: {len(entries)}件取得")
-
-    items = []
-    for e in entries:
-        title = e.get("title", "").strip()
-        if not title:
-            continue
-        dt = parse_published(e)
-        items.append({
-            "title": title,
-            "link": e.get("link", ""),
-            "published": dt.strftime("%Y-%m-%d %H:%M") if dt else None,
-            "published_sort": dt.isoformat() if dt else "",
-        })
-
-    items.sort(key=lambda x: x["published_sort"], reverse=True)
-    items = items[:MAX_ITEMS_PER_CATEGORY]
-    for item in items:
-        item.pop("published_sort", None)
-    return items
+        result[category] = items
+    return result
 
 
 def main():
-    news = build_nhk_news()
-    news["日銀"] = build_boj_news()
+    buckets = {}
+    build_domestic_sources(buckets)
+    build_tech_sources(buckets)
+    build_gigazine(buckets)
+    build_science_fixed_sources(buckets)
+    build_arxiv_papers(buckets)
+
+    news = finalize(buckets)
 
     now = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
     payload = {"generated_at": now, "categories": news}
