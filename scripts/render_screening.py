@@ -63,8 +63,8 @@ def main():
     position: sticky;
     left: 0;
     background: #0f1115;
-    width: 92px;
-    max-width: 92px;
+    width: 108px;
+    max-width: 108px;
   }}
   td.name-cell {{
     font-weight: 600;
@@ -85,6 +85,11 @@ def main():
   .badge-gc {{ background: #1b3a24; color: #4caf50; }}
   .badge-near {{ background: #3a331b; color: #ffb74d; }}
   .badge-early {{ background: #3a2f1b; color: #ffd54f; }}
+  .star-btn {{
+    background: none; border: none; color: #ffd54f; font-size: 0.9rem;
+    cursor: pointer; padding: 0 4px 0 0; vertical-align: middle;
+  }}
+  .star-btn.inactive {{ color: #555; }}
 
   .calc-box {{ background: #171a20; border-radius: 10px; padding: 14px; margin-top: 8px; }}
   .calc-row {{ display: flex; flex-direction: column; margin-bottom: 10px; }}
@@ -107,6 +112,7 @@ def main():
     <a href="index.html">セクター強度</a>
     <a href="screening.html" class="active">スクリーニング</a>
     <a href="stock.html">銘柄詳細</a>
+    <a href="watch.html">ウォッチリスト</a>
   </nav>
   <h1>銘柄スクリーニング</h1>
   <div class="updated">最終更新: {now}</div>
@@ -155,6 +161,7 @@ def main():
     <div class="calc-result" id="calc-result"></div>
   </div>
 
+  <script src="watchlist.js"></script>
   <script>
     const ALL_STOCKS = {stocks_json};
     const STRONG_SECTORS = {strong_sectors_json};
@@ -239,8 +246,12 @@ def main():
       tbody.closest('table').style.display = '';
       tbody.innerHTML = sorted.map(s => {{
         const obvMark = s.obv_confirm ? '◯' : '-';
+        const starClass = isWatched(s.ticker) ? '' : 'inactive';
         return `<tr>
-          <td class="name-cell"><a href="stock.html?ticker=${{s.ticker}}">${{s.name}}<br><span class="ticker">${{s.ticker.replace('.T','')}}</span></a></td>
+          <td class="name-cell">
+            <button class="star-btn ${{starClass}}" data-ticker="${{s.ticker}}">★</button>
+            <a href="stock.html?ticker=${{s.ticker}}">${{s.name}}<br><span class="ticker">${{s.ticker.replace('.T','')}}</span></a>
+          </td>
           <td><a href="screening.html?sector=${{encodeURIComponent(s.sector33)}}" style="color:#888;text-decoration:none;">${{s.sector33}}</a></td>
           <td>${{fmtNum(s.price)}}</td>
           <td>${{crossBadge(s.cross_status)}}</td>
@@ -256,6 +267,13 @@ def main():
 
       document.querySelectorAll('th.sortable').forEach(th => {{
         th.classList.toggle('active-sort', th.dataset.key === currentSort.key);
+      }});
+
+      document.querySelectorAll('.star-btn').forEach(btn => {{
+        btn.addEventListener('click', () => {{
+          toggleWatch(btn.dataset.ticker);
+          btn.classList.toggle('inactive');
+        }});
       }});
     }}
 
