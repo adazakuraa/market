@@ -39,6 +39,9 @@ TOP_N_SECTORS = 15      # 「強いセクター」上位いくつを既定表示
 GC_LOOKBACK_DAYS = 10       # 直近何日以内のゴールデンクロスを「済み」とみなすか
 GC_APPROACH_PCT = 0.03      # MA75に対してこの割合以内に接近していたら「接近中」
 
+SMALL_CAP_SIZE_CODE = "4"        # 小型株(Small1)の規模コード
+SMALL_CAP_MIN_VOLATILITY = 0.02  # 小型株を対象に含める最低ボラティリティ(ATR14/株価が2%以上)
+
 
 def chunked(lst, n):
     for i in range(0, len(lst), n):
