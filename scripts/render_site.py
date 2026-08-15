@@ -179,6 +179,11 @@ def main():
     padding: 6px 10px;
     font-size: 0.72rem;
   }}
+  .chart-controls button.active-period {{
+    background: #1b2a3a;
+    color: #6ab7ff;
+    border-color: #2f4a63;
+  }}
   .chk-list {{
     max-height: 180px;
     overflow-y: auto;
@@ -210,6 +215,7 @@ def main():
     <a href="index.html" class="active">セクター強度</a>
     <a href="screening.html">スクリーニング</a>
     <a href="stock.html">銘柄詳細</a>
+    <a href="watch.html">ウォッチリスト</a>
   </nav>
   <h1>セクター強度ランキング（TOPIX比・相対強度）</h1>
   <div class="updated">最終更新: {now}</div>
@@ -218,6 +224,13 @@ def main():
     <div class="chart-controls">
       <button id="btn-select-all">全て選択</button>
       <button id="btn-select-none">全て解除</button>
+    </div>
+    <div class="chart-controls" id="period-controls">
+      <button class="period-btn" data-days="5">1週間</button>
+      <button class="period-btn" data-days="21">1ヶ月</button>
+      <button class="period-btn" data-days="63">3ヶ月</button>
+      <button class="period-btn" data-days="126">6ヶ月</button>
+      <button class="period-btn active-period" data-days="0">全期間</button>
     </div>
     <div class="chk-list">
       {checkbox_html}
@@ -318,11 +331,19 @@ def main():
       }}
     }});
 
+    let currentPeriodDays = 0; // 0 = 全期間
+
+    function sliceByPeriod(arr) {{
+      if (currentPeriodDays <= 0 || arr.length <= currentPeriodDays) return arr;
+      return arr.slice(arr.length - currentPeriodDays);
+    }}
+
     function rebuildDatasets() {{
       const checked = Array.from(document.querySelectorAll('.sector-chk:checked')).map(el => el.value);
+      chart.data.labels = sliceByPeriod(TIMESERIES.dates);
       chart.data.datasets = checked.map(sector => ({{
         label: sector,
-        data: TIMESERIES.sectors[sector] || [],
+        data: sliceByPeriod(TIMESERIES.sectors[sector] || []),
         borderColor: colorOf(sector),
         backgroundColor: colorOf(sector),
         borderWidth: 1.5,
@@ -331,6 +352,15 @@ def main():
       }}));
       chart.update();
     }}
+
+    document.querySelectorAll('.period-btn').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        currentPeriodDays = parseInt(btn.dataset.days, 10);
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
+        btn.classList.add('active-period');
+        rebuildDatasets();
+      }});
+    }});
 
     document.querySelectorAll('.sector-chk').forEach(el => {{
       el.addEventListener('change', rebuildDatasets);
@@ -357,3 +387,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
