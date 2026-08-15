@@ -173,6 +173,8 @@ def build_domestic_sources(buckets):
         "JCASTニュース": "https://www.j-cast.com/index.xml",
         "AFPBB News": "http://feeds.afpbb.com/rss/afpbb/afpbbnews",
         "CNN.co.jp": "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf",
+        "朝日新聞デジタル": "http://rss.asahi.com/rss/asahi/newsheadlines.rdf",
+        "毎日新聞": "https://mainichi.jp/rss/etc/mainichi-flash.rss",
     }
     for name, url in sources.items():
         entries = fetch_feed(url)
@@ -181,25 +183,12 @@ def build_domestic_sources(buckets):
         add_items(buckets, items, category_fn=classify_domestic)
 
 
-def classify_keep_economy(title):
-    """東洋経済向け: スポーツ・芸能だけ除外し、それ以外は経済として扱う"""
-    for kw in EXCLUDE_KEYWORDS:
-        if kw in title:
-            return None
-    return "経済"
-
-
 def build_nikkei_business(buckets):
-    """日経ビジネス電子版・東洋経済オンラインの公式RSS。経済ニュースとしてそのまま採用"""
+    """日経ビジネス電子版の公式RSS。経済ニュースとしてそのまま採用"""
     entries = fetch_feed("https://business.nikkei.com/rss/sns/nb.rdf")
     print(f"日経ビジネス: {len(entries)}件取得")
     items = [make_item(e, "日経ビジネス") for e in entries]
     add_items(buckets, items, fixed_category="経済")
-
-    entries2 = fetch_feed("http://toyokeizai.net/list/feed/rss")
-    print(f"東洋経済オンライン: {len(entries2)}件取得")
-    items2 = [make_item(e, "東洋経済オンライン") for e in entries2]
-    add_items(buckets, items2, category_fn=classify_keep_economy)
 
 
 def build_tech_sources(buckets):
