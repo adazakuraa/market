@@ -12,8 +12,11 @@ OUT_PATH = os.path.join(BASE_DIR, "docs", "news.html")
 
 JST = timezone(timedelta(hours=9))
 
-CATEGORY_ORDER = ["政治", "経済", "国際", "社会", "日銀"]
-CATEGORY_ICON = {"政治": "🏛️", "経済": "💹", "国際": "🌍", "社会": "🏙️", "日銀": "🏦"}
+CATEGORY_ORDER = ["政治", "経済", "国際", "社会", "IT", "AI", "科学", "論文"]
+CATEGORY_ICON = {
+    "政治": "🏛️", "経済": "💹", "国際": "🌍", "社会": "🏙️",
+    "IT": "💻", "AI": "🤖", "科学": "🔬", "論文": "📄",
+}
 
 
 def render_items(items):
@@ -22,9 +25,10 @@ def render_items(items):
     rows = ""
     for item in items:
         published = item.get("published") or ""
+        source = item.get("source") or ""
         rows += f"""<a class="news-item" href="{item['link']}" target="_blank" rel="noopener">
   <div class="news-title">{item['title']}</div>
-  <div class="news-meta">{published}</div>
+  <div class="news-meta">{source}｜{published}</div>
 </a>
 """
     return rows
@@ -104,8 +108,8 @@ def main():
   <h1>ニュース</h1>
   <div class="updated">最終更新: {now}（データ取得: {generated_at}）</div>
   <div class="source-note">
-    出典: NHKニュース（キーワードによる自動分類、スポーツ・芸能は除外）／日本銀行 新着情報。<br>
-    見出しをタップすると出典サイトの元記事に移動します。分類は簡易的なキーワード判定のため、まれに実際のジャンルと異なる場合があります。
+    出典: NHKニュース／JCASTニュース／ITmedia NEWS／GIGAZINE／はてなブックマーク／窓の杜／INTERNET Watch／Publickey／Qiita／WIRED.jp／ナゾロジー／Science Japan(JST)／arXiv。<br>
+    分類はタイトルのキーワードによる自動判定です。スポーツ・芸能は除外していますが、まれに実際のジャンルと異なる場合があります。見出しをタップすると出典元の記事に移動します。
   </div>
 
   {sections_html}
