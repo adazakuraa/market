@@ -56,7 +56,7 @@ def main():
   .filter-bar a.clear-link {{ color: #ff8a65; text-decoration: none; }}
 
   .table-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
-  table {{ border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 720px; table-layout: fixed; }}
+  table {{ border-collapse: collapse; font-size: 0.75rem; width: 100%; min-width: 800px; table-layout: fixed; }}
   th, td {{ padding: 7px 6px; text-align: right; border-bottom: 1px solid #2a2d34; white-space: nowrap; }}
   th:first-child, td:first-child {{
     text-align: left;
@@ -78,10 +78,13 @@ def main():
   }}
   .ticker {{ color: #888; font-weight: 400; font-size: 0.68rem; }}
   th {{ color: #aaa; font-weight: 500; font-size: 0.68rem; }}
+  th.sortable {{ cursor: pointer; user-select: none; }}
+  th.sortable.active-sort {{ color: #6ab7ff; font-weight: 700; }}
   .na {{ color: #666; }}
   .badge {{ font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }}
   .badge-gc {{ background: #1b3a24; color: #4caf50; }}
   .badge-near {{ background: #3a331b; color: #ffb74d; }}
+  .badge-early {{ background: #3a2f1b; color: #ffd54f; }}
 
   .calc-box {{ background: #171a20; border-radius: 10px; padding: 14px; margin-top: 8px; }}
   .calc-row {{ display: flex; flex-direction: column; margin-bottom: 10px; }}
@@ -114,9 +117,17 @@ def main():
     <table>
       <thead>
         <tr>
-          <th>銘柄</th><th>セクター</th><th>株価</th><th>MA状況</th>
-          <th>ADX14</th><th>OBV追従</th><th>RSI14</th><th>MACDヒスト</th>
-          <th>ATR14</th><th>スコア</th>
+          <th>銘柄</th>
+          <th class="sortable" data-key="sector33">セクター</th>
+          <th class="sortable" data-key="price">株価</th>
+          <th class="sortable" data-key="cross_rank">MA状況</th>
+          <th class="sortable" data-key="adx14">ADX14</th>
+          <th class="sortable" data-key="adx_early_signal">初動</th>
+          <th class="sortable" data-key="obv_confirm">OBV追従</th>
+          <th class="sortable" data-key="rsi14">RSI14</th>
+          <th class="sortable" data-key="macd_hist">MACDヒスト</th>
+          <th class="sortable" data-key="atr14">ATR14</th>
+          <th class="sortable active-sort" data-key="score">スコア</th>
         </tr>
       </thead>
       <tbody id="table-body"></tbody>
@@ -164,11 +175,39 @@ def main():
       return '<span class="na">-</span>';
     }}
 
+    function crossRank(status) {{
+      if (status === 'ゴールデンクロス済み') return 2;
+      if (status === '接近中') return 1;
+      return 0;
+    }}
+    ALL_STOCKS.forEach(s => {{ s.cross_rank = crossRank(s.cross_status); }});
+
+    function earlyBadge(flag) {{
+      return flag ? '<span class="badge badge-early">初動</span>' : '<span class="na">-</span>';
+    }}
+
+    let currentSort = {{ key: 'score', dir: 'desc' }};
+
+    function sortList(list) {{
+      const {{ key, dir }} = currentSort;
+      const sign = dir === 'asc' ? 1 : -1;
+      return [...list].sort((a, b) => {{
+        let av = a[key], bv = b[key];
+        if (typeof av === 'boolean') av = av ? 1 : 0;
+        if (typeof bv === 'boolean') bv = bv ? 1 : 0;
+        if (av === null || av === undefined) return 1;
+        if (bv === null || bv === undefined) return -1;
+        if (typeof av === 'string') return sign * av.localeCompare(bv, 'ja');
+        return sign * (av - bv);
+      }});
+    }}
+
     function getFilteredStocks() {{
       let list;
       if (sectorFilter) {{
         list = ALL_STOCKS.filter(s => s.sector33 === sectorFilter);
         list.sort((a, b) => b.score - a.score);
+        list = list.slice(0, MAX_DEFAULT);
       }} else {{
         list = ALL_STOCKS.filter(s => STRONG_SECTORS.includes(s.sector33));
         list.sort((a, b) => b.score - a.score);
@@ -185,19 +224,20 @@ def main():
         note.textContent = `「${{sectorFilter}}」セクターの銘柄をスコア順に全件表示しています。`;
       }} else {{
         bar.innerHTML = '';
-        note.textContent = '対象セクター（相対強度上位）: ' + STRONG_SECTORS.join('、') + '。スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。';
+        note.textContent = '対象セクター（相対強度上位）: ' + STRONG_SECTORS.join('、') + '。スコアは「MAの並び・ゴールデンクロス状況・ADXの強さ・OBVの追従」を合成した目安です。「初動」バッジは、ADXが無トレンド水準(20未満)から上昇し始めた銘柄(まだ強すぎない段階)につきます。厳密なフィルタではなく、幅広く候補を並べています。最終判断はご自身の目でチャートと合わせて行ってください。';
       }}
     }}
 
     function renderTable(list) {{
       const tbody = $('table-body');
-      if (list.length === 0) {{
+      const sorted = sortList(list);
+      if (sorted.length === 0) {{
         tbody.innerHTML = '';
-        $('table-body').closest('table').style.display = 'none';
+        tbody.closest('table').style.display = 'none';
         return;
       }}
-      tbody.parentElement.style.display = '';
-      tbody.innerHTML = list.map(s => {{
+      tbody.closest('table').style.display = '';
+      tbody.innerHTML = sorted.map(s => {{
         const obvMark = s.obv_confirm ? '◯' : '-';
         return `<tr>
           <td class="name-cell"><a href="stock.html?ticker=${{s.ticker}}">${{s.name}}<br><span class="ticker">${{s.ticker.replace('.T','')}}</span></a></td>
@@ -205,6 +245,7 @@ def main():
           <td>${{fmtNum(s.price)}}</td>
           <td>${{crossBadge(s.cross_status)}}</td>
           <td>${{fmtNum(s.adx14)}}</td>
+          <td>${{earlyBadge(s.adx_early_signal)}}</td>
           <td>${{obvMark}}</td>
           <td>${{fmtNum(s.rsi14)}}</td>
           <td>${{fmtNum(s.macd_hist, 2)}}</td>
@@ -212,6 +253,10 @@ def main():
           <td>${{fmtNum(s.score, 2)}}</td>
         </tr>`;
       }}).join('');
+
+      document.querySelectorAll('th.sortable').forEach(th => {{
+        th.classList.toggle('active-sort', th.dataset.key === currentSort.key);
+      }});
     }}
 
     function renderCalcOptions(list) {{
@@ -266,13 +311,27 @@ def main():
       `;
     }}
 
+    let selectedList = [];
+
     function init() {{
       renderFilterBar();
-      const list = getFilteredStocks();
-      renderTable(list);
-      renderCalcOptions(list);
+      selectedList = getFilteredStocks();
+      renderTable(selectedList);
+      renderCalcOptions(selectedList);
       recalc();
     }}
+
+    document.querySelectorAll('th.sortable').forEach(th => {{
+      th.addEventListener('click', () => {{
+        const key = th.dataset.key;
+        if (currentSort.key === key) {{
+          currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        }} else {{
+          currentSort = {{ key, dir: 'desc' }};
+        }}
+        renderTable(selectedList);
+      }});
+    }});
 
     ['calc-ticker', 'calc-equity', 'calc-risk-pct', 'calc-atr-mult'].forEach(id => {{
       $(id).addEventListener('input', recalc);
