@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-data/news.json から、カテゴリ別ニュース一覧ページ(docs/news.html)を生成する。
+data/news.json から、タブ切り替え形式のニュースページ(docs/news.html)を生成する。
 """
 import os
 import json
@@ -42,20 +42,21 @@ def main():
     generated_at = payload.get("generated_at", "")
     now = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
-    sections_html = ""
-    for cat in CATEGORY_ORDER:
+    tabs_html = ""
+    panels_html = ""
+    for i, cat in enumerate(CATEGORY_ORDER):
         items = categories.get(cat, [])
         icon = CATEGORY_ICON.get(cat, "")
-        sections_html += f"""
-  <div class="category-box">
-    <div class="category-header" data-target="cat-{cat}">
-      <span>{icon} {cat}</span>
-      <span class="count">{len(items)}件</span>
-    </div>
-    <div class="category-list" id="cat-{cat}">
-      {render_items(items)}
-    </div>
-  </div>
+        active_tab = "active" if i == 0 else ""
+        active_panel = "active" if i == 0 else ""
+
+        tabs_html += f"""<button class="tab-btn {active_tab}" data-target="panel-{cat}">
+  {icon} {cat}<span class="tab-count">{len(items)}</span>
+</button>
+"""
+        panels_html += f"""<div class="category-panel {active_panel}" id="panel-{cat}">
+  {render_items(items)}
+</div>
 """
 
     html = f"""<!DOCTYPE html>
@@ -77,16 +78,25 @@ def main():
   nav a {{ color: #6ab7ff; margin-right: 12px; text-decoration: none; }}
   nav a.active {{ color: #e8e8e8; font-weight: 600; text-decoration: underline; }}
 
-  .category-box {{
-    background: #171a20; border-radius: 10px; margin-bottom: 10px; overflow: hidden;
+  .tab-bar {{
+    display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin-bottom: 12px; padding-bottom: 4px;
   }}
-  .category-header {{
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  .tab-btn {{
+    flex: 0 0 auto;
+    background: #171a20; color: #999; border: 1px solid #262a33;
+    border-radius: 20px; padding: 8px 14px; font-size: 0.8rem; white-space: nowrap;
   }}
-  .category-header .count {{ color: #888; font-weight: 400; font-size: 0.72rem; }}
-  .category-list {{ border-top: 1px solid #23262e; }}
-  .category-list.collapsed {{ display: none; }}
+  .tab-btn.active {{
+    background: #1b2a3a; color: #6ab7ff; border-color: #2f4a63; font-weight: 600;
+  }}
+  .tab-count {{
+    display: inline-block; margin-left: 4px; font-size: 0.68rem; color: #888;
+  }}
+  .tab-btn.active .tab-count {{ color: #6ab7ff; }}
+
+  .category-panel {{ display: none; background: #171a20; border-radius: 10px; overflow: hidden; }}
+  .category-panel.active {{ display: block; }}
   .news-item {{
     display: block; padding: 10px 14px; text-decoration: none; color: inherit;
     border-bottom: 1px solid #1d2027;
@@ -94,7 +104,7 @@ def main():
   .news-item:last-child {{ border-bottom: none; }}
   .news-title {{ font-size: 0.82rem; line-height: 1.4; color: #e8e8e8; }}
   .news-meta {{ font-size: 0.68rem; color: #777; margin-top: 3px; }}
-  .empty {{ padding: 16px; font-size: 0.8rem; color: #777; text-align: center; }}
+  .empty {{ padding: 24px 16px; font-size: 0.8rem; color: #777; text-align: center; }}
 </style>
 </head>
 <body>
@@ -108,17 +118,23 @@ def main():
   <h1>ニュース</h1>
   <div class="updated">最終更新: {now}（データ取得: {generated_at}）</div>
   <div class="source-note">
-    出典: NHKニュース／JCASTニュース／ITmedia NEWS／GIGAZINE／はてなブックマーク／窓の杜／INTERNET Watch／Publickey／Qiita／WIRED.jp／ナゾロジー／Science Japan(JST)／arXiv。<br>
+    出典: NHK／JCAST／AFPBB News／CNN.co.jp／朝日新聞／毎日新聞／日経ビジネス／ITmedia／GIGAZINE／はてなブックマーク／窓の杜／INTERNET Watch／Publickey／Qiita／WIRED.jp／ナゾロジー／Science Japan／arXiv。<br>
     分類はタイトルのキーワードによる自動判定です。スポーツ・芸能は除外していますが、まれに実際のジャンルと異なる場合があります。見出しをタップすると出典元の記事に移動します。
   </div>
 
-  {sections_html}
+  <div class="tab-bar">
+    {tabs_html}
+  </div>
+
+  {panels_html}
 
   <script>
-    document.querySelectorAll('.category-header').forEach(header => {{
-      header.addEventListener('click', () => {{
-        const target = document.getElementById(header.dataset.target);
-        target.classList.toggle('collapsed');
+    document.querySelectorAll('.tab-btn').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.category-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
       }});
     }});
   </script>
