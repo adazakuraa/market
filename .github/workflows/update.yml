@@ -45,12 +45,6 @@ jobs:
       - name: Render watchlist page
         run: python scripts/render_watchlist.py
 
-      - name: Fetch news (NHK / BOJ)
-        run: python scripts/fetch_news.py
-
-      - name: Render news page
-        run: python scripts/render_news.py
-
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
