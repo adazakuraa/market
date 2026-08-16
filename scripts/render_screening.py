@@ -114,6 +114,7 @@ def main():
     <a href="stock.html">銘柄詳細</a>
     <a href="watch.html">ウォッチリスト</a>
     <a href="news.html">ニュース</a>
+    <a href="weather.html">天気</a>
   </nav>
   <h1>銘柄スクリーニング</h1>
   <div class="updated">最終更新: {now}</div>
