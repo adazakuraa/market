@@ -8,6 +8,10 @@ on:
     - cron: '0 3 * * *'
     - cron: '0 10 * * *'
 
+concurrency:
+  group: dashboard-write
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
