@@ -140,6 +140,7 @@
   <div class="typhoon-box" id="train-box">
     <div class="loading">読み込み中...</div>
   </div>
+  <div class="form-note" id="train-fetch-status" style="margin-top:6px;"></div>
 
   <script>
     const LOC_KEY = 'md_weather_locations';
@@ -544,13 +545,17 @@
       const results = await Promise.allSettled(
         TRAIN_OPERATORS.map(op =>
           fetch(`https://api-public.odpt.org/api/v4/odpt:TrainInformation?odpt:operator=odpt.Operator:${op}`)
-            .then(res => { if (!res.ok) throw new Error(op + ': ' + res.status); return res.json(); })
+            .then(res => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
         )
       );
       let anySuccess = false;
-      results.forEach(r => {
+      const okOps = [];
+      const ngOps = [];
+      results.forEach((r, i) => {
+        const op = TRAIN_OPERATORS[i];
         if (r.status === 'fulfilled') {
           anySuccess = true;
+          okOps.push(op);
           const items = r.value.map(e => ({
             id: e['odpt:railway'],
             title: (e['odpt:railwayTitle'] && e['odpt:railwayTitle'].ja) || e['odpt:railway'],
@@ -560,9 +565,14 @@
           })).filter(t => t.id);
           TRAIN_DATA.push(...items);
         } else {
-          console.warn('train fetch failed:', r.reason);
+          ngOps.push(`${op}(${r.reason.message})`);
         }
       });
+      // スマホではブラウザのコンソールが確認しづらいため、画面上に取得状況を出す
+      const statusEl = document.getElementById('train-fetch-status');
+      if (statusEl) {
+        statusEl.innerHTML = `取得成功: ${okOps.join('、') || 'なし'}${ngOps.length ? '<br>取得失敗: ' + ngOps.join('、') : ''}`;
+      }
       if (!anySuccess) throw new Error('すべての事業者の取得に失敗しました');
     }
 
