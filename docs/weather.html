@@ -536,17 +536,34 @@
       return { label: '情報あり', cls: 'badge-near' };
     }
 
+    // 主要事業者を個別に取得(1つ失敗しても他は表示できるようにするため)
+    const TRAIN_OPERATORS = ['Toei', 'TokyoMetro', 'JR-East', 'Toyoko', 'Keio', 'Odakyu', 'Keikyu', 'Tobu', 'Seibu', 'YokohamaMunicipal'];
+
     async function loadTrainData() {
-      const res = await fetch('https://api-public.odpt.org/api/v4/odpt:TrainInformation.json');
-      if (!res.ok) throw new Error('train fetch failed: ' + res.status);
-      const raw = await res.json();
-      TRAIN_DATA = raw.map(e => ({
-        id: e['odpt:railway'],
-        title: (e['odpt:railwayTitle'] && e['odpt:railwayTitle'].ja) || e['odpt:railway'],
-        operatorTitle: (e['odpt:operator'] || '').replace('odpt.Operator:', ''),
-        text: (e['odpt:trainInformationText'] && e['odpt:trainInformationText'].ja) || e['odpt:trainInformationText'] || '情報なし',
-        date: e['dc:date'],
-      })).filter(t => t.id);
+      TRAIN_DATA = [];
+      const results = await Promise.allSettled(
+        TRAIN_OPERATORS.map(op =>
+          fetch(`https://api-public.odpt.org/api/v4/odpt:TrainInformation?odpt:operator=odpt.Operator:${op}`)
+            .then(res => { if (!res.ok) throw new Error(op + ': ' + res.status); return res.json(); })
+        )
+      );
+      let anySuccess = false;
+      results.forEach(r => {
+        if (r.status === 'fulfilled') {
+          anySuccess = true;
+          const items = r.value.map(e => ({
+            id: e['odpt:railway'],
+            title: (e['odpt:railwayTitle'] && e['odpt:railwayTitle'].ja) || e['odpt:railway'],
+            operatorTitle: (e['odpt:operator'] || '').replace('odpt.Operator:', ''),
+            text: (e['odpt:trainInformationText'] && e['odpt:trainInformationText'].ja) || e['odpt:trainInformationText'] || '情報なし',
+            date: e['dc:date'],
+          })).filter(t => t.id);
+          TRAIN_DATA.push(...items);
+        } else {
+          console.warn('train fetch failed:', r.reason);
+        }
+      });
+      if (!anySuccess) throw new Error('すべての事業者の取得に失敗しました');
     }
 
     function renderTrainStatus() {
