@@ -6,6 +6,10 @@ on:
     # 平日 16:00 JST(=07:00 UTC) 大引け後に更新
     - cron: '0 7 * * 1-5'
 
+concurrency:
+  group: dashboard-write
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
