@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天気</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    margin: 0; padding: 16px; background: #0f1115; color: #e8e8e8;
+  }
+  h1 { font-size: 1.2rem; margin: 0 0 4px 0; }
+  h2 { font-size: 0.95rem; margin: 20px 0 8px 0; }
+  h3 { font-size: 0.85rem; margin: 0 0 8px 0; color: #ccc; }
+  .updated { font-size: 0.75rem; color: #999; margin-bottom: 16px; }
+  nav.nav-primary { margin-bottom: 6px; font-size: 0.85rem; }
+  nav.nav-primary a { color: #6ab7ff; margin-right: 14px; text-decoration: none; font-weight: 600; }
+  nav.nav-primary a.active { color: #e8e8e8; text-decoration: underline; }
+  nav.nav-secondary { margin-bottom: 16px; font-size: 0.75rem; padding-left: 2px; }
+  nav.nav-secondary a { color: #888; margin-right: 12px; text-decoration: none; }
+  nav.nav-secondary a.active { color: #6ab7ff; font-weight: 600; text-decoration: underline; }
+
+  .loc-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .loc-chip {
+    background: #171a20; border: 1px solid #262a33; border-radius: 20px;
+    padding: 6px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;
+  }
+  .loc-chip button {
+    background: none; border: none; color: #888; font-size: 0.9rem; cursor: pointer; padding: 0;
+  }
+  .loc-add-btn {
+    background: #1b2a3a; color: #6ab7ff; border: 1px dashed #2f4a63;
+    border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer;
+  }
+
+  .add-form {
+    display: none; background: #171a20; border-radius: 10px; padding: 14px; margin-bottom: 16px;
+  }
+  .add-form.open { display: block; }
+  .add-form input {
+    width: 100%; box-sizing: border-box; background: #0f1115; color: #e8e8e8;
+    border: 1px solid #333; border-radius: 6px; padding: 8px; font-size: 0.85rem; margin-bottom: 8px;
+  }
+  .add-form button.search-btn {
+    background: #23262e; color: #e8e8e8; border: 1px solid #333; border-radius: 6px;
+    padding: 8px 14px; font-size: 0.8rem;
+  }
+  .geo-result {
+    padding: 8px; border-bottom: 1px solid #23262e; font-size: 0.8rem; cursor: pointer;
+  }
+  .geo-result:hover { background: #1b1e24; }
+  .form-note { font-size: 0.7rem; color: #888; margin-top: 6px; }
+
+  .weather-card { background: #171a20; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .current-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .current-icon { font-size: 2.2rem; }
+  .current-temp { font-size: 1.6rem; font-weight: 700; }
+  .current-label { font-size: 0.8rem; color: #aaa; }
+
+  .hourly-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+  .hour-cell { flex: 0 0 auto; text-align: center; font-size: 0.72rem; color: #ccc; min-width: 50px; }
+  .hour-cell .icon { font-size: 1.3rem; margin: 4px 0; }
+  .hour-cell .pop { color: #6ab7ff; font-size: 0.68rem; }
+
+  .daily-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .daily-row { display: flex; align-items: center; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid #1d2027; }
+  .daily-row:last-child { border-bottom: none; }
+  .daily-date { width: 70px; color: #ccc; }
+  .daily-icon { width: 36px; text-align: center; font-size: 1.1rem; }
+  .daily-pop { width: 46px; color: #6ab7ff; text-align: right; }
+  .daily-temp { flex: 1; text-align: right; }
+  .daily-temp .max { color: #ff8a65; font-weight: 600; }
+  .daily-temp .min { color: #6ab7ff; margin-left: 6px; }
+
+  .map-box, .typhoon-box { background: #171a20; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .map-box img { width: 100%; border-radius: 6px; margin-top: 8px; }
+  .map-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .map-tabs button {
+    background: #23262e; color: #ccc; border: 1px solid #333; border-radius: 14px;
+    padding: 5px 10px; font-size: 0.7rem;
+  }
+  .map-tabs button.active { background: #1b2a3a; color: #6ab7ff; border-color: #2f4a63; }
+  .ext-link { color: #6ab7ff; font-size: 0.78rem; text-decoration: none; }
+
+  .typhoon-item { padding: 8px 0; border-bottom: 1px solid #1d2027; font-size: 0.82rem; }
+  .typhoon-item:last-child { border-bottom: none; }
+  .typhoon-none { color: #888; font-size: 0.82rem; padding: 8px 0; }
+
+  .loading, .error-note { font-size: 0.78rem; color: #888; padding: 10px 0; }
+  .error-note { color: #ff8a65; }
+</style>
+</head>
+<body>
+  <nav class="nav-primary">
+    <a href="index.html">株</a>
+    <a href="news.html">ニュース</a>
+    <a href="weather.html" class="active">天気</a>
+  </nav>
+  <h1>天気</h1>
+  <div class="updated" id="updated-note">ページを開くたびに最新データを取得しています</div>
+
+  <div class="loc-bar" id="loc-bar"></div>
+  <div class="add-form" id="add-form">
+    <input type="text" id="geo-input" placeholder="地名を入力（例: 板橋区、渋谷区、大阪市）">
+    <button class="search-btn" id="geo-search-btn">検索</button>
+    <div id="geo-results"></div>
+    <div class="form-note">最大5地点まで登録できます。地点はこのブラウザにのみ保存されます。</div>
+  </div>
+
+  <div id="weather-cards"></div>
+
+  <h2>地上天気図</h2>
+  <div class="map-box">
+    <div class="map-tabs" id="map-tabs"></div>
+    <div id="map-content" class="loading">読み込み中...</div>
+  </div>
+
+  <h2>台風情報</h2>
+  <div class="typhoon-box" id="typhoon-box">
+    <div class="loading">読み込み中...</div>
+  </div>
+
+  <h2>地震情報（最大震度4以上・直近5件）</h2>
+  <div class="typhoon-box" id="quake-box">
+    <div class="loading">読み込み中...</div>
+  </div>
+
+  <script>
+    const LOC_KEY = 'md_weather_locations';
+    const MAX_LOCATIONS = 5;
+    const DEFAULT_LOCATIONS = [
+      { name: '板橋区', lat: 35.7511, lon: 139.7093 },
+      { name: '港区', lat: 35.6581, lon: 139.7514 },
+    ];
+
+    function getLocations() {
+      try {
+        const raw = localStorage.getItem(LOC_KEY);
+        if (!raw) {
+          localStorage.setItem(LOC_KEY, JSON.stringify(DEFAULT_LOCATIONS));
+          return DEFAULT_LOCATIONS;
+        }
+        return JSON.parse(raw);
+      } catch (e) {
+        return DEFAULT_LOCATIONS;
+      }
+    }
+
+    function saveLocations(list) {
+      try { localStorage.setItem(LOC_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+
+    function removeLocation(idx) {
+      const list = getLocations();
+      list.splice(idx, 1);
+      saveLocations(list);
+      init();
+    }
+
+    function addLocation(loc) {
+      const list = getLocations();
+      if (list.length >= MAX_LOCATIONS) {
+        alert('地点は最大' + MAX_LOCATIONS + 'つまでです。既存の地点を削除してから追加してください。');
+        return;
+      }
+      list.push(loc);
+      saveLocations(list);
+      document.getElementById('add-form').classList.remove('open');
+      init();
+    }
+
+    // ==== 天気コード -> アイコン・ラベル (Open-Meteo/WMO準拠) ====
+    const WEATHER_CODE_MAP = {
+      0: ['☀️', '快晴'], 1: ['🌤️', '晴れ'], 2: ['⛅', '一部くもり'], 3: ['☁️', 'くもり'],
+      45: ['🌫️', '霧'], 48: ['🌫️', '霧'],
+      51: ['🌦️', '弱い霧雨'], 53: ['🌦️', '霧雨'], 55: ['🌦️', '強い霧雨'],
+      56: ['🌧️', '着氷性霧雨'], 57: ['🌧️', '着氷性霧雨'],
+      61: ['🌧️', '弱い雨'], 63: ['🌧️', '雨'], 65: ['🌧️', '強い雨'],
+      66: ['🌧️', '着氷性の雨'], 67: ['🌧️', '着氷性の雨'],
+      71: ['🌨️', '弱い雪'], 73: ['🌨️', '雪'], 75: ['🌨️', '強い雪'], 77: ['🌨️', '霧雪'],
+      80: ['🌦️', 'にわか雨'], 81: ['🌦️', 'にわか雨'], 82: ['🌧️', '激しいにわか雨'],
+      85: ['🌨️', 'にわか雪'], 86: ['🌨️', 'にわか雪'],
+      95: ['⛈️', '雷雨'], 96: ['⛈️', '雷雨(ひょう)'], 99: ['⛈️', '雷雨(ひょう)'],
+    };
+    function weatherInfo(code) {
+      return WEATHER_CODE_MAP[code] || ['❓', '不明'];
+    }
+
+    function fmtDate(dateStr) {
+      const d = new Date(dateStr);
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+    }
+    function fmtHour(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getHours()}時`;
+    }
+
+    async function fetchForecast(lat, lon) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,precipitation_probability,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=7`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('forecast fetch failed');
+      return res.json();
+    }
+
+    function renderWeatherCard(loc, idx, data) {
+      const [curIcon, curLabel] = weatherInfo(data.current_weather.weathercode);
+
+      // 現在時刻以降24時間ぶんを抽出
+      const nowIso = data.current_weather.time;
+      let startIdx = data.hourly.time.findIndex(t => t >= nowIso);
+      if (startIdx < 0) startIdx = 0;
+      const hourlySlice = [];
+      for (let i = startIdx; i < Math.min(startIdx + 24, data.hourly.time.length); i++) {
+        hourlySlice.push({
+          time: data.hourly.time[i],
+          temp: data.hourly.temperature_2m[i],
+          pop: data.hourly.precipitation_probability[i],
+          code: data.hourly.weathercode[i],
+        });
+      }
+      const hourlyHtml = hourlySlice.map(h => {
+        const [icon] = weatherInfo(h.code);
+        return `<div class="hour-cell">
+          <div>${fmtHour(h.time)}</div>
+          <div class="icon">${icon}</div>
+          <div>${Math.round(h.temp)}°</div>
+          <div class="pop">${h.pop}%</div>
+        </div>`;
+      }).join('');
+
+      const dailyHtml = data.daily.time.map((t, i) => {
+        const [icon, label] = weatherInfo(data.daily.weathercode[i]);
+        return `<div class="daily-row">
+          <div class="daily-date">${fmtDate(t)}</div>
+          <div class="daily-icon">${icon}</div>
+          <div class="daily-pop">${data.daily.precipitation_probability_max[i]}%</div>
+          <div class="daily-temp">
+            <span class="max">${Math.round(data.daily.temperature_2m_max[i])}°</span>
+            <span class="min">${Math.round(data.daily.temperature_2m_min[i])}°</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="weather-card">
+        <h3>${loc.name}</h3>
+        <div class="current-row">
+          <div class="current-icon">${curIcon}</div>
+          <div>
+            <div class="current-temp">${Math.round(data.current_weather.temperature)}°C</div>
+            <div class="current-label">${curLabel}</div>
+          </div>
+        </div>
+        <div class="hourly-scroll">${hourlyHtml}</div>
+        <div class="daily-list">${dailyHtml}</div>
+      </div>`;
+    }
+
+    function renderLocBar() {
+      const list = getLocations();
+      const bar = document.getElementById('loc-bar');
+      let html = list.map((loc, i) =>
+        `<div class="loc-chip">${loc.name}<button data-idx="${i}" class="remove-loc-btn">✕</button></div>`
+      ).join('');
+      if (list.length < MAX_LOCATIONS) {
+        html += `<button class="loc-add-btn" id="open-add-form-btn">+ 地点を追加</button>`;
+      }
+      bar.innerHTML = html;
+
+      document.querySelectorAll('.remove-loc-btn').forEach(btn => {
+        btn.addEventListener('click', () => removeLocation(parseInt(btn.dataset.idx, 10)));
+      });
+      const openBtn = document.getElementById('open-add-form-btn');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          document.getElementById('add-form').classList.add('open');
+        });
+      }
+    }
+
+    async function renderWeatherCards() {
+      const list = getLocations();
+      const container = document.getElementById('weather-cards');
+      container.innerHTML = '<div class="loading">読み込み中...</div>';
+      const cards = [];
+      for (let i = 0; i < list.length; i++) {
+        try {
+          const data = await fetchForecast(list[i].lat, list[i].lon);
+          cards.push(renderWeatherCard(list[i], i, data));
+        } catch (e) {
+          cards.push(`<div class="weather-card"><h3>${list[i].name}</h3><div class="error-note">取得に失敗しました</div></div>`);
+        }
+      }
+      container.innerHTML = cards.join('');
+    }
+
+    async function searchGeo() {
+      const q = document.getElementById('geo-input').value.trim();
+      if (!q) return;
+      const resultsEl = document.getElementById('geo-results');
+      resultsEl.innerHTML = '<div class="loading">検索中...</div>';
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&country=JP`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const results = data.results || [];
+        if (results.length === 0) {
+          resultsEl.innerHTML = '<div class="form-note">見つかりませんでした。別の表記で試してください。</div>';
+          return;
+        }
+        resultsEl.innerHTML = results.map((r, i) => {
+          const label = [r.name, r.admin2, r.admin1].filter(Boolean).join(' ');
+          return `<div class="geo-result" data-idx="${i}">${label}</div>`;
+        }).join('');
+        document.querySelectorAll('.geo-result').forEach(el => {
+          el.addEventListener('click', () => {
+            const r = results[parseInt(el.dataset.idx, 10)];
+            addLocation({ name: r.name, lat: r.latitude, lon: r.longitude });
+          });
+        });
+      } catch (e) {
+        resultsEl.innerHTML = '<div class="error-note">検索に失敗しました。時間をおいて試してください。</div>';
+      }
+    }
+
+    // ==== 地上天気図(気象庁) ====
+    async function renderWeatherMap() {
+      const tabsEl = document.getElementById('map-tabs');
+      const contentEl = document.getElementById('map-content');
+      try {
+        const res = await fetch('https://www.jma.go.jp/bosai/weather_map/data/list.json');
+        if (!res.ok) throw new Error('list fetch failed');
+        const list = await res.json();
+
+        // 実況+予想図をまとめる(構造が変わる可能性があるため防御的に処理)
+        const entries = [];
+        if (Array.isArray(list.near)) {
+          list.near.forEach(e => entries.push({ label: '実況/近日', file: e.name || e }));
+        }
+        if (Array.isArray(list.far)) {
+          list.far.forEach(e => entries.push({ label: '予想', file: e.name || e }));
+        }
+        if (entries.length === 0) throw new Error('no entries');
+
+        tabsEl.innerHTML = entries.map((e, i) =>
+          `<button data-idx="${i}" class="${i === 0 ? 'active' : ''}">${e.label}</button>`
+        ).join('');
+
+        function showMap(i) {
+          const e = entries[i];
+          contentEl.innerHTML = `<img src="https://www.jma.go.jp/bosai/weather_map/data/png/${e.file}" alt="天気図">`;
+          document.querySelectorAll('#map-tabs button').forEach((b, bi) => b.classList.toggle('active', bi === i));
+        }
+        document.querySelectorAll('#map-tabs button').forEach(btn => {
+          btn.addEventListener('click', () => showMap(parseInt(btn.dataset.idx, 10)));
+        });
+        showMap(0);
+      } catch (e) {
+        tabsEl.innerHTML = '';
+        contentEl.innerHTML = `<div class="error-note">天気図の自動取得に失敗しました。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/weather_map/" target="_blank" rel="noopener">気象庁の天気図ページを開く →</a></div>`;
+      }
+    }
+
+    // ==== 台風情報(気象庁) ====
+    async function renderTyphoon() {
+      const box = document.getElementById('typhoon-box');
+      try {
+        const res = await fetch('https://www.jma.go.jp/bosai/information/data/typhoon.json');
+        if (!res.ok) throw new Error('typhoon fetch failed');
+        const list = await res.json();
+        if (!Array.isArray(list) || list.length === 0) {
+          box.innerHTML = '<div class="typhoon-none">現在、発生中の台風はありません。</div>';
+          return;
+        }
+        box.innerHTML = list.map(t => {
+          const name = t.name || t.typhoonNumber || '台風';
+          return `<div class="typhoon-item">
+            <b>${name}</b><br>
+            <a class="ext-link" href="https://www.jma.go.jp/bosai/typhoon/" target="_blank" rel="noopener">詳細を気象庁サイトで見る →</a>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = `<div class="error-note">台風情報の取得に失敗しました。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/typhoon/" target="_blank" rel="noopener">気象庁の台風情報ページを開く →</a></div>`;
+      }
+    }
+
+    // ==== 地震情報(P2P地震情報API。気象庁データを元にした公開API) ====
+    const QUAKE_SCALE_LABEL = {
+      10: '震度1', 20: '震度2', 30: '震度3', 40: '震度4',
+      45: '震度5弱', 50: '震度5強', 55: '震度6弱', 60: '震度6強', 70: '震度7',
+    };
+    async function renderQuakes() {
+      const box = document.getElementById('quake-box');
+      try {
+        const res = await fetch('https://api.p2pquake.net/v2/history?codes=551&min_scale=40&limit=5');
+        if (!res.ok) throw new Error('quake fetch failed');
+        const list = await res.json();
+        if (!Array.isArray(list) || list.length === 0) {
+          box.innerHTML = '<div class="typhoon-none">直近で震度4以上の地震はありません。</div>';
+          return;
+        }
+        box.innerHTML = list.map(q => {
+          const eq = q.earthquake;
+          const scaleLabel = QUAKE_SCALE_LABEL[eq.maxScale] || '不明';
+          const tsunami = eq.domesticTsunami && eq.domesticTsunami !== 'None' && eq.domesticTsunami !== 'Unknown'
+            ? '<br><span style="color:#ff8a65;">津波の情報あり</span>' : '';
+          return `<div class="typhoon-item">
+            <b>${scaleLabel}</b>　${eq.hypocenter.name}（M${eq.hypocenter.magnitude}、深さ${eq.hypocenter.depth}）<br>
+            <span style="color:#999;font-size:0.72rem;">${eq.time}</span>${tsunami}
+          </div>`;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = `<div class="error-note">地震情報の取得に失敗しました。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/map.html#5/34.5/137/&elem=int&contents=earthquake_map" target="_blank" rel="noopener">気象庁の地震情報ページを開く →</a></div>`;
+      }
+    }
+
+    function init() {
+      renderLocBar();
+      renderWeatherCards();
+    }
+
+    document.getElementById('geo-search-btn').addEventListener('click', searchGeo);
+    document.getElementById('geo-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchGeo();
+    });
+
+    init();
+    renderWeatherMap();
+    renderTyphoon();
+    renderQuakes();
+  </script>
+</body>
+</html>
