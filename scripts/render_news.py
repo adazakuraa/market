@@ -75,8 +75,9 @@ def main():
   .updated {{ font-size: 0.75rem; color: #999; margin-bottom: 8px; }}
   .source-note {{ font-size: 0.68rem; color: #666; margin-bottom: 16px; line-height: 1.5; }}
   nav {{ margin-bottom: 16px; font-size: 0.8rem; }}
-  nav a {{ color: #6ab7ff; margin-right: 12px; text-decoration: none; }}
-  nav a.active {{ color: #e8e8e8; font-weight: 600; text-decoration: underline; }}
+  nav.nav-primary {{ margin-bottom: 6px; font-size: 0.85rem; }}
+  nav.nav-primary a {{ color: #6ab7ff; margin-right: 14px; text-decoration: none; font-weight: 600; }}
+  nav.nav-primary a.active {{ color: #e8e8e8; text-decoration: underline; }}
 
   .tab-bar {{
     display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -108,11 +109,8 @@ def main():
 </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">セクター強度</a>
-    <a href="screening.html">スクリーニング</a>
-    <a href="stock.html">銘柄詳細</a>
-    <a href="watch.html">ウォッチリスト</a>
+  <nav class="nav-primary">
+    <a href="index.html">株</a>
     <a href="news.html" class="active">ニュース</a>
     <a href="weather.html">天気</a>
   </nav>
@@ -150,4 +148,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
