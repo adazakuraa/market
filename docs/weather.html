@@ -86,6 +86,10 @@
   .typhoon-item { padding: 8px 0; border-bottom: 1px solid #1d2027; font-size: 0.82rem; }
   .typhoon-item:last-child { border-bottom: none; }
   .typhoon-none { color: #888; font-size: 0.82rem; padding: 8px 0; }
+  .quake-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .quake-table th, .quake-table td { padding: 7px 6px; text-align: left; border-bottom: 1px solid #1d2027; }
+  .quake-table th { color: #999; font-weight: 500; font-size: 0.7rem; }
+  .quake-table td b { color: #ff8a65; }
 
   .loading, .error-note { font-size: 0.78rem; color: #888; padding: 10px 0; }
   .error-note { color: #ff8a65; }
@@ -385,33 +389,54 @@
       }
     }
 
-    // ==== 地震情報(P2P地震情報API。気象庁データを元にした公開API) ====
-    const QUAKE_SCALE_LABEL = {
-      10: '震度1', 20: '震度2', 30: '震度3', 40: '震度4',
-      45: '震度5弱', 50: '震度5強', 55: '震度6弱', 60: '震度6強', 70: '震度7',
+    // ==== 地震情報(気象庁公式データ。震度4以上・直近5件を表形式で表示) ====
+    const MAXI_LABEL = {
+      '1': '震度1', '2': '震度2', '3': '震度3', '4': '震度4',
+      '5-': '震度5弱', '5+': '震度5強', '6-': '震度6弱', '6+': '震度6強', '7': '震度7',
     };
+    const MAXI_VALUE = {
+      '1': 10, '2': 20, '3': 30, '4': 40,
+      '5-': 45, '5+': 50, '6-': 55, '6+': 60, '7': 70,
+    };
+    function fmtQuakeTime(atStr) {
+      // "2026-08-16T01:07:00+09:00" -> "8/16 01:07"
+      const d = new Date(atStr);
+      const mm = String(d.getMonth() + 1);
+      const dd = String(d.getDate());
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return `${mm}/${dd} ${hh}:${mi}`;
+    }
     async function renderQuakes() {
       const box = document.getElementById('quake-box');
       try {
-        const res = await fetch('https://api.p2pquake.net/v2/history?codes=551&min_scale=40&limit=5');
-        if (!res.ok) throw new Error('quake fetch failed');
+        const res = await fetch('https://www.jma.go.jp/bosai/quake/data/list.json');
+        if (!res.ok) throw new Error('quake fetch failed: ' + res.status);
         const list = await res.json();
-        if (!Array.isArray(list) || list.length === 0) {
+
+        const filtered = list
+          .filter(e => e.maxi && (MAXI_VALUE[e.maxi] || 0) >= 40 && e.anm && e.at)
+          .sort((a, b) => new Date(b.at) - new Date(a.at))
+          .slice(0, 5);
+
+        if (filtered.length === 0) {
           box.innerHTML = '<div class="typhoon-none">直近で震度4以上の地震はありません。</div>';
           return;
         }
-        box.innerHTML = list.map(q => {
-          const eq = q.earthquake;
-          const scaleLabel = QUAKE_SCALE_LABEL[eq.maxScale] || '不明';
-          const tsunami = eq.domesticTsunami && eq.domesticTsunami !== 'None' && eq.domesticTsunami !== 'Unknown'
-            ? '<br><span style="color:#ff8a65;">津波の情報あり</span>' : '';
-          return `<div class="typhoon-item">
-            <b>${scaleLabel}</b>　${eq.hypocenter.name}（M${eq.hypocenter.magnitude}、深さ${eq.hypocenter.depth}）<br>
-            <span style="color:#999;font-size:0.72rem;">${eq.time}</span>${tsunami}
-          </div>`;
-        }).join('');
+
+        const rows = filtered.map(e => `<tr>
+          <td>${fmtQuakeTime(e.at)}</td>
+          <td>${e.anm}</td>
+          <td>${e.mag ? 'M' + e.mag : '-'}</td>
+          <td><b>${MAXI_LABEL[e.maxi] || e.maxi}</b></td>
+        </tr>`).join('');
+
+        box.innerHTML = `<table class="quake-table">
+          <thead><tr><th>日時</th><th>震源</th><th>M</th><th>最大震度</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
       } catch (e) {
-        box.innerHTML = `<div class="error-note">地震情報の取得に失敗しました。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/map.html#5/34.5/137/&elem=int&contents=earthquake_map" target="_blank" rel="noopener">気象庁の地震情報ページを開く →</a></div>`;
+        box.innerHTML = `<div class="error-note">地震情報の取得に失敗しました（${e.message}）。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/map.html#5/34.5/137/&elem=int&contents=earthquake_map" target="_blank" rel="noopener">気象庁の地震情報ページを開く →</a></div>`;
       }
     }
 
