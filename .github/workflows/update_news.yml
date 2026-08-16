@@ -1,0 +1,39 @@
+name: update-news
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 朝7時・昼12時・夜19時 JST に更新 (UTC: 22:00前日・03:00・10:00)
+    - cron: '0 22 * * *'
+    - cron: '0 3 * * *'
+    - cron: '0 10 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install minimal dependencies (ニュース取得に必要な分だけ)
+        run: pip install feedparser requests
+
+      - name: Fetch news
+        run: python scripts/fetch_news.py
+
+      - name: Render news page
+        run: python scripts/render_news.py
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'auto update news'
+          file_pattern: 'docs/news.html data/news.json'
