@@ -130,6 +130,17 @@
     <div class="loading">読み込み中...</div>
   </div>
 
+  <h2>電車運行情報</h2>
+  <div class="loc-bar" id="train-bar"></div>
+  <div class="add-form" id="train-add-form">
+    <input type="text" id="train-input" placeholder="路線名を入力（例: 三田線、山手線、東西線）">
+    <div id="train-results"></div>
+    <div class="form-note">路線はこのブラウザにのみ保存されます。データは公共交通オープンデータセンター(ODPT)提供。</div>
+  </div>
+  <div class="typhoon-box" id="train-box">
+    <div class="loading">読み込み中...</div>
+  </div>
+
   <script>
     const LOC_KEY = 'md_weather_locations';
     const MAX_LOCATIONS = 5;
@@ -440,6 +451,138 @@
       }
     }
 
+    // ==== 電車運行情報(公共交通オープンデータセンター ODPT。APIキー不要の公開エンドポイント) ====
+    const TRAIN_KEY = 'md_train_lines';
+    const DEFAULT_TRAINS = [
+      { id: 'odpt.Railway:Toei.Mita', title: '都営三田線' },
+    ];
+    let TRAIN_DATA = []; // APIから取得した全路線の運行情報をキャッシュ
+
+    function getTrainLines() {
+      try {
+        const raw = localStorage.getItem(TRAIN_KEY);
+        if (!raw) {
+          localStorage.setItem(TRAIN_KEY, JSON.stringify(DEFAULT_TRAINS));
+          return DEFAULT_TRAINS;
+        }
+        return JSON.parse(raw);
+      } catch (e) {
+        return DEFAULT_TRAINS;
+      }
+    }
+    function saveTrainLines(list) {
+      try { localStorage.setItem(TRAIN_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+    function removeTrainLine(idx) {
+      const list = getTrainLines();
+      list.splice(idx, 1);
+      saveTrainLines(list);
+      renderTrainBar();
+      renderTrainStatus();
+    }
+    function addTrainLine(line) {
+      const list = getTrainLines();
+      if (list.some(l => l.id === line.id)) return;
+      list.push(line);
+      saveTrainLines(list);
+      document.getElementById('train-add-form').classList.remove('open');
+      document.getElementById('train-input').value = '';
+      document.getElementById('train-results').innerHTML = '';
+      renderTrainBar();
+      renderTrainStatus();
+    }
+
+    function renderTrainBar() {
+      const list = getTrainLines();
+      const bar = document.getElementById('train-bar');
+      let html = list.map((line, i) =>
+        `<div class="loc-chip">${line.title}<button data-idx="${i}" class="remove-train-btn">✕</button></div>`
+      ).join('');
+      html += `<button class="loc-add-btn" id="open-train-form-btn">+ 路線を追加</button>`;
+      bar.innerHTML = html;
+
+      document.querySelectorAll('.remove-train-btn').forEach(btn => {
+        btn.addEventListener('click', () => removeTrainLine(parseInt(btn.dataset.idx, 10)));
+      });
+      document.getElementById('open-train-form-btn').addEventListener('click', () => {
+        document.getElementById('train-add-form').classList.add('open');
+      });
+    }
+
+    function searchTrainLine() {
+      const q = document.getElementById('train-input').value.trim();
+      const resultsEl = document.getElementById('train-results');
+      if (!q) { resultsEl.innerHTML = ''; return; }
+      const matches = TRAIN_DATA.filter(t => t.title.includes(q)).slice(0, 8);
+      if (matches.length === 0) {
+        resultsEl.innerHTML = '<div class="form-note">見つかりませんでした。</div>';
+        return;
+      }
+      resultsEl.innerHTML = matches.map((t, i) =>
+        `<div class="geo-result" data-idx="${i}">${t.operatorTitle} ${t.title}</div>`
+      ).join('');
+      document.querySelectorAll('#train-results .geo-result').forEach(el => {
+        el.addEventListener('click', () => {
+          const t = matches[parseInt(el.dataset.idx, 10)];
+          addTrainLine({ id: t.id, title: t.title });
+        });
+      });
+    }
+
+    function trainStatusBadge(text) {
+      if (text.includes('見合わせ')) return { label: '運転見合わせ', cls: 'badge-early' };
+      if (text.includes('遅延') || text.includes('遅れ')) return { label: '遅延', cls: 'badge-near' };
+      if (text.includes('平常')) return { label: '平常運転', cls: 'badge-gc' };
+      return { label: '情報あり', cls: 'badge-near' };
+    }
+
+    async function loadTrainData() {
+      const res = await fetch('https://api-public.odpt.org/api/v4/odpt:TrainInformation.json');
+      if (!res.ok) throw new Error('train fetch failed: ' + res.status);
+      const raw = await res.json();
+      TRAIN_DATA = raw.map(e => ({
+        id: e['odpt:railway'],
+        title: (e['odpt:railwayTitle'] && e['odpt:railwayTitle'].ja) || e['odpt:railway'],
+        operatorTitle: (e['odpt:operator'] || '').replace('odpt.Operator:', ''),
+        text: (e['odpt:trainInformationText'] && e['odpt:trainInformationText'].ja) || e['odpt:trainInformationText'] || '情報なし',
+        date: e['dc:date'],
+      })).filter(t => t.id);
+    }
+
+    function renderTrainStatus() {
+      const box = document.getElementById('train-box');
+      const lines = getTrainLines();
+      if (lines.length === 0) {
+        box.innerHTML = '<div class="typhoon-none">路線が登録されていません。「+ 路線を追加」から追加してください。</div>';
+        return;
+      }
+      const rows = lines.map(line => {
+        const info = TRAIN_DATA.find(t => t.id === line.id);
+        if (!info) {
+          return `<div class="typhoon-item">${line.title}<br><span class="error-note">情報が見つかりませんでした</span></div>`;
+        }
+        const badge = trainStatusBadge(info.text);
+        return `<div class="typhoon-item">
+          <b>${info.title}</b>　<span class="badge ${badge.cls}">${badge.label}</span><br>
+          <span style="font-size:0.78rem;">${info.text}</span><br>
+          <span style="color:#999;font-size:0.7rem;">更新: ${info.date || '-'}</span>
+        </div>`;
+      }).join('');
+      box.innerHTML = rows;
+    }
+
+    async function initTrain() {
+      renderTrainBar();
+      try {
+        await loadTrainData();
+        renderTrainStatus();
+      } catch (e) {
+        document.getElementById('train-box').innerHTML = `<div class="error-note">運行情報の取得に失敗しました（${e.message}）。</div>`;
+      }
+    }
+
+    document.getElementById('train-input').addEventListener('input', searchTrainLine);
+
     function init() {
       renderLocBar();
       renderWeatherCards();
@@ -454,6 +597,7 @@
     renderWeatherMap();
     renderTyphoon();
     renderQuakes();
+    initTrain();
   </script>
 </body>
 </html>
