@@ -49,6 +49,15 @@ jobs:
       - name: Render watchlist page
         run: python scripts/render_watchlist.py
 
+      - name: Build macro data (FX / US indices / commodities)
+        run: python scripts/build_macro_data.py
+
+      - name: Render overseas page
+        run: python scripts/render_overseas.py
+
+      - name: Render commodities page
+        run: python scripts/render_commodities.py
+
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
