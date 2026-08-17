@@ -231,9 +231,9 @@ def main():
 </head>
 <body>
   <nav class="nav-primary">
-    <a href="index.html" class="active">株</a>
-    <a href="news.html">ニュース</a>
     <a href="weather.html">天気</a>
+    <a href="news.html">ニュース</a>
+    <a href="index.html" class="active">株</a>
   </nav>
   <nav class="nav-secondary">
     <a href="index.html" class="active">セクター強度</a>

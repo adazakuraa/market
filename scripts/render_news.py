@@ -86,7 +86,7 @@ def main():
   .tab-btn {{
     flex: 0 0 auto;
     background: #171a20; color: #999; border: 1px solid #262a33;
-    border-radius: 20px; padding: 8px 14px; font-size: 0.8rem; white-space: nowrap;
+    border-radius: 20px; padding: 9px 15px; font-size: 0.88rem; white-space: nowrap;
   }}
   .tab-btn.active {{
     background: #1b2a3a; color: #6ab7ff; border-color: #2f4a63; font-weight: 600;
@@ -103,16 +103,16 @@ def main():
     border-bottom: 1px solid #1d2027;
   }}
   .news-item:last-child {{ border-bottom: none; }}
-  .news-title {{ font-size: 0.82rem; line-height: 1.4; color: #e8e8e8; }}
-  .news-meta {{ font-size: 0.68rem; color: #777; margin-top: 3px; }}
+  .news-title {{ font-size: 0.98rem; line-height: 1.5; color: #e8e8e8; }}
+  .news-meta {{ font-size: 0.75rem; color: #777; margin-top: 4px; }}
   .empty {{ padding: 24px 16px; font-size: 0.8rem; color: #777; text-align: center; }}
 </style>
 </head>
 <body>
   <nav class="nav-primary">
-    <a href="index.html">株</a>
-    <a href="news.html" class="active">ニュース</a>
     <a href="weather.html">天気</a>
+    <a href="news.html" class="active">ニュース</a>
+    <a href="index.html">株</a>
   </nav>
   <h1>ニュース</h1>
   <div class="updated">最終更新: {now}（データ取得: {generated_at}）</div>
