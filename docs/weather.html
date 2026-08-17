@@ -17,28 +17,35 @@
   nav.nav-primary { margin-bottom: 6px; font-size: 0.85rem; }
   nav.nav-primary a { color: #6ab7ff; margin-right: 14px; text-decoration: none; font-weight: 600; }
   nav.nav-primary a.active { color: #e8e8e8; text-decoration: underline; }
-  nav.nav-secondary { margin-bottom: 16px; font-size: 0.75rem; padding-left: 2px; }
-  nav.nav-secondary a { color: #888; margin-right: 12px; text-decoration: none; }
-  nav.nav-secondary a.active { color: #6ab7ff; font-weight: 600; text-decoration: underline; }
+
+  /* ページ内タブ(今日/週間/天気図/台風/地震/電車) */
+  .tab-bar {
+    display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin-bottom: 12px; padding-bottom: 4px;
+  }
+  .tab-btn {
+    flex: 0 0 auto;
+    background: #171a20; color: #999; border: 1px solid #262a33;
+    border-radius: 20px; padding: 8px 14px; font-size: 0.8rem; white-space: nowrap;
+  }
+  .tab-btn.active { background: #1b2a3a; color: #6ab7ff; border-color: #2f4a63; font-weight: 600; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   .loc-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .loc-chip {
     background: #171a20; border: 1px solid #262a33; border-radius: 20px;
     padding: 6px 12px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;
   }
-  .loc-chip button {
-    background: none; border: none; color: #888; font-size: 0.9rem; cursor: pointer; padding: 0;
-  }
+  .loc-chip button { background: none; border: none; color: #888; font-size: 0.9rem; cursor: pointer; padding: 0; }
   .loc-add-btn {
     background: #1b2a3a; color: #6ab7ff; border: 1px dashed #2f4a63;
     border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer;
   }
 
-  .add-form {
-    display: none; background: #171a20; border-radius: 10px; padding: 14px; margin-bottom: 16px;
-  }
+  .add-form { display: none; background: #171a20; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
   .add-form.open { display: block; }
-  .add-form input {
+  .add-form input, .add-form select {
     width: 100%; box-sizing: border-box; background: #0f1115; color: #e8e8e8;
     border: 1px solid #333; border-radius: 6px; padding: 8px; font-size: 0.85rem; margin-bottom: 8px;
   }
@@ -46,9 +53,7 @@
     background: #23262e; color: #e8e8e8; border: 1px solid #333; border-radius: 6px;
     padding: 8px 14px; font-size: 0.8rem;
   }
-  .geo-result {
-    padding: 8px; border-bottom: 1px solid #23262e; font-size: 0.8rem; cursor: pointer;
-  }
+  .geo-result { padding: 8px; border-bottom: 1px solid #23262e; font-size: 0.8rem; cursor: pointer; }
   .geo-result:hover { background: #1b1e24; }
   .form-note { font-size: 0.7rem; color: #888; margin-top: 6px; }
 
@@ -63,7 +68,7 @@
   .hour-cell .icon { font-size: 1.3rem; margin: 4px 0; }
   .hour-cell .pop { color: #6ab7ff; font-size: 0.68rem; }
 
-  .daily-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .daily-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
   .daily-row { display: flex; align-items: center; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid #1d2027; }
   .daily-row:last-child { border-bottom: none; }
   .daily-date { width: 70px; color: #ccc; }
@@ -91,6 +96,11 @@
   .quake-table th { color: #999; font-weight: 500; font-size: 0.7rem; }
   .quake-table td b { color: #ff8a65; }
 
+  .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+  .badge-gc { background: #1b3a24; color: #4caf50; }
+  .badge-near { background: #3a331b; color: #ffb74d; }
+  .badge-early { background: #3a1b1b; color: #ff8a65; }
+
   .loading, .error-note { font-size: 0.78rem; color: #888; padding: 10px 0; }
   .error-note { color: #ff8a65; }
 </style>
@@ -104,6 +114,16 @@
   <h1>天気</h1>
   <div class="updated" id="updated-note">ページを開くたびに最新データを取得しています</div>
 
+  <div class="tab-bar">
+    <button class="tab-btn active" data-target="tab-today">☀️ 今日の天気</button>
+    <button class="tab-btn" data-target="tab-week">📅 週間天気</button>
+    <button class="tab-btn" data-target="tab-map">🗺️ 天気図</button>
+    <button class="tab-btn" data-target="tab-typhoon">🌀 台風</button>
+    <button class="tab-btn" data-target="tab-quake">📳 地震</button>
+    <button class="tab-btn" data-target="tab-train">🚃 電車</button>
+  </div>
+
+  <!-- 地点管理(今日/週間で共通) -->
   <div class="loc-bar" id="loc-bar"></div>
   <div class="add-form" id="add-form">
     <input type="text" id="geo-input" placeholder="地名を入力（例: 板橋区、渋谷区、大阪市）">
@@ -112,37 +132,60 @@
     <div class="form-note">最大5地点まで登録できます。地点はこのブラウザにのみ保存されます。</div>
   </div>
 
-  <div id="weather-cards"></div>
-
-  <h2>地上天気図</h2>
-  <div class="map-box">
-    <div class="map-tabs" id="map-tabs"></div>
-    <div id="map-content" class="loading">読み込み中...</div>
+  <div class="tab-panel active" id="tab-today">
+    <div id="weather-hourly-cards"></div>
   </div>
 
-  <h2>台風情報</h2>
-  <div class="typhoon-box" id="typhoon-box">
-    <div class="loading">読み込み中...</div>
+  <div class="tab-panel" id="tab-week">
+    <div id="weather-daily-cards"></div>
   </div>
 
-  <h2>地震情報（最大震度4以上・直近5件）</h2>
-  <div class="typhoon-box" id="quake-box">
-    <div class="loading">読み込み中...</div>
+  <div class="tab-panel" id="tab-map">
+    <div class="map-box">
+      <div class="map-tabs" id="map-tabs"></div>
+      <div id="map-content" class="loading">読み込み中...</div>
+    </div>
   </div>
 
-  <h2>電車運行情報</h2>
-  <div class="loc-bar" id="train-bar"></div>
-  <div class="add-form" id="train-add-form">
-    <input type="text" id="train-input" placeholder="路線名を入力（例: 三田線、山手線、東西線）">
-    <div id="train-results"></div>
-    <div class="form-note">路線はこのブラウザにのみ保存されます。データは公共交通オープンデータセンター(ODPT)提供。</div>
+  <div class="tab-panel" id="tab-typhoon">
+    <div class="typhoon-box" id="typhoon-box">
+      <div class="loading">読み込み中...</div>
+    </div>
   </div>
-  <div class="typhoon-box" id="train-box">
-    <div class="loading">読み込み中...</div>
+
+  <div class="tab-panel" id="tab-quake">
+    <div class="typhoon-box" id="quake-box">
+      <div class="loading">読み込み中...</div>
+    </div>
+    <div class="form-note">最大震度4以上・直近5件を表示しています。</div>
   </div>
-  <div class="form-note" id="train-fetch-status" style="margin-top:6px;"></div>
+
+  <div class="tab-panel" id="tab-train">
+    <div class="loc-bar" id="train-bar"></div>
+    <div class="add-form" id="train-add-form">
+      <select id="train-operator-select"></select>
+      <select id="train-line-select" disabled><option value="">先に事業者を選んでください</option></select>
+      <button class="search-btn" id="train-add-confirm-btn">追加</button>
+      <div class="form-note">路線はこのブラウザにのみ保存されます。データは公共交通オープンデータセンター(ODPT)提供。一部の路線はデータが存在しない場合があります。</div>
+    </div>
+    <div class="typhoon-box" id="train-box">
+      <div class="loading">読み込み中...</div>
+    </div>
+    <div class="form-note" id="train-fetch-status" style="margin-top:6px;"></div>
+  </div>
 
   <script>
+    // ==== ページ内タブ切り替え ====
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    // ==== 地点管理(Open-Meteo) ====
     const LOC_KEY = 'md_weather_locations';
     const MAX_LOCATIONS = 5;
     const DEFAULT_LOCATIONS = [
@@ -162,18 +205,15 @@
         return DEFAULT_LOCATIONS;
       }
     }
-
     function saveLocations(list) {
       try { localStorage.setItem(LOC_KEY, JSON.stringify(list)); } catch (e) {}
     }
-
     function removeLocation(idx) {
       const list = getLocations();
       list.splice(idx, 1);
       saveLocations(list);
-      init();
+      initWeather();
     }
-
     function addLocation(loc) {
       const list = getLocations();
       if (list.length >= MAX_LOCATIONS) {
@@ -183,10 +223,9 @@
       list.push(loc);
       saveLocations(list);
       document.getElementById('add-form').classList.remove('open');
-      init();
+      initWeather();
     }
 
-    // ==== 天気コード -> アイコン・ラベル (Open-Meteo/WMO準拠) ====
     const WEATHER_CODE_MAP = {
       0: ['☀️', '快晴'], 1: ['🌤️', '晴れ'], 2: ['⛅', '一部くもり'], 3: ['☁️', 'くもり'],
       45: ['🌫️', '霧'], 48: ['🌫️', '霧'],
@@ -199,9 +238,7 @@
       85: ['🌨️', 'にわか雪'], 86: ['🌨️', 'にわか雪'],
       95: ['⛈️', '雷雨'], 96: ['⛈️', '雷雨(ひょう)'], 99: ['⛈️', '雷雨(ひょう)'],
     };
-    function weatherInfo(code) {
-      return WEATHER_CODE_MAP[code] || ['❓', '不明'];
-    }
+    function weatherInfo(code) { return WEATHER_CODE_MAP[code] || ['❓', '不明']; }
 
     function fmtDate(dateStr) {
       const d = new Date(dateStr);
@@ -220,20 +257,16 @@
       return res.json();
     }
 
-    function renderWeatherCard(loc, idx, data) {
+    function renderHourlyCard(loc, data) {
       const [curIcon, curLabel] = weatherInfo(data.current_weather.weathercode);
-
-      // 現在時刻以降24時間ぶんを抽出
       const nowIso = data.current_weather.time;
       let startIdx = data.hourly.time.findIndex(t => t >= nowIso);
       if (startIdx < 0) startIdx = 0;
       const hourlySlice = [];
       for (let i = startIdx; i < Math.min(startIdx + 24, data.hourly.time.length); i++) {
         hourlySlice.push({
-          time: data.hourly.time[i],
-          temp: data.hourly.temperature_2m[i],
-          pop: data.hourly.precipitation_probability[i],
-          code: data.hourly.weathercode[i],
+          time: data.hourly.time[i], temp: data.hourly.temperature_2m[i],
+          pop: data.hourly.precipitation_probability[i], code: data.hourly.weathercode[i],
         });
       }
       const hourlyHtml = hourlySlice.map(h => {
@@ -243,19 +276,6 @@
           <div class="icon">${icon}</div>
           <div>${Math.round(h.temp)}°</div>
           <div class="pop">${h.pop}%</div>
-        </div>`;
-      }).join('');
-
-      const dailyHtml = data.daily.time.map((t, i) => {
-        const [icon, label] = weatherInfo(data.daily.weathercode[i]);
-        return `<div class="daily-row">
-          <div class="daily-date">${fmtDate(t)}</div>
-          <div class="daily-icon">${icon}</div>
-          <div class="daily-pop">${data.daily.precipitation_probability_max[i]}%</div>
-          <div class="daily-temp">
-            <span class="max">${Math.round(data.daily.temperature_2m_max[i])}°</span>
-            <span class="min">${Math.round(data.daily.temperature_2m_min[i])}°</span>
-          </div>
         </div>`;
       }).join('');
 
@@ -269,8 +289,23 @@
           </div>
         </div>
         <div class="hourly-scroll">${hourlyHtml}</div>
-        <div class="daily-list">${dailyHtml}</div>
       </div>`;
+    }
+
+    function renderDailyCard(loc, data) {
+      const dailyHtml = data.daily.time.map((t, i) => {
+        const [icon] = weatherInfo(data.daily.weathercode[i]);
+        return `<div class="daily-row">
+          <div class="daily-date">${fmtDate(t)}</div>
+          <div class="daily-icon">${icon}</div>
+          <div class="daily-pop">${data.daily.precipitation_probability_max[i]}%</div>
+          <div class="daily-temp">
+            <span class="max">${Math.round(data.daily.temperature_2m_max[i])}°</span>
+            <span class="min">${Math.round(data.daily.temperature_2m_min[i])}°</span>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="weather-card"><h3>${loc.name}</h3><div class="daily-list">${dailyHtml}</div></div>`;
     }
 
     function renderLocBar() {
@@ -283,32 +318,34 @@
         html += `<button class="loc-add-btn" id="open-add-form-btn">+ 地点を追加</button>`;
       }
       bar.innerHTML = html;
-
       document.querySelectorAll('.remove-loc-btn').forEach(btn => {
         btn.addEventListener('click', () => removeLocation(parseInt(btn.dataset.idx, 10)));
       });
       const openBtn = document.getElementById('open-add-form-btn');
-      if (openBtn) {
-        openBtn.addEventListener('click', () => {
-          document.getElementById('add-form').classList.add('open');
-        });
-      }
+      if (openBtn) openBtn.addEventListener('click', () => document.getElementById('add-form').classList.add('open'));
     }
 
     async function renderWeatherCards() {
       const list = getLocations();
-      const container = document.getElementById('weather-cards');
-      container.innerHTML = '<div class="loading">読み込み中...</div>';
-      const cards = [];
+      const hourlyContainer = document.getElementById('weather-hourly-cards');
+      const dailyContainer = document.getElementById('weather-daily-cards');
+      hourlyContainer.innerHTML = '<div class="loading">読み込み中...</div>';
+      dailyContainer.innerHTML = '<div class="loading">読み込み中...</div>';
+      const hourlyCards = [];
+      const dailyCards = [];
       for (let i = 0; i < list.length; i++) {
         try {
           const data = await fetchForecast(list[i].lat, list[i].lon);
-          cards.push(renderWeatherCard(list[i], i, data));
+          hourlyCards.push(renderHourlyCard(list[i], data));
+          dailyCards.push(renderDailyCard(list[i], data));
         } catch (e) {
-          cards.push(`<div class="weather-card"><h3>${list[i].name}</h3><div class="error-note">取得に失敗しました</div></div>`);
+          const errCard = `<div class="weather-card"><h3>${list[i].name}</h3><div class="error-note">取得に失敗しました</div></div>`;
+          hourlyCards.push(errCard);
+          dailyCards.push(errCard);
         }
       }
-      container.innerHTML = cards.join('');
+      hourlyContainer.innerHTML = hourlyCards.join('');
+      dailyContainer.innerHTML = dailyCards.join('');
     }
 
     async function searchGeo() {
@@ -329,7 +366,7 @@
           const label = [r.name, r.admin2, r.admin1].filter(Boolean).join(' ');
           return `<div class="geo-result" data-idx="${i}">${label}</div>`;
         }).join('');
-        document.querySelectorAll('.geo-result').forEach(el => {
+        document.querySelectorAll('#geo-results .geo-result').forEach(el => {
           el.addEventListener('click', () => {
             const r = results[parseInt(el.dataset.idx, 10)];
             addLocation({ name: r.name, lat: r.latitude, lon: r.longitude });
@@ -340,6 +377,11 @@
       }
     }
 
+    function initWeather() {
+      renderLocBar();
+      renderWeatherCards();
+    }
+
     // ==== 地上天気図(気象庁) ====
     async function renderWeatherMap() {
       const tabsEl = document.getElementById('map-tabs');
@@ -348,29 +390,18 @@
         const res = await fetch('https://www.jma.go.jp/bosai/weather_map/data/list.json');
         if (!res.ok) throw new Error('list fetch failed');
         const list = await res.json();
-
-        // 実況+予想図をまとめる(構造が変わる可能性があるため防御的に処理)
         const entries = [];
-        if (Array.isArray(list.near)) {
-          list.near.forEach(e => entries.push({ label: '実況/近日', file: e.name || e }));
-        }
-        if (Array.isArray(list.far)) {
-          list.far.forEach(e => entries.push({ label: '予想', file: e.name || e }));
-        }
+        if (Array.isArray(list.near)) list.near.forEach(e => entries.push({ label: '実況/近日', file: e.name || e }));
+        if (Array.isArray(list.far)) list.far.forEach(e => entries.push({ label: '予想', file: e.name || e }));
         if (entries.length === 0) throw new Error('no entries');
 
-        tabsEl.innerHTML = entries.map((e, i) =>
-          `<button data-idx="${i}" class="${i === 0 ? 'active' : ''}">${e.label}</button>`
-        ).join('');
-
+        tabsEl.innerHTML = entries.map((e, i) => `<button data-idx="${i}" class="${i === 0 ? 'active' : ''}">${e.label}</button>`).join('');
         function showMap(i) {
           const e = entries[i];
           contentEl.innerHTML = `<img src="https://www.jma.go.jp/bosai/weather_map/data/png/${e.file}" alt="天気図">`;
           document.querySelectorAll('#map-tabs button').forEach((b, bi) => b.classList.toggle('active', bi === i));
         }
-        document.querySelectorAll('#map-tabs button').forEach(btn => {
-          btn.addEventListener('click', () => showMap(parseInt(btn.dataset.idx, 10)));
-        });
+        document.querySelectorAll('#map-tabs button').forEach(btn => btn.addEventListener('click', () => showMap(parseInt(btn.dataset.idx, 10))));
         showMap(0);
       } catch (e) {
         tabsEl.innerHTML = '';
@@ -391,27 +422,20 @@
         }
         box.innerHTML = list.map(t => {
           const name = t.name || t.typhoonNumber || '台風';
-          return `<div class="typhoon-item">
-            <b>${name}</b><br>
-            <a class="ext-link" href="https://www.jma.go.jp/bosai/typhoon/" target="_blank" rel="noopener">詳細を気象庁サイトで見る →</a>
-          </div>`;
+          return `<div class="typhoon-item"><b>${name}</b><br><a class="ext-link" href="https://www.jma.go.jp/bosai/typhoon/" target="_blank" rel="noopener">詳細を気象庁サイトで見る →</a></div>`;
         }).join('');
       } catch (e) {
         box.innerHTML = `<div class="error-note">台風情報の取得に失敗しました。<br><a class="ext-link" href="https://www.jma.go.jp/bosai/typhoon/" target="_blank" rel="noopener">気象庁の台風情報ページを開く →</a></div>`;
       }
     }
 
-    // ==== 地震情報(気象庁公式データ。震度4以上・直近5件を表形式で表示) ====
+    // ==== 地震情報(気象庁公式データ) ====
     const MAXI_LABEL = {
       '1': '震度1', '2': '震度2', '3': '震度3', '4': '震度4',
       '5-': '震度5弱', '5+': '震度5強', '6-': '震度6弱', '6+': '震度6強', '7': '震度7',
     };
-    const MAXI_VALUE = {
-      '1': 10, '2': 20, '3': 30, '4': 40,
-      '5-': 45, '5+': 50, '6-': 55, '6+': 60, '7': 70,
-    };
+    const MAXI_VALUE = { '1': 10, '2': 20, '3': 30, '4': 40, '5-': 45, '5+': 50, '6-': 55, '6+': 60, '7': 70 };
     function fmtQuakeTime(atStr) {
-      // "2026-08-16T01:07:00+09:00" -> "8/16 01:07"
       const d = new Date(atStr);
       const mm = String(d.getMonth() + 1);
       const dd = String(d.getDate());
@@ -425,24 +449,20 @@
         const res = await fetch('https://www.jma.go.jp/bosai/quake/data/list.json');
         if (!res.ok) throw new Error('quake fetch failed: ' + res.status);
         const list = await res.json();
-
         const filtered = list
           .filter(e => e.maxi && (MAXI_VALUE[e.maxi] || 0) >= 40 && e.anm && e.at)
           .sort((a, b) => new Date(b.at) - new Date(a.at))
           .slice(0, 5);
-
         if (filtered.length === 0) {
           box.innerHTML = '<div class="typhoon-none">直近で震度4以上の地震はありません。</div>';
           return;
         }
-
         const rows = filtered.map(e => `<tr>
           <td>${fmtQuakeTime(e.at)}</td>
           <td>${e.anm}</td>
           <td>${e.mag ? 'M' + e.mag : '-'}</td>
           <td><b>${MAXI_LABEL[e.maxi] || e.maxi}</b></td>
         </tr>`).join('');
-
         box.innerHTML = `<table class="quake-table">
           <thead><tr><th>日時</th><th>震源</th><th>M</th><th>最大震度</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -452,28 +472,51 @@
       }
     }
 
-    // ==== 電車運行情報(公共交通オープンデータセンター ODPT。APIキー不要の公開エンドポイント) ====
+    // ==== 電車運行情報(ODPT。事業者→路線を選んでIDを組み立てる方式) ====
     const TRAIN_KEY = 'md_train_lines';
-    const DEFAULT_TRAINS = [
-      { id: 'odpt.Railway:Toei.Mita', title: '都営三田線' },
-    ];
-    let TRAIN_DATA = []; // APIから取得した全路線の運行情報をキャッシュ
+    const DEFAULT_TRAINS = [{ id: 'odpt.Railway:Toei.Mita', title: '都営三田線' }];
+    let TRAIN_DATA = [];
+
+    // 事業者コード: 日本語表示名
+    const OPERATOR_LABELS = {
+      'Toei': '都営地下鉄', 'TokyoMetro': '東京メトロ', 'JR-East': 'JR東日本',
+      'Tokyu': '東急電鉄', 'Keio': '京王電鉄', 'Odakyu': '小田急電鉄',
+      'Keikyu': '京急電鉄', 'Tobu': '東武鉄道', 'Seibu': '西武鉄道',
+      'YokohamaMunicipal': '横浜市営地下鉄',
+    };
+    // 事業者ごとの路線カタログ: [ID末尾, 日本語表示名]
+    const LINE_CATALOG = {
+      'Toei': [['Asakusa', '浅草線'], ['Mita', '三田線'], ['Shinjuku', '新宿線'], ['Oedo', '大江戸線']],
+      'TokyoMetro': [
+        ['Ginza', '銀座線'], ['Marunouchi', '丸ノ内線'], ['Hibiya', '日比谷線'], ['Tozai', '東西線'],
+        ['Chiyoda', '千代田線'], ['Yurakucho', '有楽町線'], ['Hanzomon', '半蔵門線'],
+        ['Namboku', '南北線'], ['Fukutoshin', '副都心線'],
+      ],
+      'JR-East': [
+        ['Yamanote', '山手線'], ['ChuoRapid', '中央線快速'], ['ChuoSobuLocal', '中央・総武線各駅停車'],
+        ['KeihinTohokuNegishi', '京浜東北線'], ['Saikyo', '埼京線'], ['ShonanShinjuku', '湘南新宿ライン'],
+        ['Joban', '常磐線'], ['Tokaido', '東海道線'], ['Takasaki', '高崎線'], ['Utsunomiya', '宇都宮線'],
+      ],
+      'Tokyu': [
+        ['Toyoko', '東横線'], ['Denentoshi', '田園都市線'], ['Meguro', '目黒線'],
+        ['Oimachi', '大井町線'], ['Ikegami', '池上線'], ['Tamagawa', '東急多摩川線'],
+      ],
+      'Keio': [['KeioLine', '京王線'], ['Inokashira', '井の頭線']],
+      'Odakyu': [['Odawara', '小田原線'], ['Enoshima', '江ノ島線'], ['Tama', '多摩線']],
+      'Keikyu': [['Main', '本線'], ['Airport', '空港線']],
+      'Tobu': [['TobuTojo', '東武東上線'], ['TobuIsesaki', '伊勢崎線(スカイツリーライン)'], ['TobuNikko', '日光線']],
+      'Seibu': [['SeibuIkebukuro', '池袋線'], ['SeibuShinjuku', '新宿線']],
+      'YokohamaMunicipal': [['Blue', 'ブルーライン'], ['Green', 'グリーンライン']],
+    };
 
     function getTrainLines() {
       try {
         const raw = localStorage.getItem(TRAIN_KEY);
-        if (!raw) {
-          localStorage.setItem(TRAIN_KEY, JSON.stringify(DEFAULT_TRAINS));
-          return DEFAULT_TRAINS;
-        }
+        if (!raw) { localStorage.setItem(TRAIN_KEY, JSON.stringify(DEFAULT_TRAINS)); return DEFAULT_TRAINS; }
         return JSON.parse(raw);
-      } catch (e) {
-        return DEFAULT_TRAINS;
-      }
+      } catch (e) { return DEFAULT_TRAINS; }
     }
-    function saveTrainLines(list) {
-      try { localStorage.setItem(TRAIN_KEY, JSON.stringify(list)); } catch (e) {}
-    }
+    function saveTrainLines(list) { try { localStorage.setItem(TRAIN_KEY, JSON.stringify(list)); } catch (e) {} }
     function removeTrainLine(idx) {
       const list = getTrainLines();
       list.splice(idx, 1);
@@ -486,9 +529,6 @@
       if (list.some(l => l.id === line.id)) return;
       list.push(line);
       saveTrainLines(list);
-      document.getElementById('train-add-form').classList.remove('open');
-      document.getElementById('train-input').value = '';
-      document.getElementById('train-results').innerHTML = '';
       renderTrainBar();
       renderTrainStatus();
     }
@@ -501,7 +541,6 @@
       ).join('');
       html += `<button class="loc-add-btn" id="open-train-form-btn">+ 路線を追加</button>`;
       bar.innerHTML = html;
-
       document.querySelectorAll('.remove-train-btn').forEach(btn => {
         btn.addEventListener('click', () => removeTrainLine(parseInt(btn.dataset.idx, 10)));
       });
@@ -510,25 +549,37 @@
       });
     }
 
-    function searchTrainLine() {
-      const q = document.getElementById('train-input').value.trim();
-      const resultsEl = document.getElementById('train-results');
-      if (!q) { resultsEl.innerHTML = ''; return; }
-      const matches = TRAIN_DATA.filter(t => t.title.includes(q)).slice(0, 8);
-      if (matches.length === 0) {
-        resultsEl.innerHTML = '<div class="form-note">見つかりませんでした。</div>';
+    function populateOperatorSelect() {
+      const sel = document.getElementById('train-operator-select');
+      sel.innerHTML = '<option value="">事業者を選択</option>' +
+        Object.keys(OPERATOR_LABELS).map(op => `<option value="${op}">${OPERATOR_LABELS[op]}</option>`).join('');
+    }
+    function populateLineSelect(operator) {
+      const sel = document.getElementById('train-line-select');
+      const lines = LINE_CATALOG[operator] || [];
+      if (lines.length === 0) {
+        sel.innerHTML = '<option value="">この事業者の路線データがありません</option>';
+        sel.disabled = true;
         return;
       }
-      resultsEl.innerHTML = matches.map((t, i) =>
-        `<div class="geo-result" data-idx="${i}">${t.operatorTitle} ${t.title}</div>`
-      ).join('');
-      document.querySelectorAll('#train-results .geo-result').forEach(el => {
-        el.addEventListener('click', () => {
-          const t = matches[parseInt(el.dataset.idx, 10)];
-          addTrainLine({ id: t.id, title: t.title });
-        });
-      });
+      sel.innerHTML = '<option value="">路線を選択</option>' +
+        lines.map(([code, ja]) => `<option value="${code}">${ja}</option>`).join('');
+      sel.disabled = false;
     }
+    document.getElementById('train-operator-select').addEventListener('change', (e) => {
+      populateLineSelect(e.target.value);
+    });
+    document.getElementById('train-add-confirm-btn').addEventListener('click', () => {
+      const operator = document.getElementById('train-operator-select').value;
+      const lineSel = document.getElementById('train-line-select');
+      const lineCode = lineSel.value;
+      if (!operator || !lineCode) {
+        alert('事業者と路線の両方を選んでください。');
+        return;
+      }
+      const ja = lineSel.options[lineSel.selectedIndex].textContent;
+      addTrainLine({ id: `odpt.Railway:${operator}.${lineCode}`, title: `${OPERATOR_LABELS[operator]} ${ja}` });
+    });
 
     function trainStatusBadge(text) {
       if (text.includes('見合わせ')) return { label: '運転見合わせ', cls: 'badge-early' };
@@ -537,8 +588,7 @@
       return { label: '情報あり', cls: 'badge-near' };
     }
 
-    // 主要事業者を個別に取得(1つ失敗しても他は表示できるようにするため)
-    const TRAIN_OPERATORS = ['Toei', 'TokyoMetro', 'JR-East', 'Toyoko', 'Keio', 'Odakyu', 'Keikyu', 'Tobu', 'Seibu', 'YokohamaMunicipal'];
+    const TRAIN_OPERATORS = Object.keys(OPERATOR_LABELS);
 
     async function loadTrainData() {
       TRAIN_DATA = [];
@@ -558,8 +608,6 @@
           okOps.push(op);
           const items = r.value.map(e => ({
             id: e['odpt:railway'],
-            title: (e['odpt:railwayTitle'] && e['odpt:railwayTitle'].ja) || e['odpt:railway'],
-            operatorTitle: (e['odpt:operator'] || '').replace('odpt.Operator:', ''),
             text: (e['odpt:trainInformationText'] && e['odpt:trainInformationText'].ja) || e['odpt:trainInformationText'] || '情報なし',
             date: e['dc:date'],
           })).filter(t => t.id);
@@ -568,7 +616,6 @@
           ngOps.push(`${op}(${r.reason.message})`);
         }
       });
-      // スマホではブラウザのコンソールが確認しづらいため、画面上に取得状況を出す
       const statusEl = document.getElementById('train-fetch-status');
       if (statusEl) {
         statusEl.innerHTML = `取得成功: ${okOps.join('、') || 'なし'}${ngOps.length ? '<br>取得失敗: ' + ngOps.join('、') : ''}`;
@@ -586,11 +633,11 @@
       const rows = lines.map(line => {
         const info = TRAIN_DATA.find(t => t.id === line.id);
         if (!info) {
-          return `<div class="typhoon-item">${line.title}<br><span class="error-note">情報が見つかりませんでした</span></div>`;
+          return `<div class="typhoon-item">${line.title}<br><span class="error-note">この路線のデータが見つかりませんでした（IDが実際のデータと一致していない可能性があります）</span></div>`;
         }
         const badge = trainStatusBadge(info.text);
         return `<div class="typhoon-item">
-          <b>${info.title}</b>　<span class="badge ${badge.cls}">${badge.label}</span><br>
+          <b>${line.title}</b>　<span class="badge ${badge.cls}">${badge.label}</span><br>
           <span style="font-size:0.78rem;">${info.text}</span><br>
           <span style="color:#999;font-size:0.7rem;">更新: ${info.date || '-'}</span>
         </div>`;
@@ -599,6 +646,7 @@
     }
 
     async function initTrain() {
+      populateOperatorSelect();
       renderTrainBar();
       try {
         await loadTrainData();
@@ -608,19 +656,11 @@
       }
     }
 
-    document.getElementById('train-input').addEventListener('input', searchTrainLine);
-
-    function init() {
-      renderLocBar();
-      renderWeatherCards();
-    }
-
+    // ==== 初期化 ====
     document.getElementById('geo-search-btn').addEventListener('click', searchGeo);
-    document.getElementById('geo-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') searchGeo();
-    });
+    document.getElementById('geo-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchGeo(); });
 
-    init();
+    initWeather();
     renderWeatherMap();
     renderTyphoon();
     renderQuakes();
