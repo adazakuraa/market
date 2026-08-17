@@ -115,11 +115,8 @@
   <div class="updated" id="updated-note">ページを開くたびに最新データを取得しています</div>
 
   <div class="tab-bar">
-    <button class="tab-btn active" data-target="tab-today">☀️ 今日の天気</button>
-    <button class="tab-btn" data-target="tab-week">📅 週間天気</button>
-    <button class="tab-btn" data-target="tab-map">🗺️ 天気図</button>
-    <button class="tab-btn" data-target="tab-typhoon">🌀 台風</button>
-    <button class="tab-btn" data-target="tab-quake">📳 地震</button>
+    <button class="tab-btn active" data-target="tab-weather">☀️ 天気</button>
+    <button class="tab-btn" data-target="tab-jma">🗺️ 気象情報</button>
     <button class="tab-btn" data-target="tab-train">🚃 電車</button>
   </div>
 
@@ -132,46 +129,50 @@
     <div class="form-note">最大5地点まで登録できます。地点はこのブラウザにのみ保存されます。</div>
   </div>
 
-  <div class="tab-panel active" id="tab-today">
+  <div class="tab-panel active" id="tab-weather">
+    <h3>今日の天気</h3>
     <div id="weather-hourly-cards"></div>
-  </div>
-
-  <div class="tab-panel" id="tab-week">
+    <h3>週間天気</h3>
     <div id="weather-daily-cards"></div>
   </div>
 
-  <div class="tab-panel" id="tab-map">
+  <div class="tab-panel" id="tab-jma">
+    <h3>地上天気図</h3>
     <div class="map-box">
       <div class="map-tabs" id="map-tabs"></div>
       <div id="map-content" class="loading">読み込み中...</div>
     </div>
-  </div>
 
-  <div class="tab-panel" id="tab-typhoon">
+    <h3>台風情報</h3>
     <div class="typhoon-box" id="typhoon-box">
       <div class="loading">読み込み中...</div>
     </div>
-  </div>
 
-  <div class="tab-panel" id="tab-quake">
+    <h3>地震情報（最大震度4以上・直近5件）</h3>
     <div class="typhoon-box" id="quake-box">
       <div class="loading">読み込み中...</div>
     </div>
-    <div class="form-note">最大震度4以上・直近5件を表示しています。</div>
   </div>
 
   <div class="tab-panel" id="tab-train">
+    <h3>登録路線</h3>
     <div class="loc-bar" id="train-bar"></div>
     <div class="add-form" id="train-add-form">
       <select id="train-operator-select"></select>
       <select id="train-line-select" disabled><option value="">先に事業者を選んでください</option></select>
       <button class="search-btn" id="train-add-confirm-btn">追加</button>
-      <div class="form-note">路線はこのブラウザにのみ保存されます。データは公共交通オープンデータセンター(ODPT)提供。一部の路線はデータが存在しない場合があります。</div>
+      <div class="form-note">路線はこのブラウザにのみ保存されます。データは公共交通オープンデータセンター(ODPT)提供。都営以外は路線IDの命名規則が異なる場合があり、見つからないことがあります。</div>
     </div>
     <div class="typhoon-box" id="train-box">
       <div class="loading">読み込み中...</div>
     </div>
     <div class="form-note" id="train-fetch-status" style="margin-top:6px;"></div>
+
+    <h3 style="margin-top:20px;">遅延10分以上を自動検出（取得できた全路線から）</h3>
+    <div class="typhoon-box" id="train-delay-box">
+      <div class="loading">読み込み中...</div>
+    </div>
+    <div class="form-note">本文中の「◯分」という記載をテキストから抽出した簡易判定です。取得に失敗している事業者は対象にできません。</div>
   </div>
 
   <script>
@@ -588,6 +589,32 @@
       return { label: '情報あり', cls: 'badge-near' };
     }
 
+    // テキストから「◯分」という記載を抽出する簡易ロジック(構造化された遅延分数はAPIに存在しないため)
+    function extractDelayMinutes(text) {
+      const match = text.match(/(\d+)\s*分/);
+      if (!match) return null;
+      return parseInt(match[1], 10);
+    }
+
+    function renderDelayScan() {
+      const box = document.getElementById('train-delay-box');
+      const DELAY_THRESHOLD = 10;
+      const hits = TRAIN_DATA
+        .map(t => ({ ...t, minutes: extractDelayMinutes(t.text) }))
+        .filter(t => t.minutes !== null && t.minutes >= DELAY_THRESHOLD)
+        .sort((a, b) => b.minutes - a.minutes);
+
+      if (hits.length === 0) {
+        box.innerHTML = '<div class="typhoon-none">遅延10分以上の路線は見つかりませんでした（取得できた範囲内）。</div>';
+        return;
+      }
+      box.innerHTML = hits.map(t => `<div class="typhoon-item">
+        <b>${t.id.replace('odpt.Railway:', '')}</b>　<span class="badge badge-early">約${t.minutes}分</span><br>
+        <span style="font-size:0.78rem;">${t.text}</span><br>
+        <span style="color:#999;font-size:0.7rem;">更新: ${t.date || '-'}</span>
+      </div>`).join('');
+    }
+
     const TRAIN_OPERATORS = Object.keys(OPERATOR_LABELS);
 
     async function loadTrainData() {
@@ -651,8 +678,10 @@
       try {
         await loadTrainData();
         renderTrainStatus();
+        renderDelayScan();
       } catch (e) {
         document.getElementById('train-box').innerHTML = `<div class="error-note">運行情報の取得に失敗しました（${e.message}）。</div>`;
+        document.getElementById('train-delay-box').innerHTML = `<div class="error-note">取得に失敗したため検出できません。</div>`;
       }
     }
 
