@@ -25,7 +25,7 @@
   .tab-btn {
     flex: 0 0 auto;
     background: #171a20; color: #999; border: 1px solid #262a33;
-    border-radius: 20px; padding: 8px 14px; font-size: 0.8rem; white-space: nowrap;
+    border-radius: 20px; padding: 9px 15px; font-size: 0.88rem; white-space: nowrap;
   }
   .tab-btn.active {
     background: #1b2a3a; color: #6ab7ff; border-color: #2f4a63; font-weight: 600;
@@ -42,19 +42,19 @@
     border-bottom: 1px solid #1d2027;
   }
   .news-item:last-child { border-bottom: none; }
-  .news-title { font-size: 0.82rem; line-height: 1.4; color: #e8e8e8; }
-  .news-meta { font-size: 0.68rem; color: #777; margin-top: 3px; }
+  .news-title { font-size: 0.98rem; line-height: 1.5; color: #e8e8e8; }
+  .news-meta { font-size: 0.75rem; color: #777; margin-top: 4px; }
   .empty { padding: 24px 16px; font-size: 0.8rem; color: #777; text-align: center; }
 </style>
 </head>
 <body>
   <nav class="nav-primary">
-    <a href="index.html">株</a>
-    <a href="news.html" class="active">ニュース</a>
     <a href="weather.html">天気</a>
+    <a href="news.html" class="active">ニュース</a>
+    <a href="index.html">株</a>
   </nav>
   <h1>ニュース</h1>
-  <div class="updated">最終更新: 2026-08-17 19:22 JST（データ取得: 2026-08-17 19:22 JST）</div>
+  <div class="updated">最終更新: 2026-08-17 20:28 JST（データ取得: 2026-08-17 20:28 JST）</div>
   <div class="source-note">
     出典: NHK／JCAST／AFPBB News／CNN.co.jp／朝日新聞／毎日新聞／日経ビジネス／ITmedia／GIGAZINE／はてなブックマーク／窓の杜／INTERNET Watch／Publickey／Qiita／WIRED.jp／ナゾロジー／Science Japan／arXiv。<br>
     分類はタイトルのキーワードによる自動判定です。スポーツ・芸能は除外していますが、まれに実際のジャンルと異なる場合があります。見出しをタップすると出典元の記事に移動します。
@@ -65,13 +65,13 @@
   🏛️ 政治<span class="tab-count">17</span>
 </button>
 <button class="tab-btn " data-target="panel-経済">
-  💹 経済<span class="tab-count">19</span>
+  💹 経済<span class="tab-count">21</span>
 </button>
 <button class="tab-btn " data-target="panel-国際">
-  🌍 国際<span class="tab-count">17</span>
+  🌍 国際<span class="tab-count">15</span>
 </button>
 <button class="tab-btn " data-target="panel-社会">
-  🏙️ 社会<span class="tab-count">19</span>
+  🏙️ 社会<span class="tab-count">18</span>
 </button>
 <button class="tab-btn " data-target="panel-IT">
   💻 IT<span class="tab-count">25</span>
@@ -89,7 +89,15 @@
   </div>
 
   <div class="category-panel active" id="panel-政治">
-  <a class="news-item" href="http://www.asahi.com/articles/ASV8K2QRNV8KUJHB007M.html?ref=rss" target="_blank" rel="noopener">
+  <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/010/240000c" target="_blank" rel="noopener">
+  <div class="news-title">採決直前、異例の緊急動議　議長は辞職意向…福岡県議会で何が？</div>
+  <div class="news-meta">毎日新聞｜2026-08-17 20:18</div>
+</a>
+<a class="news-item" href="https://www.j-cast.com/2026/08/17517196.html" target="_blank" rel="noopener">
+  <div class="news-title">高市首相の式辞「繰り返させない」に野党議員から疑問＆批判　辻元清美氏「自分を主語にして語るべきだ」</div>
+  <div class="news-meta">JCASTニュース｜2026-08-17 19:35</div>
+</a>
+<a class="news-item" href="http://www.asahi.com/articles/ASV8K2QRNV8KUJHB007M.html?ref=rss" target="_blank" rel="noopener">
   <div class="news-title">茨城県かすみがうら前市長、政治団体を設立　2年後に国政政党めざす</div>
   <div class="news-meta">朝日新聞デジタル｜2026-08-17 19:00</div>
 </a>
@@ -104,14 +112,6 @@
 <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/010/209000c" target="_blank" rel="noopener">
   <div class="news-title">愛媛知事選、元衆院議員の宮沢博行氏が出馬表明　過去に女性問題</div>
   <div class="news-meta">毎日新聞｜2026-08-17 18:37</div>
-</a>
-<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/010/060000c" target="_blank" rel="noopener">
-  <div class="news-title">福岡県議会、蔵内議長の辞職勧告決議案は採決中止　金銭授受疑惑</div>
-  <div class="news-meta">毎日新聞｜2026-08-17 18:24</div>
-</a>
-<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/010/068000c" target="_blank" rel="noopener">
-  <div class="news-title">福岡県議会、新副議長に板橋氏選出　金銭授受疑惑で前任者が辞職</div>
-  <div class="news-meta">毎日新聞｜2026-08-17 18:21</div>
 </a>
 <a class="news-item" href="http://www.asahi.com/articles/ASV8K2V8ZV8KUHBI00KM.html?ref=rss" target="_blank" rel="noopener">
   <div class="news-title">トランプ氏娘婿クシュナー氏、ハマスと会談　ガザ和平へ具体措置要求</div>
@@ -160,7 +160,15 @@
 
 </div>
 <div class="category-panel " id="panel-経済">
-  <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/020/211000c" target="_blank" rel="noopener">
+  <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/030/233000c" target="_blank" rel="noopener">
+  <div class="news-title">台湾27年度防衛費、初の1兆台湾ドル超え　総統「平和への投資」</div>
+  <div class="news-meta">毎日新聞｜2026-08-17 19:49</div>
+</a>
+<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/040/229000c" target="_blank" rel="noopener">
+  <div class="news-title">生成AIで駐禁除外標章を偽造疑い　男性を書類送検　大阪府警</div>
+  <div class="news-meta">毎日新聞｜2026-08-17 19:42</div>
+</a>
+<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/020/211000c" target="_blank" rel="noopener">
   <div class="news-title">経済プラス:夏以降に待つさらなる家計の負担増　「強い経済」実現に懸念</div>
   <div class="news-meta">毎日新聞｜2026-08-17 19:03</div>
 </a>
@@ -259,14 +267,6 @@
   <div class="news-title">トランプ氏の米韓演習縮小発言　米元高官「明らかに平壌訪問に関心」</div>
   <div class="news-meta">朝日新聞デジタル｜2026-08-17 17:30</div>
 </a>
-<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/030/162000c" target="_blank" rel="noopener">
-  <div class="news-title">中国、江沢民氏の生誕100周年記念大会　習近平氏が団結訴え</div>
-  <div class="news-meta">毎日新聞｜2026-08-17 17:07</div>
-</a>
-<a class="news-item" href="https://mainichi.jp/articles/20260814/k00/00m/030/183000c" target="_blank" rel="noopener">
-  <div class="news-title">ポッドキャスト:＜ポッドキャスト＞韓国で盛んな竹島ツアー　2年後には上陸者急増か</div>
-  <div class="news-meta">毎日新聞｜2026-08-17 17:00</div>
-</a>
 <a class="news-item" href="https://www.j-cast.com/2026/08/17517180.html" target="_blank" rel="noopener">
   <div class="news-title">プーチン大統領の択捉島訪問に逃げ腰な北方領土キャラ　大臣発言を紹介するだけの投稿に「自分の言葉で」</div>
   <div class="news-meta">JCASTニュース｜2026-08-17 16:15</div>
@@ -310,7 +310,15 @@
 
 </div>
 <div class="category-panel " id="panel-社会">
-  <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/040/223000c" target="_blank" rel="noopener">
+  <a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/040/235000c" target="_blank" rel="noopener">
+  <div class="news-title">熊本地震　38キロの断層が地表出現　7キロは10年前と重なる</div>
+  <div class="news-meta">毎日新聞｜2026-08-17 19:52</div>
+</a>
+<a class="news-item" href="http://www.asahi.com/articles/ASV8K30W5V8KUTIL014M.html?ref=rss" target="_blank" rel="noopener">
+  <div class="news-title">トー横から海外へ誘拐事件　詐欺ノルマ10人?約束の3カ月過ぎても</div>
+  <div class="news-meta">朝日新聞デジタル｜2026-08-17 19:30</div>
+</a>
+<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/040/223000c" target="_blank" rel="noopener">
   <div class="news-title">1年前買ったワンボックスカーも…　豪雨で浸水した車、補償は?</div>
   <div class="news-meta">毎日新聞｜2026-08-17 19:09</div>
 </a>
@@ -326,10 +334,6 @@
   <div class="news-title">地震が引き裂いた5人家族、生き残ったのは三つ子の姉妹の1人のみ　コロンビア</div>
   <div class="news-meta">CNN.co.jp｜2026-08-17 18:05</div>
 </a>
-<a class="news-item" href="https://mainichi.jp/articles/20260817/k00/00m/040/159000c" target="_blank" rel="noopener">
-  <div class="news-title">ガソリン混入の灯油販売、火災招く　容疑で男性ら書類送検　岐阜</div>
-  <div class="news-meta">毎日新聞｜2026-08-17 17:52</div>
-</a>
 <a class="news-item" href="http://www.asahi.com/articles/ASV873GTCV87UTFK00ZM.html?ref=rss" target="_blank" rel="noopener">
   <div class="news-title">遺骨調査続く戦後81年の硫黄島　猛暑と火山活動しのぐ現場で</div>
   <div class="news-meta">朝日新聞デジタル｜2026-08-17 17:00</div>
@@ -338,17 +342,9 @@
   <div class="news-title">トミー・ジョンさん死去、83歳　肘靱帯再建手術通称の由来</div>
   <div class="news-meta">CNN.co.jp｜2026-08-17 09:39</div>
 </a>
-<a class="news-item" href="http://www.asahi.com/articles/ASV8J1V93V8JUDCB00NM.html?ref=rss" target="_blank" rel="noopener">
-  <div class="news-title">一酸化炭素中毒で死亡、停電中の発電機か　千葉豪雨で死者10人に</div>
-  <div class="news-meta">朝日新聞デジタル｜2026-08-17 08:14</div>
-</a>
 <a class="news-item" href="http://www.asahi.com/articles/ASV8C761GV8CUTIL002M.html?ref=rss" target="_blank" rel="noopener">
   <div class="news-title">AIリスクどう考える「教師も学んで」　シンポで教育関係者ら語る</div>
   <div class="news-meta">朝日新聞デジタル｜2026-08-17 07:00</div>
-</a>
-<a class="news-item" href="http://www.asahi.com/articles/ASV8J6WS7V8JUHBI002M.html?ref=rss" target="_blank" rel="noopener">
-  <div class="news-title">トミー・ジョンさん死去　投手のひじ手術の由来となった大リーガー</div>
-  <div class="news-meta">朝日新聞デジタル｜2026-08-17 06:31</div>
 </a>
 <a class="news-item" href="http://www.asahi.com/articles/ASV8J6WS7V8JUHBI002M.html?ref=rss" target="_blank" rel="noopener">
   <div class="news-title">トミー・ジョンさん死去　投手のひじ手術の由来となった大リーガー</div>
@@ -389,7 +385,11 @@
 
 </div>
 <div class="category-panel " id="panel-IT">
-  <a class="news-item" href="https://gigazine.net/news/20260817-headline/" target="_blank" rel="noopener">
+  <a class="news-item" href="https://gigazine.net/news/20260817-france-top-court-blocks-sns-ban-under-15s/" target="_blank" rel="noopener">
+  <div class="news-title">15歳未満のSNS利用禁止法案を表現の自由を侵害するとして最高裁が差し止め</div>
+  <div class="news-meta">GIGAZINE｜2026-08-17 20:00</div>
+</a>
+<a class="news-item" href="https://gigazine.net/news/20260817-headline/" target="_blank" rel="noopener">
   <div class="news-title">2026年8月17日のヘッドラインニュース</div>
   <div class="news-meta">GIGAZINE｜2026-08-17 19:15</div>
 </a>
@@ -400,10 +400,6 @@
 <a class="news-item" href="https://forest.watch.impress.co.jp/docs/serial/blenderwthing/2133113.html" target="_blank" rel="noopener">
   <div class="news-title">「Blender」のジオメトリノードで毛と布の物理演算がリアルに！【Blender ウォッチング】</div>
   <div class="news-meta">窓の杜｜2026-08-17 18:11</div>
-</a>
-<a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000570/" target="_blank" rel="noopener">
-  <div class="news-title">母子2人制作の中国CGアニメ「牛来」、粗削りさが話題で異例のヒット　興収17万円→6000万円超に</div>
-  <div class="news-meta">ITmedia NEWS｜2026-08-17 18:07</div>
 </a>
 <a class="news-item" href="https://internet.watch.impress.co.jp/docs/news/2133238.html" target="_blank" rel="noopener">
   <div class="news-title">10月11日実施の「ルートゾーンKSKロールオーバー」準備はOK？ 改訂版ガイドをICANNが公開中</div>
@@ -429,9 +425,17 @@
   <div class="news-title">楽天、迎撃ドローンの独ヘルシングと提携へ　防衛省への納入支援　報道</div>
   <div class="news-meta">ITmedia NEWS｜2026-08-17 17:26</div>
 </a>
+<a class="news-item" href="https://ascii.jp/elem/000/004/427/4427059/" target="_blank" rel="noopener">
+  <div class="news-title">うんこミュージアム、個人情報漏れた可能性　不正アクセスで</div>
+  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 17:24</div>
+</a>
 <a class="news-item" href="https://gigazine.net/news/20260817-haagen-dazs-crispy-sand-peanuts-butter-caramel/" target="_blank" rel="noopener">
   <div class="news-title">ピーナッツバターとバターキャラメルの2つの甘さが楽しめるハーゲンダッツの「クリスピーサンド『ピーナッツ＆バターキャラメル』」試食レビュー</div>
   <div class="news-meta">GIGAZINE｜2026-08-17 17:18</div>
+</a>
+<a class="news-item" href="https://zenn.dev/hidebike712/books/oauth-attacks-and-bcp" target="_blank" rel="noopener">
+  <div class="news-title">攻撃手法から学ぶ OAuth セキュリティベストプラクティス</div>
+  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 16:38</div>
 </a>
 <a class="news-item" href="https://gigazine.net/news/20260817-data-centers-economy-town/" target="_blank" rel="noopener">
   <div class="news-title">データセンターブームの恩恵で人口8500人の町の貧困率が大幅低下、ただし電力需要増に伴う費用はデータセンターが負担</div>
@@ -449,10 +453,6 @@
   <div class="news-title">デカい「Word」ドキュメントで便利、特定位置へ直接着地できるリンク共有機能が導入／Windows/Mac版で利用可能。開くのはWeb版でもOK</div>
   <div class="news-meta">窓の杜｜2026-08-17 16:14</div>
 </a>
-<a class="news-item" href="https://tomarigi.me/" target="_blank" rel="noopener">
-  <div class="news-title">とまり木 — 各地のカメラから、日本のいま。</div>
-  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 15:22</div>
-</a>
 <a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000566/" target="_blank" rel="noopener">
   <div class="news-title">両毛システムズ、社内システムに不正アクセス被害</div>
   <div class="news-meta">ITmedia NEWS｜2026-08-17 14:26</div>
@@ -460,10 +460,6 @@
 <a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000561/" target="_blank" rel="noopener">
   <div class="news-title">千葉水害、半数以上が“ハザードマップの浸水エリア外”で起きていた　ウェザーニューズ調査より</div>
   <div class="news-meta">ITmedia NEWS｜2026-08-17 14:24</div>
-</a>
-<a class="news-item" href="https://gigazine.net/news/20260817-us-drone-tariff/" target="_blank" rel="noopener">
-  <div class="news-title">ドローンと関連部品の輸入にアメリカ政府が最大100％の関税発動へ、日本には負担軽減措置あり</div>
-  <div class="news-meta">GIGAZINE｜2026-08-17 14:11</div>
 </a>
 <a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000565/" target="_blank" rel="noopener">
   <div class="news-title">LINE着せかえ“デザイン崩れ”問題、返金フォーム設置　ただ「返金できない場合も」</div>
@@ -473,10 +469,6 @@
   <div class="news-title">千葉水害、半数以上が“ハザードマップの浸水エリア外”で起きていた　ウェザーニューズ調査より</div>
   <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 13:35</div>
 </a>
-<a class="news-item" href="https://simonwillison.net/2026/Aug/16/qwen-38-27b/" target="_blank" rel="noopener">
-  <div class="news-title">Qwen 3.8 27B is excellent, but it defaults to wildly overthinking things</div>
-  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 13:21</div>
-</a>
 <a class="news-item" href="https://forest.watch.impress.co.jp/docs/serial/yajiuma/2132984.html" target="_blank" rel="noopener">
   <div class="news-title">「VLC」でMP3の再生開始まで33秒もかかる！　「X」で怒りをぶちまけるも、原因は別のところに……／気持ちはわかるけど、前向きに【やじうまの杜】</div>
   <div class="news-meta">窓の杜｜2026-08-17 13:05</div>
@@ -485,14 +477,22 @@
   <div class="news-title">「さくらのレンタルサーバ」で不正アクセス、583アカウントへの不正ログインを確認</div>
   <div class="news-meta">INTERNET Watch｜2026-08-17 12:25</div>
 </a>
-<a class="news-item" href="https://www.sakura.ad.jp/corporate/information/newsreleases/2026/08/17/1968225614/" target="_blank" rel="noopener">
-  <div class="news-title">当社レンタルサーバーサービスの一部環境に対する不正なアクセスについて | さくらインターネット</div>
-  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 12:11</div>
+<a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000563/" target="_blank" rel="noopener">
+  <div class="news-title">「さくらのレンタルサーバ」に不正アクセス　583アカウントが不正ログイン被害、個人データなど漏えいのおそれ</div>
+  <div class="news-meta">ITmedia NEWS｜2026-08-17 12:13</div>
+</a>
+<a class="news-item" href="https://forest.watch.impress.co.jp/docs/serial/accessranking/2133001.html" target="_blank" rel="noopener">
+  <div class="news-title">8月のWindows Updateに注目が集まる、大規模な脆弱性修正が続く ～窓の杜アクセスランキング［2026/8/11～2026/8/16]【記事アクセスランキング】</div>
+  <div class="news-meta">窓の杜｜2026-08-17 11:45</div>
 </a>
 
 </div>
 <div class="category-panel " id="panel-AI">
-  <a class="news-item" href="https://www.itmedia.co.jp/aiplus/article/2608/17/2000000564/" target="_blank" rel="noopener">
+  <a class="news-item" href="https://www.itmedia.co.jp/news/article/2608/17/2000000570/" target="_blank" rel="noopener">
+  <div class="news-title">中国のCGアニメ映画「牛来」、“AI生成よりひどい”と話題で逆にヒット　興収は一気に350倍以上に</div>
+  <div class="news-meta">ITmedia NEWS｜2026-08-17 19:13</div>
+</a>
+<a class="news-item" href="https://www.itmedia.co.jp/aiplus/article/2608/17/2000000564/" target="_blank" rel="noopener">
   <div class="news-title">「ほんだし」のラベルがAIでぐちゃぐちゃに……　味の素、公式Xの投稿画像について謝罪</div>
   <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 17:33</div>
 </a>
@@ -532,10 +532,6 @@
   <div class="news-title">Z.aiがコーディング能力に優れたオープンウェイトAIモデル「GLM-5.3」リリース、前モデル比で50％の性能向上</div>
   <div class="news-meta">GIGAZINE｜2026-08-17 12:05</div>
 </a>
-<a class="news-item" href="https://internet.watch.impress.co.jp/docs/yajiuma/2133026.html" target="_blank" rel="noopener">
-  <div class="news-title">登場から1年持たず……Microsoft、Copilotのゆるキャラ「Mico」の“左遷”を決定【やじうまWatch】</div>
-  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 11:50</div>
-</a>
 <a class="news-item" href="https://gigazine.net/news/20260817-anthropic-claude-text-watermark/" target="_blank" rel="noopener">
   <div class="news-title">「AIが生成した文章であることを示す電子透かし」についてAnthropicが公式解説</div>
   <div class="news-meta">GIGAZINE｜2026-08-17 11:43</div>
@@ -564,6 +560,10 @@
   <div class="news-title">生成AIの画像は誰のもの？：著作物性をめぐる先駆的裁判（栗原潔） - エキスパート - Yahoo!ニュース</div>
   <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 11:12</div>
 </a>
+<a class="news-item" href="https://gigazine.net/news/20260817-stripe-acquire-openrouter-7-billion/" target="_blank" rel="noopener">
+  <div class="news-title">1.1兆円超でStripeがAIゲートウェイサービスのOpenRouterを買収か</div>
+  <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 10:53</div>
+</a>
 <a class="news-item" href="https://japan.cnet.com/article/35251584/" target="_blank" rel="noopener">
   <div class="news-title">Claudeで障害　アクセスできず（復旧）</div>
   <div class="news-meta">はてなブックマーク(テクノロジー)｜2026-08-17 10:32</div>
@@ -588,14 +588,14 @@
   <div class="news-title">なぜ多くの人はAIエージェントを使っていないのか</div>
   <div class="news-meta">WIRED.jp｜2026-08-17 08:00</div>
 </a>
-<a class="news-item" href="https://forest.watch.impress.co.jp/docs/update/library/2132843.html" target="_blank" rel="noopener">
-  <div class="news-title">【アップデート情報】窓の杜収録ソフト　8月17日　～「GitHub Desktop」「Discord」「Copilot Keyboard」など</div>
-  <div class="news-meta">窓の杜｜2026-08-17 07:30</div>
-</a>
 
 </div>
 <div class="category-panel " id="panel-科学">
-  <a class="news-item" href="https://nazology.kusuguru.co.jp/archives/198739" target="_blank" rel="noopener">
+  <a class="news-item" href="https://nazology.kusuguru.co.jp/archives/198758" target="_blank" rel="noopener">
+  <div class="news-title">2000年前の古代人の絵から「ヒトの血」を検出──出産した女性の血だった可能性</div>
+  <div class="news-meta">ナゾロジー｜2026-08-17 19:30</div>
+</a>
+<a class="news-item" href="https://nazology.kusuguru.co.jp/archives/198739" target="_blank" rel="noopener">
   <div class="news-title">「忙しくないと落ち着かない人」の心理背景にあるものとは</div>
   <div class="news-meta">ナゾロジー｜2026-08-17 17:00</div>
 </a>
@@ -630,10 +630,6 @@
 <a class="news-item" href="https://nazology.kusuguru.co.jp/archives/189537" target="_blank" rel="noopener">
   <div class="news-title">才能ある若者の育て方が判明【特化すべきか、色々やらせるべきか】</div>
   <div class="news-meta">ナゾロジー｜2026-08-17 06:30</div>
-</a>
-<a class="news-item" href="https://nazology.kusuguru.co.jp/archives/198712" target="_blank" rel="noopener">
-  <div class="news-title">性的に興奮した男性は、女性の表情よりも服装に注目しがちになる</div>
-  <div class="news-meta">ナゾロジー｜2026-08-16 22:00</div>
 </a>
 <a class="news-item" href="https://sj.jst.go.jp/news/202608/n0814-01k.html" target="_blank" rel="noopener">
   <div class="news-title">AI accurately predicts temperature from molecular arrangements</div>
