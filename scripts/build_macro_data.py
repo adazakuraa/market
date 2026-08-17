@@ -22,6 +22,7 @@ LOOKBACK_PERIOD = "7mo"  # 6ヶ月表示に余裕を持たせる
 
 OVERSEAS_TICKERS = {
     "米ドル/円": "JPY=X",
+    "日経平均": "^N225",
     "S&P500": "^GSPC",
     "NASDAQ総合": "^IXIC",
 }

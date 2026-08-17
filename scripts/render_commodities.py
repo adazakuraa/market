@@ -49,7 +49,7 @@ def main():
   nav.nav-primary {{ margin-bottom: 6px; font-size: 0.85rem; }}
   nav.nav-primary a {{ color: #6ab7ff; margin-right: 14px; text-decoration: none; font-weight: 600; }}
   nav.nav-primary a.active {{ color: #e8e8e8; text-decoration: underline; }}
-  nav.nav-secondary {{ margin-bottom: 16px; font-size: 0.75rem; padding-left: 2px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }}
+  nav.nav-secondary {{ margin-bottom: 16px; font-size: 0.75rem; padding-left: 2px; }}
   nav.nav-secondary a {{ color: #888; margin-right: 12px; text-decoration: none; }}
   nav.nav-secondary a.active {{ color: #6ab7ff; font-weight: 600; text-decoration: underline; }}
 
