@@ -97,6 +97,8 @@ def main():
     <a href="screening.html">スクリーニング</a>
     <a href="stock.html">銘柄詳細</a>
     <a href="watch.html" class="active">ウォッチリスト</a>
+    <a href="overseas.html">海外指標</a>
+    <a href="commodities.html">資源</a>
   </nav>
   <h1>ウォッチリスト</h1>
   <div class="updated">最終更新: {now}</div>
