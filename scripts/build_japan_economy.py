@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-日本国債利回り(財務省: 過去＋今月最新を結合)と国内企業物価指数(日銀API)を取得する。
+日本国債利回り(財務省: 過去＋今月最新を結合)と国内企業物価指数(日銀API: CSV取得)を取得する。
 
 出力:
 - data/jgb_yields.json
@@ -23,12 +23,14 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 OUT_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 
-# 国債CSV URL
 MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 
-# 日銀API URL (国内企業物価指数 2020年基準 総平均)
-BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData?format=json&lang=jp&code=PRCG20_2200000000&startDate=201501"
+# 日銀API: 確実にパースできる CSV 形式で取得 (PR01 = 物価指数, PRCG20_2200000000 = 2020年基準 総平均)
+BOJ_API_CSV_URL = (
+    "https://www.stat-search.boj.or.jp/api/v1/getData"
+    "?format=csv&lang=jp&db=PR01&code=PRCG20_2200000000&startDate=201501"
+)
 
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
 DAYS_TO_KEEP = 200
@@ -45,7 +47,7 @@ def http_get(url):
 
 
 def parse_wareki_date(val):
-    """和暦(S/H/R)や西暦を YYYY-MM-DD に変換"""
+    """財務省CSVの和暦(S/H/R)や西暦を YYYY-MM-DD に変換"""
     if not val:
         return None
     val = val.strip()
@@ -64,7 +66,7 @@ def parse_wareki_date(val):
 
 
 def parse_jgb_csv(raw_bytes, data_dict):
-    """CSVをパースして data_dict {date: {label: value}} に格納"""
+    """国債CSVをパースして格納"""
     text = raw_bytes.decode("cp932", errors="replace")
     lines = text.splitlines()
 
@@ -96,7 +98,7 @@ def parse_jgb_csv(raw_bytes, data_dict):
 
 
 def fetch_jgb_yields():
-    """過去CSVと今月最新CSVの両方を取得してマージ"""
+    """過去CSVと今月最新CSVを結合して取得"""
     daily_records = {}
 
     try:
@@ -115,7 +117,6 @@ def fetch_jgb_yields():
         raise RuntimeError("国債データが取得できませんでした")
 
     sorted_dates = sorted(daily_records.keys())[-DAYS_TO_KEEP:]
-
     result = {label: {"dates": [], "values": []} for label in JGB_TARGET_COLUMNS}
     for d in sorted_dates:
         row_vals = daily_records[d]
@@ -128,53 +129,43 @@ def fetch_jgb_yields():
 
 
 def fetch_cgpi():
-    """日銀APIから国内企業物価指数(総平均)を取得"""
-    raw = http_get(BOJ_API_URL)
-    data = json.loads(raw.decode("utf-8"))
+    """日銀APIから国内企業物価指数(総平均)をCSVで取得してパース"""
+    raw = http_get(BOJ_API_CSV_URL)
+    # 日銀CSVはShift-JISまたはUTF-8で返る
+    try:
+        text = raw.decode("cp932")
+    except UnicodeDecodeError:
+        text = raw.decode("utf-8", errors="replace")
 
-    status = str(data.get("STATUS", ""))
-    if status != "200":
-        raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE', data)}")
-
-    resultset = data.get("RESULTSET", [])
-    entry = resultset[0] if isinstance(resultset, list) else resultset
+    reader = csv.reader(text.splitlines())
 
     dates = []
     values = []
 
-    # 日銀APIの公式構造: OBSERVATION配列の中に SURVEY_DATE / OBS_VALUE が入る
-    observations = entry.get("OBSERVATION") or entry.get("OBS_DATA") or []
-    if observations:
-        for item in observations:
-            d_raw = str(item.get("SURVEY_DATE") or item.get("DATE", "")).strip()
-            v_raw = str(item.get("OBS_VALUE") or item.get("VALUE", "")).replace("-", "").strip()
+    for row in reader:
+        if not row or len(row) < 2:
+            continue
 
-            if len(d_raw) >= 6:
-                formatted_date = f"{d_raw[:4]}-{d_raw[4:6]}"
-            else:
-                formatted_date = d_raw
+        col0 = row[0].strip().replace('"', '')
+        col1 = row[1].strip().replace('"', '').replace(',', '')
+
+        # "YYYY/MM", "YYYY-MM", "YYYYMM" の日付形式を検出
+        m = re.match(r"^(\d{4})[/-]?(\d{2})", col0)
+        if m:
+            yyyy, mm = m.groups()
+            date_str = f"{yyyy}-{mm}"
 
             try:
-                val = round(float(v_raw), 2)
+                val = round(float(col1), 2)
+                dates.append(date_str)
+                values.append(val)
             except ValueError:
-                val = None
-
-            dates.append(formatted_date)
-            values.append(val)
-    else:
-        # 予備: 旧フォーマットや別形式の場合のフォールバック
-        dates_raw = entry.get("SURVEY_DATES") or entry.get("DATES", [])
-        values_raw = entry.get("VALUES", [])
-        for d, v in zip(dates_raw, values_raw):
-            d_str = str(d).strip()
-            dates.append(f"{d_str[:4]}-{d_str[4:6]}" if len(d_str) >= 6 else d_str)
-            try:
-                values.append(round(float(v), 2) if v is not None else None)
-            except ValueError:
-                values.append(None)
+                continue
 
     if not dates:
-        raise RuntimeError(f"企業物価指数のデータが見つかりませんでした (レスポンス形式: {list(entry.keys())})")
+        # デバッグ用: 取れなかった場合は返ってきた内容の先頭を出力
+        preview = "\n".join(text.splitlines()[:5])
+        raise RuntimeError(f"日銀CSVからデータ行を抽出できませんでした。\nレスポンス先頭:\n{preview}")
 
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
@@ -182,14 +173,15 @@ def fetch_cgpi():
 def main():
     os.makedirs(DATA_DIR, exist_ok=True)
 
+    print("=== データ取得開始 ===")
     try:
         jgb = fetch_jgb_yields()
         with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
             json.dump(jgb, f, ensure_ascii=False, indent=2)
         dates = jgb.get("長期(10年)", {}).get("dates", [])
-        print(f"Saved JGB yields ({len(dates)}営業日分, 期間: {dates[0]} 〜 {dates[-1]}) -> {OUT_JGB_PATH}")
+        print(f"◎ 国債利回り取得成功 ({len(dates)}営業日分, 最新: {dates[-1]}) -> {OUT_JGB_PATH}")
     except Exception as e:
-        print(f"[error] 国債利回りの取得に失敗しました: {e}")
+        print(f"× 国債利回り失敗: {e}")
 
     try:
         cgpi = fetch_cgpi()
@@ -197,9 +189,10 @@ def main():
             json.dump(cgpi, f, ensure_ascii=False, indent=2)
         c_dates = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", [])
         c_vals = cgpi.get("国内企業物価指数(総平均)", {}).get("values", [])
-        print(f"Saved CGPI ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]} = {c_vals[-1]}) -> {OUT_CGPI_PATH}")
+        print(f"◎ 企業物価指数取得成功 ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]} = {c_vals[-1]}) -> {OUT_CGPI_PATH}")
     except Exception as e:
-        print(f"[error] 企業物価指数の取得に失敗しました: {e}")
+        print(f"× 企業物価指数失敗: {e}")
+    print("======================")
 
 
 if __name__ == "__main__":
