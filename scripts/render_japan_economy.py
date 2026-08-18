@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
 """
 data/jgb_yields.json と data/cgpi.json から、日本の経済状況ページ(docs/japan_economy.html)を生成する。
-国債利回りは日次データ用(1週間〜6ヶ月)、企業物価指数は月次データ用(1年〜全期間)の
-別々の期間切り替えボタンを持つ。
 """
 import os
 import json
 from datetime import datetime, timezone, timedelta
 
-BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
-IN_JGB_PATH = os.path.join(BASE_DIR, "data", "jgb_yields.json")
-IN_CGPI_PATH = os.path.join(BASE_DIR, "data", "cgpi.json")
-OUT_PATH = os.path.join(BASE_DIR, "docs", "japan_economy.html")
+try:
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    CURRENT_DIR = os.getcwd()
+
+BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..")) if os.path.basename(CURRENT_DIR) == "scripts" else CURRENT_DIR
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DOCS_DIR = os.path.join(BASE_DIR, "docs")
+
+IN_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
+IN_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
+OUT_PATH = os.path.join(DOCS_DIR, "japan_economy.html")
 
 JST = timezone(timedelta(hours=9))
 CHART_COLORS = ["#4caf50", "#2196f3", "#ff9800", "#e91e63"]
@@ -135,7 +141,7 @@ def main():
       jgbCharts = [];
       JGB_LABELS.forEach((label, i) => {{
         const series = JGB_DATA[label];
-        if (!series) return;
+        if (!series || !series.dates.length) return;
         const ctx = document.getElementById('jgb-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
@@ -178,7 +184,7 @@ def main():
       cgpiCharts = [];
       CGPI_LABELS.forEach((label, i) => {{
         const series = CGPI_DATA[label];
-        if (!series) return;
+        if (!series || !series.dates.length) return;
         const ctx = document.getElementById('cgpi-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
