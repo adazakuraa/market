@@ -58,6 +58,12 @@ jobs:
       - name: Render commodities page
         run: python scripts/render_commodities.py
 
+      - name: Build Japan economy data (JGB yields / CGPI)
+        run: python scripts/build_japan_economy.py
+
+      - name: Render Japan economy page
+        run: python scripts/render_japan_economy.py
+
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
