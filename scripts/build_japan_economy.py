@@ -28,9 +28,7 @@ OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 
-# 日本銀行 時系列統計データAPI (国内企業物価指数 2020年基準 総平均)
-BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData?format=json&lang=jp&code=PRCG20_2200000000&startDate=201501"
-
+BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getDataCode?format=json&lang=jp&db=PR01&code=PRCG20_2200000000&startDate=201501"
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
 DAYS_TO_KEEP = 200
 
@@ -115,37 +113,32 @@ def fetch_cgpi():
     raw = http_get(BOJ_API_URL)
     data = json.loads(raw.decode("utf-8"))
 
-    # STATUS判定
     if str(data.get("STATUS")) != "200":
         raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE', data)}")
 
-    resultset = data.get("RESULTSET", [])
+    resultset = data.get("RESULTSET")
     if not resultset:
         raise RuntimeError(f"日銀APIのRESULTSETが空です: {data}")
 
-    entry = resultset[0] if isinstance(resultset, list) else resultset
+    # 単一系列ならdict、複数系列ならlistで返ってくるため両対応
+    if isinstance(resultset, list):
+        resultset = resultset[0] if resultset else {}
 
-    # 【重要】日銀APIの正式キー OBSERVATION から抽出
-    observations = entry.get("OBSERVATION", [])
-    if not observations:
-        raise RuntimeError(f"OBSERVATIONが見つかりません。取得キー一覧: {list(entry.keys())}")
+    # 【重要】実際の構造は RESULTSET.VALUES.SURVEY_DATES / RESULTSET.VALUES.VALUES
+    # (VALUESというキーの中に、さらにSURVEY_DATESとVALUESが入っている2階層構造)
+    values_obj = resultset.get("VALUES", {})
+    dates_raw = values_obj.get("SURVEY_DATES")
+    values_raw = values_obj.get("VALUES")
+
+    if not dates_raw or not values_raw:
+        raise RuntimeError(f"日銀APIのデータ部が見つかりませんでした。取得キー一覧: {list(resultset.keys())}")
 
     dates = []
-    values = []
-    for item in observations:
-        d_str = str(item.get("SURVEY_DATE", "")).strip()
-        v_str = str(item.get("OBS_VALUE", "")).replace("-", "").strip()
+    for d in dates_raw:
+        d_str = str(d)
+        dates.append(f"{d_str[:4]}-{d_str[4:6]}")  # 202401 -> 2024-01
 
-        # 202401 -> 2024-01 に変換
-        if len(d_str) >= 6:
-            dates.append(f"{d_str[:4]}-{d_str[4:6]}")
-        else:
-            dates.append(d_str)
-
-        try:
-            values.append(round(float(v_str), 2))
-        except (ValueError, TypeError):
-            values.append(None)
+    values = [None if v is None else round(float(v), 2) for v in values_raw]
 
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
