@@ -119,7 +119,7 @@ def main():
     <button class="period-btn-cgpi active-period" data-months="0">全期間</button>
   </div>
   {cgpi_charts_html or '<div class="empty-note">データがありません</div>'}
-  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。企業物価指数は月次データです。</div>
+  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -130,7 +130,8 @@ def main():
     const COLORS = {json.dumps(CHART_COLORS)};
 
     function sliceTail(arr, n) {{
-      if (n <= 0 || arr.length <= n) return arr;
+      if (!arr || !arr.length) return [];
+      if (!n || n <= 0 || arr.length <= n) return arr;
       return arr.slice(arr.length - n);
     }}
 
@@ -142,20 +143,27 @@ def main():
       jgbCharts = [];
       JGB_LABELS.forEach((label, i) => {{
         const series = JGB_DATA[label];
-        if (!series || !series.dates.length) return;
-        const ctx = document.getElementById('jgb-chart-' + i).getContext('2d');
+        if (!series || !series.dates || !series.dates.length) return;
+        const el = document.getElementById('jgb-chart-' + i);
+        if (!el) return;
+        const ctx = el.getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
           data: {{
             labels: sliceTail(series.dates, jgbDays),
             datasets: [{{
-              label: label, data: sliceTail(series.values, jgbDays),
-              borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length],
-              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
+              label: label,
+              data: sliceTail(series.values, jgbDays),
+              borderColor: COLORS[i % COLORS.length],
+              backgroundColor: COLORS[i % COLORS.length],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.15,
             }}],
           }},
           options: {{
-            responsive: true, animation: false,
+            responsive: true,
+            animation: false,
             interaction: {{ mode: 'index', intersect: false }},
             plugins: {{ legend: {{ display: false }} }},
             scales: {{
@@ -185,20 +193,27 @@ def main():
       cgpiCharts = [];
       CGPI_LABELS.forEach((label, i) => {{
         const series = CGPI_DATA[label];
-        if (!series || !series.dates.length) return;
-        const ctx = document.getElementById('cgpi-chart-' + i).getContext('2d');
+        if (!series || !series.dates || !series.dates.length) return;
+        const el = document.getElementById('cgpi-chart-' + i);
+        if (!el) return;
+        const ctx = el.getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
           data: {{
             labels: sliceTail(series.dates, cgpiMonths),
             datasets: [{{
-              label: label, data: sliceTail(series.values, cgpiMonths),
-              borderColor: COLORS[(i + 1) % COLORS.length], backgroundColor: COLORS[(i + 1) % COLORS.length],
-              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
+              label: label,
+              data: sliceTail(series.values, cgpiMonths),
+              borderColor: COLORS[(i + 1) % COLORS.length],
+              backgroundColor: COLORS[(i + 1) % COLORS.length],
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.15,
             }}],
           }},
           options: {{
-            responsive: true, animation: false,
+            responsive: true,
+            animation: false,
             interaction: {{ mode: 'index', intersect: false }},
             plugins: {{ legend: {{ display: false }} }},
             scales: {{
