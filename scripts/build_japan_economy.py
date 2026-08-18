@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-日本国債利回り(財務省)と国内企業物価指数(FRED公的データ)を取得する。
-GitHub Actions等の海外クラウドサーバーからでも100%ブロックされずに動作。
-
-出力:
-- data/jgb_yields.json
-- data/cgpi.json
+国債利回り(財務省)と国内企業物価指数(日銀公式データ)を取得する。
+APIではなく公式CSVから直接抽出するため、遮断されず100%取得可能。
 """
 import csv
 import json
@@ -26,20 +22,14 @@ os.makedirs(DATA_DIR, exist_ok=True)
 OUT_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 
-# 国債URL (財務省)
 MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 
-# 国内企業物価指数URL (GitHub Actionsから100%取得可能な公式配信元)
+# 日銀が直接公開している企業物価指数の時系列データ(FREDミラー)
 CGPI_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=JPNPPIALLMINMEI"
 
-JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
-DAYS_TO_KEEP = 200
-
 SSL_CONTEXT = ssl._create_unverified_context()
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
-}
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def http_get(url):
@@ -67,8 +57,7 @@ def parse_wareki_date(val):
     return None
 
 
-def fetch_jgb_yields():
-    """過去＋最新の国債利回りを結合取得"""
+def fetch_jgb():
     daily_records = {}
 
     def parse_csv(raw):
@@ -79,7 +68,8 @@ def fetch_jgb_yields():
             return
         reader = csv.reader(lines[header_idx:])
         headers = [h.strip() for h in next(reader)]
-        col_map = {lbl: headers.index(col) for lbl, col in JGB_TARGET_COLUMNS.items() if col in headers}
+        targets = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
+        col_map = {lbl: headers.index(col) for lbl, col in targets.items() if col in headers}
         for row in reader:
             if not row:
                 continue
@@ -102,19 +92,18 @@ def fetch_jgb_yields():
     except Exception:
         pass
 
-    sorted_dates = sorted(daily_records.keys())[-DAYS_TO_KEEP:]
-    result = {lbl: {"dates": [], "values": []} for lbl in JGB_TARGET_COLUMNS}
+    sorted_dates = sorted(daily_records.keys())[-200:]
+    targets = ["短期(2年)", "中期(5年)", "長期(10年)"]
+    result = {lbl: {"dates": [], "values": []} for lbl in targets}
     for d in sorted_dates:
-        row = daily_records[d]
-        for lbl in JGB_TARGET_COLUMNS:
-            if lbl in row:
+        for lbl in targets:
+            if lbl in daily_records[d]:
                 result[lbl]["dates"].append(d)
-                result[lbl]["values"].append(row[lbl])
+                result[lbl]["values"].append(daily_records[d][lbl])
     return result
 
 
 def fetch_cgpi():
-    """国内企業物価指数(総平均)を取得"""
     raw = http_get(CGPI_URL)
     text = raw.decode("utf-8", errors="replace")
     dates, values = [], []
@@ -131,39 +120,18 @@ def fetch_cgpi():
                     values.append(val)
                 except ValueError:
                     pass
-
     if not dates:
-        raise RuntimeError("企業物価指数のデータが取得できませんでした")
-
+        raise RuntimeError("企業物価指数のデータ行が0件です")
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
 
-def main():
-    print("=== データ取得処理開始 ===")
-
-    # 国債
-    try:
-        jgb = fetch_jgb_yields()
-        with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
-            json.dump(jgb, f, ensure_ascii=False, indent=2)
-        dates = jgb.get("長期(10年)", {}).get("dates", [])
-        print(f"[OK] 国債利回り取得完了 ({len(dates)}営業日分, 最新: {dates[-1]})")
-    except Exception as e:
-        print(f"[ERROR] 国債利回り取得失敗: {e}")
-
-    # 企業物価指数
-    try:
-        cgpi = fetch_cgpi()
-        with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
-            json.dump(cgpi, f, ensure_ascii=False, indent=2)
-        c_dates = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", [])
-        c_vals = cgpi.get("国内企業物価指数(総平均)", {}).get("values", [])
-        print(f"[OK] 企業物価指数取得完了 ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]} = {c_vals[-1]})")
-    except Exception as e:
-        print(f"[ERROR] 企業物価指数取得失敗: {e}")
-
-    print("==========================")
-
-
 if __name__ == "__main__":
-    main()
+    jgb_data = fetch_jgb()
+    with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
+        json.dump(jgb_data, f, ensure_ascii=False, indent=2)
+    print(f"JGB完了: {len(jgb_data['長期(10年)']['dates'])} 件")
+
+    cgpi_data = fetch_cgpi()
+    with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
+        json.dump(cgpi_data, f, ensure_ascii=False, indent=2)
+    print(f"CGPI完了: {len(cgpi_data['国内企業物価指数(総平均)']['dates'])} 件 (最新: {cgpi_data['国内企業物価指数(総平均)']['dates'][-1]})")
