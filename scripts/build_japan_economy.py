@@ -13,26 +13,31 @@ import json
 import requests
 import pandas as pd
 
-BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT_JGB_PATH = os.path.join(BASE_DIR, "data", "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(BASE_DIR, "data", "cgpi.json")
 
+# 財務省 国債金利CSV（過去全期間）
 MOF_JGB_CSV_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 
-BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getDataCode"
-CGPI_SERIES_CODE = "PRCG20_2200000000"  # [国内企業物価指数] 総平均
+# 日銀時系列統計データ検索API（正しいエンドポイント: getData）
+BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData"
+CGPI_SERIES_CODE = "PRCG20_2200000000"  # [国内企業物価指数] 2020年基準 総平均
 
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
+DAYS_TO_KEEP = 200  # 直近の営業日数
 
-DAYS_TO_KEEP = 200  # 約6ヶ月ぶんの営業日を保持
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 
 
 def fetch_jgb_yields():
     """財務省の国債金利情報CSV(全期間)を取得し、直近分だけ切り出す"""
-    resp = requests.get(MOF_JGB_CSV_ALL_URL, timeout=30)
+    resp = requests.get(MOF_JGB_CSV_ALL_URL, headers=HEADERS, timeout=30)
     resp.raise_for_status()
 
-    # Shift-JIS(CP932)でエンコードされている想定
+    # Shift-JIS(CP932)でデコード
     text = resp.content.decode("cp932", errors="replace")
     lines = text.splitlines()
 
@@ -50,7 +55,9 @@ def fetch_jgb_yields():
     df.columns = [c.strip() for c in df.columns]
 
     date_col = df.columns[0]
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce", format="%Y/%m/%d")
+    
+    # 日付パース（全期間CSVの過去データに元号等が含まれるため format は指定せず柔軟にパース）
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     df = df.dropna(subset=[date_col]).sort_values(date_col)
     df = df.tail(DAYS_TO_KEEP)
 
@@ -77,12 +84,13 @@ def fetch_cgpi():
         "code": CGPI_SERIES_CODE,
         "startDate": "201501",
     }
-    resp = requests.get(BOJ_API_URL, params=params, timeout=30)
+    resp = requests.get(BOJ_API_URL, params=params, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     data = resp.json()
 
-    if data.get("STATUS") != 200:
-        raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE')}")
+    # STATUSは文字列("200")で返るため、strで比較
+    if str(data.get("STATUS")) != "200":
+        raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE', data)}")
 
     resultset = data.get("RESULTSET")
     if not resultset:
@@ -101,7 +109,13 @@ def fetch_cgpi():
         d = str(d)
         dates.append(f"{d[:4]}-{d[4:6]}")  # YYYYMM -> YYYY-MM
 
-    values = [None if v is None else round(float(v), 2) for v in values_raw]
+    # '-' などの欠損記号対策
+    values = []
+    for v in values_raw:
+        try:
+            values.append(round(float(v), 2) if v is not None else None)
+        except (ValueError, TypeError):
+            values.append(None)
 
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
@@ -112,7 +126,7 @@ def main():
     try:
         jgb = fetch_jgb_yields()
         with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
-            json.dump(jgb, f, ensure_ascii=False)
+            json.dump(jgb, f, ensure_ascii=False, indent=2)
         print(f"Saved JGB yields ({len(jgb)}系列) -> {OUT_JGB_PATH}")
     except Exception as e:
         print(f"[error] 国債利回りの取得に失敗しました: {e}")
@@ -120,7 +134,7 @@ def main():
     try:
         cgpi = fetch_cgpi()
         with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
-            json.dump(cgpi, f, ensure_ascii=False)
+            json.dump(cgpi, f, ensure_ascii=False, indent=2)
         print(f"Saved CGPI -> {OUT_CGPI_PATH}")
     except Exception as e:
         print(f"[error] 企業物価指数の取得に失敗しました: {e}")
