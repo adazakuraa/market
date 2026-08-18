@@ -240,6 +240,7 @@ def main():
     <a href="screening.html">スクリーニング</a>
     <a href="stock.html">銘柄詳細</a>
     <a href="watch.html">ウォッチリスト</a>
+    <a href="japan_economy.html">日本の経済状況</a>
     <a href="overseas.html">海外指標</a>
     <a href="commodities.html">資源</a>
   </nav>
