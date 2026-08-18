@@ -23,10 +23,11 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 OUT_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 
-# 過去データ(先月末まで)と最新データ(今月分)の2つのURL
+# 国債CSV URL
 MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 
+# 日銀API URL (国内企業物価指数 2020年基準 総平均)
 BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData?format=json&lang=jp&code=PRCG20_2200000000&startDate=201501"
 
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
@@ -63,7 +64,7 @@ def parse_wareki_date(val):
 
 
 def parse_jgb_csv(raw_bytes, data_dict):
-    """CSVをパースして data_dict {date: {label: value}} に格納（重複は上書き）"""
+    """CSVをパースして data_dict {date: {label: value}} に格納"""
     text = raw_bytes.decode("cp932", errors="replace")
     lines = text.splitlines()
 
@@ -95,27 +96,24 @@ def parse_jgb_csv(raw_bytes, data_dict):
 
 
 def fetch_jgb_yields():
-    """過去CSVと今月最新CSVの両方を取得してマージする"""
+    """過去CSVと今月最新CSVの両方を取得してマージ"""
     daily_records = {}
 
-    # 1. 過去全期間CSVを取得
     try:
         raw_all = http_get(MOF_JGB_ALL_URL)
         parse_jgb_csv(raw_all, daily_records)
     except Exception as e:
-        print(f"[warn] 過去CSVの取得に失敗: {e}")
+        print(f"[warn] 過去国債CSV取得失敗: {e}")
 
-    # 2. 今月の最新CSVを取得してマージ
     try:
         raw_cur = http_get(MOF_JGB_CURRENT_URL)
         parse_jgb_csv(raw_cur, daily_records)
     except Exception as e:
-        print(f"[warn] 最新CSVの取得に失敗: {e}")
+        print(f"[warn] 最新国債CSV取得失敗: {e}")
 
     if not daily_records:
         raise RuntimeError("国債データが取得できませんでした")
 
-    # 日付昇順でソートして直近分を切り出す
     sorted_dates = sorted(daily_records.keys())[-DAYS_TO_KEEP:]
 
     result = {label: {"dates": [], "values": []} for label in JGB_TARGET_COLUMNS}
@@ -134,21 +132,49 @@ def fetch_cgpi():
     raw = http_get(BOJ_API_URL)
     data = json.loads(raw.decode("utf-8"))
 
-    if str(data.get("STATUS")) != "200":
+    status = str(data.get("STATUS", ""))
+    if status != "200":
         raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE', data)}")
 
     resultset = data.get("RESULTSET", [])
     entry = resultset[0] if isinstance(resultset, list) else resultset
-    dates_raw = entry.get("SURVEY_DATES") or entry.get("DATES", [])
-    values_raw = entry.get("VALUES", [])
 
-    dates = [f"{str(d)[:4]}-{str(d)[4:6]}" for d in dates_raw]
+    dates = []
     values = []
-    for v in values_raw:
-        try:
-            values.append(round(float(v), 2) if v is not None else None)
-        except (ValueError, TypeError):
-            values.append(None)
+
+    # 日銀APIの公式構造: OBSERVATION配列の中に SURVEY_DATE / OBS_VALUE が入る
+    observations = entry.get("OBSERVATION") or entry.get("OBS_DATA") or []
+    if observations:
+        for item in observations:
+            d_raw = str(item.get("SURVEY_DATE") or item.get("DATE", "")).strip()
+            v_raw = str(item.get("OBS_VALUE") or item.get("VALUE", "")).replace("-", "").strip()
+
+            if len(d_raw) >= 6:
+                formatted_date = f"{d_raw[:4]}-{d_raw[4:6]}"
+            else:
+                formatted_date = d_raw
+
+            try:
+                val = round(float(v_raw), 2)
+            except ValueError:
+                val = None
+
+            dates.append(formatted_date)
+            values.append(val)
+    else:
+        # 予備: 旧フォーマットや別形式の場合のフォールバック
+        dates_raw = entry.get("SURVEY_DATES") or entry.get("DATES", [])
+        values_raw = entry.get("VALUES", [])
+        for d, v in zip(dates_raw, values_raw):
+            d_str = str(d).strip()
+            dates.append(f"{d_str[:4]}-{d_str[4:6]}" if len(d_str) >= 6 else d_str)
+            try:
+                values.append(round(float(v), 2) if v is not None else None)
+            except ValueError:
+                values.append(None)
+
+    if not dates:
+        raise RuntimeError(f"企業物価指数のデータが見つかりませんでした (レスポンス形式: {list(entry.keys())})")
 
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
@@ -170,7 +196,8 @@ def main():
         with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
             json.dump(cgpi, f, ensure_ascii=False, indent=2)
         c_dates = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", [])
-        print(f"Saved CGPI ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]}) -> {OUT_CGPI_PATH}")
+        c_vals = cgpi.get("国内企業物価指数(総平均)", {}).get("values", [])
+        print(f"Saved CGPI ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]} = {c_vals[-1]}) -> {OUT_CGPI_PATH}")
     except Exception as e:
         print(f"[error] 企業物価指数の取得に失敗しました: {e}")
 
