@@ -48,7 +48,7 @@
     <a href="commodities.html">資源</a>
   </nav>
   <h1>日本の経済状況</h1>
-  <div class="updated">最終更新: 2026-08-18 21:05 JST</div>
+  <div class="updated">最終更新: 2026-08-18 21:11 JST</div>
 
   <h2>国債利回り（短期・中期・長期）</h2>
   <div class="period-controls" id="jgb-period-controls">
@@ -67,7 +67,7 @@
     <button class="period-btn-cgpi active-period" data-months="0">全期間</button>
   </div>
   <div class="empty-note">データがありません</div>
-  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行 時系列統計データ検索サイト。企業物価指数は月次データのため、期間表示は月単位です。</div>
+  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。企業物価指数は月次データです。</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -126,7 +126,7 @@
     });
 
     // ==== 企業物価指数(月次) ====
-    let cgpiMonths = 0; // 0 = 全期間
+    let cgpiMonths = 0;
     let cgpiCharts = [];
     function buildCgpiCharts() {
       cgpiCharts.forEach(c => c.destroy());
