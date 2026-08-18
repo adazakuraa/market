@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-国債利回り(財務省)と国内企業物価指数(日銀公式データ)を取得する。
-APIではなく公式CSVから直接抽出するため、遮断されず100%取得可能。
+日本国債利回り(財務省)と国内企業物価指数(日本銀行時系列API)を取得する。
+
+出力:
+- data/jgb_yields.json
+- data/cgpi.json
 """
 import csv
 import json
 import os
 import re
-import ssl
 import urllib.request
 
 try:
@@ -22,19 +24,24 @@ os.makedirs(DATA_DIR, exist_ok=True)
 OUT_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 
+# 財務省 国債金利CSV
 MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
 MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 
-# 日銀が直接公開している企業物価指数の時系列データ(FREDミラー)
-CGPI_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=JPNPPIALLMINMEI"
+# 日本銀行 時系列統計データAPI (国内企業物価指数 2020年基準 総平均)
+BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData?format=json&lang=jp&code=PRCG20_2200000000&startDate=201501"
 
-SSL_CONTEXT = ssl._create_unverified_context()
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
+DAYS_TO_KEEP = 200
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+}
 
 
 def http_get(url):
     req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=25) as res:
+    with urllib.request.urlopen(req, timeout=25) as res:
         return res.read()
 
 
@@ -57,7 +64,8 @@ def parse_wareki_date(val):
     return None
 
 
-def fetch_jgb():
+def fetch_jgb_yields():
+    """過去＋最新の国債利回りを結合取得"""
     daily_records = {}
 
     def parse_csv(raw):
@@ -68,8 +76,7 @@ def fetch_jgb():
             return
         reader = csv.reader(lines[header_idx:])
         headers = [h.strip() for h in next(reader)]
-        targets = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
-        col_map = {lbl: headers.index(col) for lbl, col in targets.items() if col in headers}
+        col_map = {lbl: headers.index(col) for lbl, col in JGB_TARGET_COLUMNS.items() if col in headers}
         for row in reader:
             if not row:
                 continue
@@ -92,46 +99,83 @@ def fetch_jgb():
     except Exception:
         pass
 
-    sorted_dates = sorted(daily_records.keys())[-200:]
-    targets = ["短期(2年)", "中期(5年)", "長期(10年)"]
-    result = {lbl: {"dates": [], "values": []} for lbl in targets}
+    sorted_dates = sorted(daily_records.keys())[-DAYS_TO_KEEP:]
+    result = {lbl: {"dates": [], "values": []} for lbl in JGB_TARGET_COLUMNS}
     for d in sorted_dates:
-        for lbl in targets:
-            if lbl in daily_records[d]:
+        row = daily_records[d]
+        for lbl in JGB_TARGET_COLUMNS:
+            if lbl in row:
                 result[lbl]["dates"].append(d)
-                result[lbl]["values"].append(daily_records[d][lbl])
+                result[lbl]["values"].append(row[lbl])
     return result
 
 
 def fetch_cgpi():
-    raw = http_get(CGPI_URL)
-    text = raw.decode("utf-8", errors="replace")
-    dates, values = [], []
-    for row in csv.reader(text.splitlines()):
-        if not row or len(row) < 2:
-            continue
-        m = re.match(r"^(\d{4})-(\d{2})", row[0].strip())
-        if m:
-            yyyy, mm = m.groups()
-            if int(yyyy) >= 2015:
-                try:
-                    val = round(float(row[1].strip()), 2)
-                    dates.append(f"{yyyy}-{mm}")
-                    values.append(val)
-                except ValueError:
-                    pass
-    if not dates:
-        raise RuntimeError("企業物価指数のデータ行が0件です")
+    """日銀APIから国内企業物価指数を取得"""
+    raw = http_get(BOJ_API_URL)
+    data = json.loads(raw.decode("utf-8"))
+
+    # STATUS判定
+    if str(data.get("STATUS")) != "200":
+        raise RuntimeError(f"日銀APIエラー: {data.get('MESSAGE', data)}")
+
+    resultset = data.get("RESULTSET", [])
+    if not resultset:
+        raise RuntimeError(f"日銀APIのRESULTSETが空です: {data}")
+
+    entry = resultset[0] if isinstance(resultset, list) else resultset
+
+    # 【重要】日銀APIの正式キー OBSERVATION から抽出
+    observations = entry.get("OBSERVATION", [])
+    if not observations:
+        raise RuntimeError(f"OBSERVATIONが見つかりません。取得キー一覧: {list(entry.keys())}")
+
+    dates = []
+    values = []
+    for item in observations:
+        d_str = str(item.get("SURVEY_DATE", "")).strip()
+        v_str = str(item.get("OBS_VALUE", "")).replace("-", "").strip()
+
+        # 202401 -> 2024-01 に変換
+        if len(d_str) >= 6:
+            dates.append(f"{d_str[:4]}-{d_str[4:6]}")
+        else:
+            dates.append(d_str)
+
+        try:
+            values.append(round(float(v_str), 2))
+        except (ValueError, TypeError):
+            values.append(None)
+
     return {"国内企業物価指数(総平均)": {"dates": dates, "values": values}}
 
 
-if __name__ == "__main__":
-    jgb_data = fetch_jgb()
-    with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
-        json.dump(jgb_data, f, ensure_ascii=False, indent=2)
-    print(f"JGB完了: {len(jgb_data['長期(10年)']['dates'])} 件")
+def main():
+    print("=== データ取得処理開始 ===")
 
-    cgpi_data = fetch_cgpi()
-    with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
-        json.dump(cgpi_data, f, ensure_ascii=False, indent=2)
-    print(f"CGPI完了: {len(cgpi_data['国内企業物価指数(総平均)']['dates'])} 件 (最新: {cgpi_data['国内企業物価指数(総平均)']['dates'][-1]})")
+    # 1. 国債
+    try:
+        jgb = fetch_jgb_yields()
+        with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
+            json.dump(jgb, f, ensure_ascii=False, indent=2)
+        dates = jgb.get("長期(10年)", {}).get("dates", [])
+        print(f"[OK] data/jgb_yields.json 作成成功 ({len(dates)}営業日分, 最新: {dates[-1]})")
+    except Exception as e:
+        print(f"[ERROR] 国債利回り取得失敗: {e}")
+
+    # 2. 企業物価指数
+    try:
+        cgpi = fetch_cgpi()
+        with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
+            json.dump(cgpi, f, ensure_ascii=False, indent=2)
+        c_dates = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", [])
+        c_vals = cgpi.get("国内企業物価指数(総平均)", {}).get("values", [])
+        print(f"[OK] data/cgpi.json 作成成功 ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]} = {c_vals[-1]})")
+    except Exception as e:
+        print(f"[ERROR] 企業物価指数取得失敗: {e}")
+
+    print("==========================")
+
+
+if __name__ == "__main__":
+    main()
