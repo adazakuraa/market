@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-data/jgb_yields.json と data/cgpi.json から、日本の経済状況ページ(docs/japan_economy.html)を生成する。
+data/jgb_yields.json と data/cgpi.json から docs/japan_economy.html を生成する。
 """
 import os
 import json
@@ -14,6 +14,7 @@ except NameError:
 BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..")) if os.path.basename(CURRENT_DIR) == "scripts" else CURRENT_DIR
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DOCS_DIR = os.path.join(BASE_DIR, "docs")
+os.makedirs(DOCS_DIR, exist_ok=True)
 
 IN_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 IN_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
@@ -118,7 +119,7 @@ def main():
     <button class="period-btn-cgpi active-period" data-months="0">全期間</button>
   </div>
   {cgpi_charts_html or '<div class="empty-note">データがありません</div>'}
-  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行 時系列統計データ検索サイト。企業物価指数は月次データのため、期間表示は月単位です。</div>
+  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。企業物価指数は月次データです。</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -177,7 +178,7 @@ def main():
     }});
 
     // ==== 企業物価指数(月次) ====
-    let cgpiMonths = 0; // 0 = 全期間
+    let cgpiMonths = 0;
     let cgpiCharts = [];
     function buildCgpiCharts() {{
       cgpiCharts.forEach(c => c.destroy());
@@ -224,10 +225,9 @@ def main():
 </body>
 </html>
 """
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"Saved -> {OUT_PATH}")
+    print(f"Generated -> {OUT_PATH}")
 
 
 if __name__ == "__main__":
