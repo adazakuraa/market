@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-日本国債利回り(財務省公式CSV・日次最新版)と国内企業物価指数(日本銀行API)を取得する。
+日本国債利回り(財務省: 過去＋今月最新を結合)と国内企業物価指数(日銀API)を取得する。
 
 出力:
 - data/jgb_yields.json
@@ -23,8 +23,10 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 OUT_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
 OUT_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
 
-# 【修正】日々更新される最新の国債CSV URLに変更
-MOF_JGB_CSV_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
+# 過去データ(先月末まで)と最新データ(今月分)の2つのURL
+MOF_JGB_ALL_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
+MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
+
 BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getData?format=json&lang=jp&code=PRCG20_2200000000&startDate=201501"
 
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
@@ -60,37 +62,70 @@ def parse_wareki_date(val):
     return None
 
 
-def fetch_jgb_yields():
-    """財務省の最新国債金利情報CSVを取得"""
-    raw = http_get(MOF_JGB_CSV_URL)
-    text = raw.decode("cp932", errors="replace")
+def parse_jgb_csv(raw_bytes, data_dict):
+    """CSVをパースして data_dict {date: {label: value}} に格納（重複は上書き）"""
+    text = raw_bytes.decode("cp932", errors="replace")
     lines = text.splitlines()
 
     header_idx = next((i for i, line in enumerate(lines) if "基準日" in line), None)
     if header_idx is None:
-        raise RuntimeError("財務省CSVのヘッダー行が見つかりませんでした")
+        return
 
     reader = csv.reader(lines[header_idx:])
     headers = [h.strip() for h in next(reader)]
-
     col_map = {lbl: headers.index(col) for lbl, col in JGB_TARGET_COLUMNS.items() if col in headers}
-    result = {k: {"dates": [], "values": []} for k in col_map}
 
-    for row in list(reader)[-DAYS_TO_KEEP:]:
+    for row in reader:
         if not row:
             continue
         date_str = parse_wareki_date(row[0])
         if not date_str:
             continue
+
+        if date_str not in data_dict:
+            data_dict[date_str] = {}
+
         for label, idx in col_map.items():
             if idx < len(row):
                 val_str = row[idx].replace("-", "").strip()
                 try:
-                    val = round(float(val_str), 3)
-                    result[label]["dates"].append(date_str)
-                    result[label]["values"].append(val)
+                    data_dict[date_str][label] = round(float(val_str), 3)
                 except ValueError:
                     pass
+
+
+def fetch_jgb_yields():
+    """過去CSVと今月最新CSVの両方を取得してマージする"""
+    daily_records = {}
+
+    # 1. 過去全期間CSVを取得
+    try:
+        raw_all = http_get(MOF_JGB_ALL_URL)
+        parse_jgb_csv(raw_all, daily_records)
+    except Exception as e:
+        print(f"[warn] 過去CSVの取得に失敗: {e}")
+
+    # 2. 今月の最新CSVを取得してマージ
+    try:
+        raw_cur = http_get(MOF_JGB_CURRENT_URL)
+        parse_jgb_csv(raw_cur, daily_records)
+    except Exception as e:
+        print(f"[warn] 最新CSVの取得に失敗: {e}")
+
+    if not daily_records:
+        raise RuntimeError("国債データが取得できませんでした")
+
+    # 日付昇順でソートして直近分を切り出す
+    sorted_dates = sorted(daily_records.keys())[-DAYS_TO_KEEP:]
+
+    result = {label: {"dates": [], "values": []} for label in JGB_TARGET_COLUMNS}
+    for d in sorted_dates:
+        row_vals = daily_records[d]
+        for label in JGB_TARGET_COLUMNS:
+            if label in row_vals:
+                result[label]["dates"].append(d)
+                result[label]["values"].append(row_vals[label])
+
     return result
 
 
@@ -125,8 +160,8 @@ def main():
         jgb = fetch_jgb_yields()
         with open(OUT_JGB_PATH, "w", encoding="utf-8") as f:
             json.dump(jgb, f, ensure_ascii=False, indent=2)
-        latest_date = jgb.get("長期(10年)", {}).get("dates", ["-"])[-1]
-        print(f"Saved JGB yields ({len(jgb)}系列, 最新日: {latest_date}) -> {OUT_JGB_PATH}")
+        dates = jgb.get("長期(10年)", {}).get("dates", [])
+        print(f"Saved JGB yields ({len(dates)}営業日分, 期間: {dates[0]} 〜 {dates[-1]}) -> {OUT_JGB_PATH}")
     except Exception as e:
         print(f"[error] 国債利回りの取得に失敗しました: {e}")
 
@@ -134,8 +169,8 @@ def main():
         cgpi = fetch_cgpi()
         with open(OUT_CGPI_PATH, "w", encoding="utf-8") as f:
             json.dump(cgpi, f, ensure_ascii=False, indent=2)
-        latest_m = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", ["-"])[-1]
-        print(f"Saved CGPI (最新月: {latest_m}) -> {OUT_CGPI_PATH}")
+        c_dates = cgpi.get("国内企業物価指数(総平均)", {}).get("dates", [])
+        print(f"Saved CGPI ({len(c_dates)}ヶ月分, 最新: {c_dates[-1]}) -> {OUT_CGPI_PATH}")
     except Exception as e:
         print(f"[error] 企業物価指数の取得に失敗しました: {e}")
 
