@@ -46,9 +46,10 @@
     <a href="japan_economy.html" class="active">日本の経済状況</a>
     <a href="overseas.html">海外指標</a>
     <a href="commodities.html">資源</a>
+    <a href="calendar.html">経済指標カレンダー</a>
   </nav>
   <h1>日本の経済状況</h1>
-  <div class="updated">最終更新: 2026-08-19 16:28 JST</div>
+  <div class="updated">最終更新: 2026-08-19 18:23 JST</div>
 
   <h2>国債利回り（短期・中期・長期）</h2>
   <div class="period-controls" id="jgb-period-controls">
@@ -67,7 +68,7 @@
     <button class="period-btn-cgpi active-period" data-months="0">全期間</button>
   </div>
   <div class="chart-box"><h3>国内企業物価指数(総平均)</h3><canvas id="cgpi-chart-0" height="180"></canvas></div>
-  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。</div>
+  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行 時系列統計データ検索サイト。企業物価指数は月次データのため、期間表示は月単位です。</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -78,8 +79,7 @@
     const COLORS = ["#4caf50", "#2196f3", "#ff9800", "#e91e63"];
 
     function sliceTail(arr, n) {
-      if (!arr || !arr.length) return [];
-      if (!n || n <= 0 || arr.length <= n) return arr;
+      if (n <= 0 || arr.length <= n) return arr;
       return arr.slice(arr.length - n);
     }
 
@@ -91,27 +91,20 @@
       jgbCharts = [];
       JGB_LABELS.forEach((label, i) => {
         const series = JGB_DATA[label];
-        if (!series || !series.dates || !series.dates.length) return;
-        const el = document.getElementById('jgb-chart-' + i);
-        if (!el) return;
-        const ctx = el.getContext('2d');
+        if (!series) return;
+        const ctx = document.getElementById('jgb-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: sliceTail(series.dates, jgbDays),
             datasets: [{
-              label: label,
-              data: sliceTail(series.values, jgbDays),
-              borderColor: COLORS[i % COLORS.length],
-              backgroundColor: COLORS[i % COLORS.length],
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.15,
+              label: label, data: sliceTail(series.values, jgbDays),
+              borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length],
+              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
             }],
           },
           options: {
-            responsive: true,
-            animation: false,
+            responsive: true, animation: false,
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { display: false } },
             scales: {
@@ -134,34 +127,27 @@
     });
 
     // ==== 企業物価指数(月次) ====
-    let cgpiMonths = 0;
+    let cgpiMonths = 0; // 0 = 全期間
     let cgpiCharts = [];
     function buildCgpiCharts() {
       cgpiCharts.forEach(c => c.destroy());
       cgpiCharts = [];
       CGPI_LABELS.forEach((label, i) => {
         const series = CGPI_DATA[label];
-        if (!series || !series.dates || !series.dates.length) return;
-        const el = document.getElementById('cgpi-chart-' + i);
-        if (!el) return;
-        const ctx = el.getContext('2d');
+        if (!series) return;
+        const ctx = document.getElementById('cgpi-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: sliceTail(series.dates, cgpiMonths),
             datasets: [{
-              label: label,
-              data: sliceTail(series.values, cgpiMonths),
-              borderColor: COLORS[(i + 1) % COLORS.length],
-              backgroundColor: COLORS[(i + 1) % COLORS.length],
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.15,
+              label: label, data: sliceTail(series.values, cgpiMonths),
+              borderColor: COLORS[(i + 1) % COLORS.length], backgroundColor: COLORS[(i + 1) % COLORS.length],
+              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
             }],
           },
           options: {
-            responsive: true,
-            animation: false,
+            responsive: true, animation: false,
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { display: false } },
             scales: {
