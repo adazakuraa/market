@@ -1,24 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-data/jgb_yields.json と data/cgpi.json から docs/japan_economy.html を生成する。
+data/jgb_yields.json と data/cgpi.json から、日本の経済状況ページ(docs/japan_economy.html)を生成する。
+国債利回りは日次データ用(1週間〜6ヶ月)、企業物価指数は月次データ用(1年〜全期間)の
+別々の期間切り替えボタンを持つ。
 """
 import os
 import json
 from datetime import datetime, timezone, timedelta
 
-try:
-    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    CURRENT_DIR = os.getcwd()
-
-BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..")) if os.path.basename(CURRENT_DIR) == "scripts" else CURRENT_DIR
-DATA_DIR = os.path.join(BASE_DIR, "data")
-DOCS_DIR = os.path.join(BASE_DIR, "docs")
-os.makedirs(DOCS_DIR, exist_ok=True)
-
-IN_JGB_PATH = os.path.join(DATA_DIR, "jgb_yields.json")
-IN_CGPI_PATH = os.path.join(DATA_DIR, "cgpi.json")
-OUT_PATH = os.path.join(DOCS_DIR, "japan_economy.html")
+BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
+IN_JGB_PATH = os.path.join(BASE_DIR, "data", "jgb_yields.json")
+IN_CGPI_PATH = os.path.join(BASE_DIR, "data", "cgpi.json")
+OUT_PATH = os.path.join(BASE_DIR, "docs", "japan_economy.html")
 
 JST = timezone(timedelta(hours=9))
 CHART_COLORS = ["#4caf50", "#2196f3", "#ff9800", "#e91e63"]
@@ -98,6 +91,7 @@ def main():
     <a href="japan_economy.html" class="active">日本の経済状況</a>
     <a href="overseas.html">海外指標</a>
     <a href="commodities.html">資源</a>
+    <a href="calendar.html">経済指標カレンダー</a>
   </nav>
   <h1>日本の経済状況</h1>
   <div class="updated">最終更新: {now}</div>
@@ -119,7 +113,7 @@ def main():
     <button class="period-btn-cgpi active-period" data-months="0">全期間</button>
   </div>
   {cgpi_charts_html or '<div class="empty-note">データがありません</div>'}
-  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行(企業物価指数)。</div>
+  <div class="empty-note">出典: 財務省(国債金利情報)／日本銀行 時系列統計データ検索サイト。企業物価指数は月次データのため、期間表示は月単位です。</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script>
@@ -130,8 +124,7 @@ def main():
     const COLORS = {json.dumps(CHART_COLORS)};
 
     function sliceTail(arr, n) {{
-      if (!arr || !arr.length) return [];
-      if (!n || n <= 0 || arr.length <= n) return arr;
+      if (n <= 0 || arr.length <= n) return arr;
       return arr.slice(arr.length - n);
     }}
 
@@ -143,27 +136,20 @@ def main():
       jgbCharts = [];
       JGB_LABELS.forEach((label, i) => {{
         const series = JGB_DATA[label];
-        if (!series || !series.dates || !series.dates.length) return;
-        const el = document.getElementById('jgb-chart-' + i);
-        if (!el) return;
-        const ctx = el.getContext('2d');
+        if (!series) return;
+        const ctx = document.getElementById('jgb-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
           data: {{
             labels: sliceTail(series.dates, jgbDays),
             datasets: [{{
-              label: label,
-              data: sliceTail(series.values, jgbDays),
-              borderColor: COLORS[i % COLORS.length],
-              backgroundColor: COLORS[i % COLORS.length],
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.15,
+              label: label, data: sliceTail(series.values, jgbDays),
+              borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length],
+              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
             }}],
           }},
           options: {{
-            responsive: true,
-            animation: false,
+            responsive: true, animation: false,
             interaction: {{ mode: 'index', intersect: false }},
             plugins: {{ legend: {{ display: false }} }},
             scales: {{
@@ -186,34 +172,27 @@ def main():
     }});
 
     // ==== 企業物価指数(月次) ====
-    let cgpiMonths = 0;
+    let cgpiMonths = 0; // 0 = 全期間
     let cgpiCharts = [];
     function buildCgpiCharts() {{
       cgpiCharts.forEach(c => c.destroy());
       cgpiCharts = [];
       CGPI_LABELS.forEach((label, i) => {{
         const series = CGPI_DATA[label];
-        if (!series || !series.dates || !series.dates.length) return;
-        const el = document.getElementById('cgpi-chart-' + i);
-        if (!el) return;
-        const ctx = el.getContext('2d');
+        if (!series) return;
+        const ctx = document.getElementById('cgpi-chart-' + i).getContext('2d');
         const chart = new Chart(ctx, {{
           type: 'line',
           data: {{
             labels: sliceTail(series.dates, cgpiMonths),
             datasets: [{{
-              label: label,
-              data: sliceTail(series.values, cgpiMonths),
-              borderColor: COLORS[(i + 1) % COLORS.length],
-              backgroundColor: COLORS[(i + 1) % COLORS.length],
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.15,
+              label: label, data: sliceTail(series.values, cgpiMonths),
+              borderColor: COLORS[(i + 1) % COLORS.length], backgroundColor: COLORS[(i + 1) % COLORS.length],
+              borderWidth: 1.5, pointRadius: 0, tension: 0.15,
             }}],
           }},
           options: {{
-            responsive: true,
-            animation: false,
+            responsive: true, animation: false,
             interaction: {{ mode: 'index', intersect: false }},
             plugins: {{ legend: {{ display: false }} }},
             scales: {{
@@ -240,9 +219,10 @@ def main():
 </body>
 </html>
 """
+    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"Generated -> {OUT_PATH}")
+    print(f"Saved -> {OUT_PATH}")
 
 
 if __name__ == "__main__":

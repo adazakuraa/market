@@ -243,6 +243,7 @@ def main():
     <a href="japan_economy.html">日本の経済状況</a>
     <a href="overseas.html">海外指標</a>
     <a href="commodities.html">資源</a>
+    <a href="calendar.html">経済指標カレンダー</a>
   </nav>
   <h1>セクター強度ランキング（TOPIX比・相対強度）</h1>
   <div class="updated">最終更新: {now}</div>
