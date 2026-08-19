@@ -64,6 +64,12 @@ jobs:
       - name: Render Japan economy page
         run: python scripts/render_japan_economy.py
 
+      - name: Build calendar (BOJ / FOMC)
+        run: python scripts/build_calendar.py
+
+      - name: Render calendar page
+        run: python scripts/render_calendar.py
+
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
