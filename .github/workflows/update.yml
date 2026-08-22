@@ -70,6 +70,9 @@ jobs:
       - name: Render calendar page
         run: python scripts/render_calendar.py
 
+      - name: Train prediction models (ML)
+        run: python scripts/ml_predict.py
+
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
