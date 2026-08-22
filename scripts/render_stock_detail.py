@@ -66,6 +66,32 @@ def main():
     border-radius: 8px; padding: 10px; font-size: 0.85rem; cursor: pointer;
   }}
   .star-btn.active {{ background: #3a2f1b; border-color: #ffd54f; }}
+  .analyze-btn {{
+    display: block; width: 100%; margin-bottom: 14px;
+    background: #171a20; color: #b39ddb; border: 1px solid #3d2f5c;
+    border-radius: 8px; padding: 12px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+  }}
+  .analyze-btn:disabled {{ opacity: 0.5; }}
+  .analysis-box {{ background: #171a20; border-radius: 10px; padding: 16px; margin-bottom: 16px; }}
+  .prob-row {{ display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }}
+  .prob-value {{ font-size: 1.8rem; font-weight: 700; }}
+  .prob-value.up {{ color: #4caf50; }}
+  .prob-value.down {{ color: #f44336; }}
+  .prob-label {{ font-size: 0.78rem; color: #999; }}
+  .signal-badge {{ font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600; }}
+  .signal-buy {{ background: #1b3a24; color: #4caf50; }}
+  .signal-none {{ background: #23262e; color: #999; }}
+  .metric-grid {{ display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }}
+  .metric-chip {{ background: #0f1115; border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; flex: 1; min-width: 70px; text-align: center; }}
+  .metric-chip b {{ display: block; font-size: 1rem; margin-top: 2px; }}
+  .imp-bar-row {{ display: flex; align-items: center; gap: 8px; font-size: 0.72rem; margin-bottom: 5px; }}
+  .imp-bar-label {{ width: 110px; color: #ccc; text-align: right; flex-shrink: 0; }}
+  .imp-bar-track {{ flex: 1; background: #0f1115; border-radius: 4px; height: 10px; overflow: hidden; }}
+  .imp-bar-fill {{ background: #6ab7ff; height: 100%; }}
+  .rule-box {{ background: #0f1115; border-radius: 8px; padding: 10px 12px; font-size: 0.75rem; margin-bottom: 8px; line-height: 1.6; }}
+  .rule-box.buy {{ border-left: 3px solid #4caf50; }}
+  .rule-box.sell {{ border-left: 3px solid #f44336; }}
+  .analysis-note {{ font-size: 0.68rem; color: #777; line-height: 1.6; margin-top: 10px; }}
 </style>
 </head>
 <body>
@@ -89,6 +115,9 @@ def main():
 
   <select id="ticker-select"></select>
   <button id="star-btn" class="star-btn">★ ウォッチに追加</button>
+  <button id="analyze-btn" class="analyze-btn">🔮 AI分析する（上昇予測・売買パターン）</button>
+
+  <div id="analysis-area" style="display:none;"></div>
 
   <div class="stat-row" id="stat-row"></div>
   <div id="loading" class="loading" style="display:none;">読み込み中...</div>
@@ -230,9 +259,127 @@ def main():
       ], d.dates, '');
     }}
 
+    // ==== AI分析(予測モデル結果の取得・表示) ====
+    function featureLabel(name) {{
+      const labels = {{
+        rsi14: 'RSI14', macd: 'MACD', macd_signal: 'MACDシグナル', macd_hist: 'MACDヒスト',
+        atr14: 'ATR14', adx14: 'ADX14', plus_di: '+DI', minus_di: '-DI',
+        obv_change_20d: 'OBV20日変化', price_vs_ma25: '価格/MA25乖離', price_vs_ma75: '価格/MA75乖離',
+        ma25_vs_ma75: 'MA25/MA75乖離', return_1d: '1日リターン', return_3d: '3日リターン',
+        return_5d: '5日リターン', return_10d: '10日リターン', volume_ratio: '出来高比率',
+        bb_width: 'ボリンジャー幅', macro_usdjpy: '米ドル/円', macro_usdjpy_chg20d: '米ドル/円20日変化',
+        macro_oil: '原油価格', macro_oil_chg20d: '原油20日変化', macro_cgpi: '企業物価指数',
+        macro_cgpi_chg20d: '企業物価指数変化', fund_per: 'PER', fund_pbr: 'PBR', fund_dividend_yield: '配当利回り',
+      }};
+      return labels[name] || name;
+    }}
+
+    function ruleHtml(rule, kind) {{
+      if (!rule) return `<div class="rule-box ${{kind}}">十分な確信度のパターンは見つかりませんでした。</div>`;
+      const pct = (rule.precision_up * 100).toFixed(1);
+      return `<div class="rule-box ${{kind}}">
+        条件: ${{rule.path.join(' かつ ')}}<br>
+        該当${{rule.n_samples}}件中、上昇的中率 <b>${{pct}}%</b>
+      </div>`;
+    }}
+
+    function renderAnalysis(result) {{
+      const area = document.getElementById('analysis-area');
+      if (result.status !== 'ok') {{
+        area.innerHTML = `<div class="analysis-box"><div class="analysis-note">この銘柄はデータ不足のため分析できませんでした（学習に必要な期間が足りません）。</div></div>`;
+        area.style.display = 'block';
+        return;
+      }}
+
+      const probPct = (result.latest_prob_up * 100).toFixed(1);
+      const isUp = result.latest_prob_up >= result.decision_threshold;
+      const signalHtml = result.signal === 'buy_candidate'
+        ? '<span class="signal-badge signal-buy">買い候補シグナル</span>'
+        : '<span class="signal-badge signal-none">シグナルなし</span>';
+
+      const m = result.metrics;
+      const metricsHtml = `
+        <div class="metric-grid">
+          <div class="metric-chip">Accuracy<b>${{(m.accuracy*100).toFixed(0)}}%</b></div>
+          <div class="metric-chip">Precision<b>${{(m.precision*100).toFixed(0)}}%</b></div>
+          <div class="metric-chip">Recall<b>${{(m.recall*100).toFixed(0)}}%</b></div>
+          <div class="metric-chip">F1<b>${{(m.f1*100).toFixed(0)}}%</b></div>
+        </div>`;
+
+      const maxImp = result.feature_importance.length ? result.feature_importance[0].importance : 1;
+      const impHtml = result.feature_importance.map(f => `
+        <div class="imp-bar-row">
+          <div class="imp-bar-label">${{featureLabel(f.feature)}}</div>
+          <div class="imp-bar-track"><div class="imp-bar-fill" style="width:${{(f.importance/maxImp*100).toFixed(0)}}%"></div></div>
+          <div>${{(f.importance*100).toFixed(1)}}%</div>
+        </div>`).join('');
+
+      let btHtml = '<div class="analysis-note">有効な売買閾値の組み合わせが見つかりませんでした。</div>';
+      if (result.backtest) {{
+        const bt = result.backtest;
+        btHtml = `<div class="rule-box">
+          確率${{(bt.buy_threshold*100).toFixed(0)}}%以上で買い、${{(bt.sell_threshold*100).toFixed(0)}}%以下(または保有10日)で売る場合:<br>
+          過去${{bt.n_trades}}回の取引で、平均リターン <b>${{(bt.avg_return_per_trade*100).toFixed(2)}}%/回</b>
+        </div>`;
+      }}
+
+      area.innerHTML = `
+        <div class="analysis-box">
+          <div class="prob-row">
+            <div>
+              <div class="prob-value ${{isUp ? 'up' : 'down'}}">${{probPct}}%</div>
+              <div class="prob-label">${{result.horizon_days}}営業日後に${{(result.up_threshold*100).toFixed(0)}}%以上上昇する確率</div>
+            </div>
+            ${{signalHtml}}
+          </div>
+          ${{metricsHtml}}
+          <div class="analysis-note">評価指標はテスト期間(直近${{result.n_test}}営業日、学習には使っていない期間)での成績です。学習データ${{result.n_train}}件。使用モデル: ${{result.model_used}}</div>
+
+          <h3 style="margin-top:16px;">特徴量重要度</h3>
+          ${{impHtml}}
+
+          <h3 style="margin-top:16px;">買いやすいパターン</h3>
+          ${{ruleHtml(result.buy_rule, 'buy')}}
+
+          <h3 style="margin-top:10px;">売りやすい(下落しやすい)パターン</h3>
+          ${{ruleHtml(result.sell_rule, 'sell')}}
+
+          <h3 style="margin-top:16px;">売買閾値バックテスト</h3>
+          ${{btHtml}}
+          <div class="analysis-note">※ 過去データ上の最適化であり、将来の利益を保証するものではありません。投資判断はご自身の責任でお願いします。</div>
+        </div>`;
+      area.style.display = 'block';
+    }}
+
+    async function analyzeCurrentTicker() {{
+      const ticker = select.value;
+      const code = ticker.replace('.T', '');
+      const btn = document.getElementById('analyze-btn');
+      const area = document.getElementById('analysis-area');
+      btn.disabled = true;
+      btn.textContent = '分析中...';
+      area.style.display = 'block';
+      area.innerHTML = '<div class="analysis-box"><div class="loading">読み込み中...</div></div>';
+
+      try {{
+        const res = await fetch(`predictions/${{code}}.json`);
+        if (!res.ok) throw new Error('この銘柄の分析データはまだありません');
+        const result = await res.json();
+        renderAnalysis(result);
+      }} catch (e) {{
+        area.innerHTML = `<div class="analysis-box"><div class="analysis-note">分析データを取得できませんでした（${{e.message}}）。この銘柄は日次バッチの対象外か、まだ分析が実行されていない可能性があります。</div></div>`;
+      }} finally {{
+        btn.disabled = false;
+        btn.textContent = '🔮 AI分析する（上昇予測・売買パターン）';
+      }}
+    }}
+
+    document.getElementById('analyze-btn').addEventListener('click', analyzeCurrentTicker);
+
     select.addEventListener('change', () => {{
       loadAndRender(select.value);
       updateStarBtn();
+      document.getElementById('analysis-area').style.display = 'none';
     }});
     if (INDEX.length > 0) {{
       loadAndRender(select.value || INDEX[0].ticker);
