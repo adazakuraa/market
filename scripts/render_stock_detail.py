@@ -279,10 +279,14 @@ def main():
 
     function ruleHtml(rule, kind) {{
       if (!rule) return `<div class="rule-box ${{kind}}">十分な確信度のパターンは見つかりませんでした。</div>`;
-      const pct = (rule.precision_up * 100).toFixed(1);
+      const isSell = kind === 'sell';
+      const pct = isSell
+        ? ((1 - rule.precision_up) * 100).toFixed(1)
+        : (rule.precision_up * 100).toFixed(1);
+      const label = isSell ? '下落的中率' : '上昇的中率';
       return `<div class="rule-box ${{kind}}">
         条件: ${{rule.path.join(' かつ ')}}<br>
-        該当${{rule.n_samples}}件中、上昇的中率 <b>${{pct}}%</b>
+        該当${{rule.n_samples}}件中、${{label}} <b>${{pct}}%</b>
       </div>`;
     }}
 
