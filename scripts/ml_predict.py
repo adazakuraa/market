@@ -33,6 +33,7 @@ PREDICTIONS_DIR = os.path.join(BASE_DIR, "docs", "predictions")
 OVERSEAS_PATH = os.path.join(BASE_DIR, "data", "overseas.json")
 COMMODITIES_PATH = os.path.join(BASE_DIR, "data", "commodities.json")
 CGPI_PATH = os.path.join(BASE_DIR, "data", "cgpi.json")
+JGB_PATH = os.path.join(BASE_DIR, "data", "jgb_yields.json")
 
 HORIZON_DAYS = 5
 UP_THRESHOLD = 0.02
@@ -71,6 +72,13 @@ def load_macro_series():
         # 月次(YYYY-MM)なので、月初日付にしてから日次にreindex+ffillできるようにする
         idx = pd.to_datetime([f"{d}-01" for d in s["dates"]])
         macro["cgpi"] = pd.Series(s["values"], index=idx)
+
+    jgb = load_json(JGB_PATH) or {}
+    jgb_key_map = {"短期(2年)": "jgb_2y", "中期(5年)": "jgb_5y", "長期(10年)": "jgb_10y"}
+    for label, key in jgb_key_map.items():
+        if label in jgb:
+            s = jgb[label]
+            macro[key] = pd.Series(s["values"], index=pd.to_datetime(s["dates"]))
 
     return macro
 

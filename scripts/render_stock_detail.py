@@ -270,6 +270,9 @@ def main():
         bb_width: 'ボリンジャー幅', macro_usdjpy: '米ドル/円', macro_usdjpy_chg20d: '米ドル/円20日変化',
         macro_oil: '原油価格', macro_oil_chg20d: '原油20日変化', macro_cgpi: '企業物価指数',
         macro_cgpi_chg20d: '企業物価指数変化', fund_per: 'PER', fund_pbr: 'PBR', fund_dividend_yield: '配当利回り',
+        macro_jgb_2y: '国債利回り(2年)', macro_jgb_2y_chg20d: '国債利回り2年20日変化',
+        macro_jgb_5y: '国債利回り(5年)', macro_jgb_5y_chg20d: '国債利回り5年20日変化',
+        macro_jgb_10y: '国債利回り(10年)', macro_jgb_10y_chg20d: '国債利回り10年20日変化',
       }};
       return labels[name] || name;
     }}

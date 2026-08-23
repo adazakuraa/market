@@ -63,7 +63,7 @@ def build_features(close, high, low, volume, macro=None, fundamentals=None):
     # ==== マクロ特徴量(為替・原油・企業物価指数など) ====
     if macro:
         for name, series in macro.items():
-            aligned = series.reindex(df.index).ffill()
+            aligned = series.reindex(df.index).ffill().bfill()  # 先頭がわずかに欠けても切り捨てないための保険
             df[f"macro_{name}"] = aligned
             df[f"macro_{name}_chg20d"] = aligned.pct_change(20)
 
@@ -131,7 +131,7 @@ def build_features_from_timeseries(ts, macro=None, fundamentals=None):
 
     if macro:
         for name, series in macro.items():
-            aligned = series.reindex(df.index).ffill()
+            aligned = series.reindex(df.index).ffill().bfill()  # 先頭がわずかに欠けても切り捨てないための保険
             df[f"macro_{name}"] = aligned
             df[f"macro_{name}_chg20d"] = aligned.pct_change(20)
 

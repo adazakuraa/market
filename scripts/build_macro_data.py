@@ -18,7 +18,7 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 OUT_OVERSEAS_PATH = os.path.join(BASE_DIR, "data", "overseas.json")
 OUT_COMMODITIES_PATH = os.path.join(BASE_DIR, "data", "commodities.json")
 
-LOOKBACK_PERIOD = "7mo"  # 6ヶ月表示に余裕を持たせる
+LOOKBACK_PERIOD = "1y"  # 予測モデルの特徴量として使うため、株価データと同じ期間を確保
 
 OVERSEAS_TICKERS = {
     "米ドル/円": "JPY=X",
