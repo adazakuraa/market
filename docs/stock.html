@@ -80,7 +80,7 @@
     <a href="calendar.html">経済指標カレンダー</a>
   </nav>
   <h1>銘柄詳細</h1>
-  <div class="updated">最終更新: 2026-08-23 09:56 JST</div>
+  <div class="updated">最終更新: 2026-08-23 20:56 JST</div>
 
   <select id="ticker-select"></select>
   <button id="star-btn" class="star-btn">★ ウォッチに追加</button>
@@ -248,10 +248,14 @@
 
     function ruleHtml(rule, kind) {
       if (!rule) return `<div class="rule-box ${kind}">十分な確信度のパターンは見つかりませんでした。</div>`;
-      const pct = (rule.precision_up * 100).toFixed(1);
+      const isSell = kind === 'sell';
+      const pct = isSell
+        ? ((1 - rule.precision_up) * 100).toFixed(1)
+        : (rule.precision_up * 100).toFixed(1);
+      const label = isSell ? '下落的中率' : '上昇的中率';
       return `<div class="rule-box ${kind}">
         条件: ${rule.path.join(' かつ ')}<br>
-        該当${rule.n_samples}件中、上昇的中率 <b>${pct}%</b>
+        該当${rule.n_samples}件中、${label} <b>${pct}%</b>
       </div>`;
     }
 
