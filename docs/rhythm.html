@@ -1307,22 +1307,30 @@ function stopSchedulerOnly(){
 
 /* ============================================================
    7. カウントイン
+   ノーツは判定される瞬間のTRAVEL_TIME秒前に画面上端に出現する必要が
+   あるため、カウントイン(3・2・1・叩け!)の開始タイミングを
+   「1曲目の頭(step0)がTRAVEL_TIME秒後に来るように」逆算する。
+   カウントインの長さ(4拍)よりTRAVEL_TIMEが長い場合は、その分だけ
+   カウントインの前に無音の助走時間を追加する。
 ============================================================ */
-function runCountIn(stage, cb){
+function runCountIn(stage, firstStepTime){
   const cd = document.getElementById('countdown');
   const beatDur = 60/stage.bpm;
-  const lead = 0.15;
+  const countInDur = 4*beatDur;
+  const tickStart = firstStepTime - countInDur; // 「3」の掛け声が鳴るタイミング
   for(let i=0;i<4;i++){
-    playTick(actx.currentTime + lead + i*beatDur, i===0);
+    playTick(tickStart + i*beatDur, i===0);
   }
+  const nowMs = actx.currentTime*1000;
+  const tickStartMs = tickStart*1000;
   const labels = ['3','2','1','叩け！'];
   labels.forEach((l,i)=>{
+    const delay = Math.max(0, tickStartMs + i*beatDur*1000 - nowMs);
     setTimeout(()=>{ cd.textContent = l; cd.style.opacity='1';
       cd.style.transform='scale(1.3)';
       requestAnimationFrame(()=>{ cd.style.transition='opacity .5s, transform .5s'; cd.style.opacity='0'; cd.style.transform='scale(1)'; });
-    }, (lead + i*beatDur)*1000);
+    }, delay);
   });
-  setTimeout(cb, (lead + 4*beatDur)*1000);
 }
 
 /* ============================================================
@@ -1344,12 +1352,18 @@ function startStage(id){
   resizeCanvas();
   if(actx.state==='suspended') actx.resume();
   stepDur = 60/currentStage.bpm/4;
-  runCountIn(currentStage, ()=>{
-    nextStepTime = actx.currentTime + 0.05;
-    started = true;
-    schedulerLoop();
-    requestAnimationFrame(renderLoop);
-  });
+
+  const beatDur = 60/currentStage.bpm;
+  const countInDur = 4*beatDur;
+  // 1曲目の頭は「カウントインの長さ」と「ノーツが落ちてくるのに必要な時間」の
+  // 長い方だけ先の未来に置く。これでどんな速度設定でも必ず上端から降ってくる。
+  const preroll = Math.max(countInDur, TRAVEL_TIME) + 0.15;
+  nextStepTime = actx.currentTime + preroll;
+
+  runCountIn(currentStage, nextStepTime);
+  started = true; // 実際にヒットできるノーツはまだ遠くにあるので、この時点でtrueにしても安全
+  schedulerLoop();
+  requestAnimationFrame(renderLoop);
 }
 
 function endStage(){
