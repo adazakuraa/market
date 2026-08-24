@@ -62,22 +62,22 @@ html,body{
 .select-header{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 10px; border-bottom:1px solid var(--line);}
 .select-header h2{ font-family:'Shippori Antique',serif; font-size:20px; margin:0; color:var(--wood);}
 .iconbtn{ background:none; border:1px solid var(--line); color:var(--paper-dim); border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer;}
-#stage-list{ flex:1; overflow-y:auto; padding:10px 2px 24px; display:flex; flex-direction:column; gap:12px; -webkit-overflow-scrolling:touch;}
+#stage-list{ flex:1; overflow-y:auto; padding:10px 2px 24px; display:flex; flex-direction:column; gap:16px; -webkit-overflow-scrolling:touch;}
 .stage-card{
-  display:flex; align-items:center; gap:14px; background:var(--panel);
-  border:1px solid var(--line); border-radius:12px; padding:16px 16px; min-height:64px; position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:16px; background:var(--panel);
+  border:1px solid var(--line); border-radius:14px; padding:22px 18px; min-height:112px; position:relative; overflow:hidden; box-sizing:border-box;
 }
 .stage-card.locked{ opacity:.42; }
 .stage-belt{
-  width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  font-family:'Shippori Antique',serif; font-size:16px; flex-shrink:0; border:2px solid var(--beltcolor,var(--wood));
-  color:var(--beltcolor,var(--wood)); background:rgba(0,0,0,.25); padding:2px; text-align:center; line-height:1.1;
+  width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'Shippori Antique',serif; font-size:17px; flex-shrink:0; border:2px solid var(--beltcolor,var(--wood));
+  color:var(--beltcolor,var(--wood)); background:rgba(0,0,0,.25); padding:2px; text-align:center; line-height:1.15;
 }
 .stage-info{ flex:1; min-width:0; }
-.stage-info .name{ font-family:'Shippori Antique',serif; font-size:17px; color:var(--paper); }
-.stage-info .meta{ font-size:12px; color:var(--paper-dim); margin-top:5px; letter-spacing:.03em; line-height:1.5;}
-.stage-grade{ font-family:'Shippori Antique',serif; font-size:24px; width:32px; text-align:center; color:var(--gold); flex-shrink:0;}
-.stage-card .lock-ic{ font-size:22px; color:var(--paper-dim); }
+.stage-info .name{ font-family:'Shippori Antique',serif; font-size:18px; color:var(--paper); }
+.stage-info .meta{ font-size:12.5px; color:var(--paper-dim); margin-top:6px; letter-spacing:.03em; line-height:1.6;}
+.stage-grade{ font-family:'Shippori Antique',serif; font-size:26px; width:34px; text-align:center; color:var(--gold); flex-shrink:0;}
+.stage-card .lock-ic{ font-size:24px; color:var(--paper-dim); }
 #cat-tabs{ display:flex; gap:6px; padding:10px 2px 2px; overflow-x:auto; -webkit-overflow-scrolling:touch;}
 #cat-tabs button{
   flex:none; font-family:'Zen Kaku Gothic New',sans-serif; font-size:12px; font-weight:700; letter-spacing:.03em;
@@ -99,6 +99,20 @@ html,body{
   color:var(--paper-dim); background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:10px 16px;
 }
 .set-pills button.active{ color:#1a1207; background:var(--wood); border-color:transparent; }
+.num-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.num-row .num-label{ font-size:12px; color:var(--paper-dim); width:56px; flex-shrink:0; }
+.num-row button{
+  width:42px; height:42px; border-radius:8px; border:1px solid var(--line); background:var(--panel);
+  color:var(--paper); font-size:20px; font-weight:700; flex-shrink:0;
+}
+.num-row input[type="number"]{
+  flex:1; min-width:0; height:42px; border-radius:8px; border:1px solid var(--line); background:var(--bg2);
+  color:var(--paper); font-size:16px; text-align:center; font-family:'Zen Kaku Gothic New',sans-serif;
+  -moz-appearance:textfield;
+}
+.num-row input[type="number"]::-webkit-inner-spin-button,
+.num-row input[type="number"]::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+.num-row .num-unit{ font-size:12px; color:var(--paper-dim); width:28px; flex-shrink:0; }
 
 /* ---------- play screen ---------- */
 #screen-play{ background:var(--bg); }
@@ -188,21 +202,23 @@ html,body{
     </div>
     <div id="settings-body">
       <div class="set-group">
-        <div class="set-title">ノーツの速さ</div>
-        <div class="set-desc">速いほどノーツ同士の間隔が広がって見やすくなりますが、画面に出てから判定ラインに届くまでの時間は短くなります。</div>
-        <div class="set-pills" id="set-speed"></div>
+        <div class="set-title">ノーツの速さ(倍率)</div>
+        <div class="set-desc">数値が大きいほどノーツ同士の間隔が広がりますが、画面に出てから判定ラインに届くまでの時間は短くなります。目安: 0.4〜3.0</div>
+        <div class="num-row" id="num-speed"></div>
       </div>
       <div class="set-group">
-        <div class="set-title">判定ラインの位置</div>
-        <div class="set-desc">タップする位置の高さを調整します。</div>
-        <div class="set-pills" id="set-judgeline"></div>
+        <div class="set-title">判定ラインの位置(%)</div>
+        <div class="set-desc">画面の高さに対する判定ラインの位置です。数値が大きいほど下に来ます。目安: 50〜95</div>
+        <div class="num-row" id="num-judgeline"></div>
       </div>
       <div class="set-group">
-        <div class="set-title">判定の厳しさ</div>
-        <div class="set-desc">タイミングのズレをどこまで許容するかです。押しても反映されない場合は「甘め」を。</div>
-        <div class="set-pills" id="set-window"></div>
+        <div class="set-title">判定の許容範囲(ミリ秒)</div>
+        <div class="set-desc">PERFECT/GOOD/OKそれぞれの許容ズレ時間です。押しても反映されない場合は数値を大きくしてください。GOOD・OKはPERFECT以上の値にしてください。</div>
+        <div class="num-row" id="num-perfect"></div>
+        <div class="num-row" id="num-good"></div>
+        <div class="num-row" id="num-ok"></div>
       </div>
-      <button class="btn" id="btn-settings-reset" style="margin-top:20px;">初期設定に戻す</button>
+      <button class="btn" id="btn-settings-reset" style="margin-top:12px;">初期設定に戻す</button>
     </div>
   </section>
 
@@ -372,17 +388,17 @@ const EXTRA_STAGES = [
     pattern:{
       hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"x-x-x-x-x-x-x-x-",
+      kick:"x-x-----x-x-----",
     },
     desc:"突っ走る2ビート系パンクロック。" },
   { id:11, category:"jpop", belt:"J・6", name:"ダンスポップ四つ打ち", bpm:128, bars:10, rootFreq:110,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
+      hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
       kick:"x---x---x---x---",
     },
-    desc:"EDM由来のダンスポップキック、16分ハイハットで華やかに。" },
+    desc:"EDM由来のダンスポップキック、四つ打ちで華やかに。" },
   { id:12, category:"jpop", belt:"J・7", name:"R&Bグルーヴ", bpm:90, bars:10, rootFreq:82,
     lanes:["hihat","snare","kick"],
     pattern:{
@@ -434,7 +450,7 @@ const EXTRA_STAGES = [
     pattern:{
       hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"x-x-x-x-x-x-x-x-",
+      kick:"x-x---x-x-x---x-",
     },
     desc:"疾走感全開のオープニングテーマ定番ビート。" },
   { id:17, category:"anison", belt:"A・2", name:"熱血バトルテーマ", bpm:175, bars:12, rootFreq:98,
@@ -442,7 +458,7 @@ const EXTRA_STAGES = [
     pattern:{
       hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"xx--x-x-xx--x-x-",
+      kick:"xx--x---xx--x---",
       tom:"----------------",
     },
     fillEvery:4,
@@ -517,11 +533,11 @@ const EXTRA_STAGES = [
   { id:24, category:"anison", belt:"A・9", name:"魔法少女変身BGM", bpm:132, bars:10, rootFreq:130,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
+      hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
       kick:"x-------x-------",
     },
-    desc:"きらきらした16分ハイハットが特徴の変身BGM。" },
+    desc:"きらきらしたハイハットが特徴の変身BGM。" },
   { id:25, category:"anison", belt:"A・10", name:"エンドカードの余韻", bpm:60, bars:8, rootFreq:73,
     lanes:["hihat","snare","kick"],
     pattern:{
@@ -535,15 +551,15 @@ const EXTRA_STAGES = [
     pattern:{
       hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"x-x-x-x-x-x-x-x-",
+      kick:"x---x---x---x---",
     },
     desc:"超高速で駆け抜けるチップチューン風ビート。" },
   { id:27, category:"vocaloid", belt:"V・2", name:"ハイテンポポップ", bpm:175, bars:12, rootFreq:98,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
+      hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"x--x--x-x--x--x-",
+      kick:"x--x----x--x----",
     },
     desc:"ボーカロイド曲によくある超高速ポップビート。" },
   { id:28, category:"vocaloid", belt:"V・3", name:"ボカロバラード", bpm:85, bars:8, rootFreq:73,
@@ -580,15 +596,15 @@ const EXTRA_STAGES = [
   { id:31, category:"vocaloid", belt:"V・6", name:"電波ソング風", bpm:180, bars:12, rootFreq:130,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
-      snare:"--x-x-----x-x---",
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
       kick:"x-----x-x-----x-",
     },
     desc:"目まぐるしく動く電波ソング風の忙しいビート。" },
   { id:32, category:"vocaloid", belt:"V・7", name:"EDMクロスオーバー", bpm:128, bars:10, rootFreq:110,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
+      hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
       kick:"x---x---x---x---",
     },
@@ -621,10 +637,10 @@ const EXTRA_STAGES = [
     pattern:{
       hihat:"xxxxxxxxxxxxxxxx",
       snare:"----x-------x---",
-      kick:"x-x-x-x-x-x-x-x-",
+      kick:"x--x--x-x--x--x-",
       tom:"----------------",
     },
-    fillEvery:3,
+    fillEvery:4,
     fillPattern:{
       snare:"--x-x-x-x-x-x-xx",
       kick:"x--x--x--x--x---",
@@ -650,8 +666,8 @@ const ESSENTIAL_STAGES = [
     lanes:["hihat","snare","kick"],
     pattern:{
       hihat:"xxxxxxxxxxxxxxxx",
-      snare:"--x-x-x---x-x-x-",
-      kick:"x--x--x---x--x--",
+      snare:"----x-x-----x-x-",
+      kick:"x-----x---x-----",
     },
     desc:"16分の細かい刻みが特徴のファンクグルーヴ。" },
   { id:38, category:'essentials', subtype:"groove", belt:"定・3", name:"レゲエ ワンドロップ", bpm:80, bars:8, rootFreq:73,
@@ -707,17 +723,17 @@ const ESSENTIAL_STAGES = [
     pattern:{
       hihat:"x-x-x-x-x-x-x-x-",
       snare:"----x-------x---",
-      kick:"x-xxx-xxx-xxx-xx",
+      kick:"x-xx--xxx-xx--x-",
     },
     desc:"メタル定番、「タッカタッカ」と刻むギャロップキック。" },
   { id:45, category:'essentials', subtype:"groove", belt:"定・10", name:"高速ブラストビート風", bpm:190, bars:12, rootFreq:73,
     lanes:["hihat","snare","kick"],
     pattern:{
-      hihat:"xxxxxxxxxxxxxxxx",
-      snare:"x-x-x-x-x-x-x-x-",
-      kick:"-x-x-x-x-x-x-x-x",
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"x---x---x---x---",
+      kick:"--x---x---x---x-",
     },
-    desc:"キックとスネアが交互に連打される高速ブラストビート風。" },
+    desc:"キックとスネアが小刻みに絡み合う、ブラストビート風グルーヴ(練習用に簡略化)。" },
   { id:46, category:'essentials', subtype:"fill", belt:"フ・1", name:"8分タム回し", bpm:100, bars:8, rootFreq:98,
     lanes:["hihat","snare","kick","tom"],
     pattern:{
@@ -883,43 +899,75 @@ let progress = Store.get('beatdojo_progress', {unlocked:1, best:{}}); // best[st
 function saveProgress(){ Store.set('beatdojo_progress', progress); }
 
 /* ============================================================
-   4-b. ユーザー設定 (速度・判定ライン・判定の厳しさ)
+   4-b. ユーザー設定 (速度・判定ライン・判定の厳しさを数値で直接指定)
 ============================================================ */
-const SPEED_OPTIONS = [
-  { key:'slow',    label:'遅め',     factor:0.8 },
-  { key:'normal',  label:'標準',     factor:1.1 },
-  { key:'fast',    label:'速め',     factor:1.4 },
-  { key:'vfast',   label:'かなり速い', factor:1.8 },
+const SETTINGS_DEFAULT = {
+  speedFactor: 1.1,     // ノーツ速度倍率
+  judgeLinePct: 80,     // 判定ラインの位置(画面高さに対する%)
+  perfectMs: 80,        // PERFECT許容(ミリ秒)
+  goodMs: 160,          // GOOD許容(ミリ秒)
+  okMs: 260,            // OK許容(ミリ秒)
+};
+const SETTINGS_FIELDS = [
+  { key:'speedFactor', min:0.4, max:3.0, step:0.1, decimals:1, unit:'倍' },
+  { key:'judgeLinePct', min:50, max:95, step:1, decimals:0, unit:'%' },
+  { key:'perfectMs', min:20, max:300, step:5, decimals:0, unit:'ms' },
+  { key:'goodMs',    min:20, max:400, step:5, decimals:0, unit:'ms' },
+  { key:'okMs',      min:20, max:500, step:5, decimals:0, unit:'ms' },
 ];
-const JUDGELINE_OPTIONS = [
-  { key:'high',   label:'高め', ratio:0.68 },
-  { key:'mid',    label:'標準', ratio:0.80 },
-  { key:'low',    label:'低め', ratio:0.90 },
-];
-const WINDOW_OPTIONS = [
-  { key:'easy',   label:'甘め', mult:1.5 },
-  { key:'normal', label:'標準', mult:1.0 },
-  { key:'hard',   label:'厳しめ', mult:0.6 },
-];
-let settings = Object.assign({ speed:'normal', judgeline:'mid', window:'normal' }, Store.get('beatdojo_settings', {}));
-function saveSettings(){ Store.set('beatdojo_settings', settings); }
-function getOpt(list, key){ return list.find(o=>o.key===key) || list[0]; }
-
-function buildSettingsUI(){
-  buildPills('set-speed', SPEED_OPTIONS, settings.speed, v=>{ settings.speed=v; saveSettings(); buildSettingsUI(); });
-  buildPills('set-judgeline', JUDGELINE_OPTIONS, settings.judgeline, v=>{ settings.judgeline=v; saveSettings(); buildSettingsUI(); });
-  buildPills('set-window', WINDOW_OPTIONS, settings.window, v=>{ settings.window=v; saveSettings(); buildSettingsUI(); });
+function loadSettings(){
+  const saved = Store.get('beatdojo_settings', null);
+  if(saved && typeof saved.speedFactor === 'number') return Object.assign({}, SETTINGS_DEFAULT, saved);
+  return Object.assign({}, SETTINGS_DEFAULT);
 }
-function buildPills(containerId, options, currentKey, onPick){
+let settings = loadSettings();
+function saveSettings(){ Store.set('beatdojo_settings', settings); }
+
+function clampSettings(){
+  // GOOD・OKがPERFECT未満にならないよう自動で整える
+  if(settings.goodMs < settings.perfectMs) settings.goodMs = settings.perfectMs;
+  if(settings.okMs < settings.goodMs) settings.okMs = settings.goodMs;
+}
+
+function buildNumRow(containerId, field, labelText){
   const wrap = document.getElementById(containerId);
   wrap.innerHTML = '';
-  options.forEach(o=>{
-    const b = document.createElement('button');
-    b.textContent = o.label;
-    if(o.key===currentKey) b.classList.add('active');
-    b.addEventListener('click', ()=> onPick(o.key));
-    wrap.appendChild(b);
+  const label = document.createElement('div');
+  label.className = 'num-label'; label.textContent = labelText;
+  const minus = document.createElement('button'); minus.textContent = '−';
+  const input = document.createElement('input');
+  input.type = 'number'; input.inputMode = 'decimal';
+  input.min = field.min; input.max = field.max; input.step = field.step;
+  input.value = settings[field.key];
+  const plus = document.createElement('button'); plus.textContent = '＋';
+  const unit = document.createElement('div'); unit.className='num-unit'; unit.textContent = field.unit;
+
+  function apply(val){
+    val = Math.round(val / field.step) * field.step;
+    val = Math.min(field.max, Math.max(field.min, val));
+    val = parseFloat(val.toFixed(2));
+    settings[field.key] = val;
+    input.value = val;
+    clampSettings();
+    saveSettings();
+    buildSettingsUI(); // 依存関係(GOOD/OK自動補正など)を反映して全体を再描画
+  }
+  minus.addEventListener('click', ()=> apply(settings[field.key] - field.step));
+  plus.addEventListener('click', ()=> apply(settings[field.key] + field.step));
+  input.addEventListener('change', ()=>{
+    const v = parseFloat(input.value);
+    apply(isNaN(v) ? settings[field.key] : v);
   });
+
+  wrap.appendChild(label); wrap.appendChild(minus); wrap.appendChild(input); wrap.appendChild(plus); wrap.appendChild(unit);
+}
+
+function buildSettingsUI(){
+  buildNumRow('num-speed', SETTINGS_FIELDS[0], '速度');
+  buildNumRow('num-judgeline', SETTINGS_FIELDS[1], '位置');
+  buildNumRow('num-perfect', SETTINGS_FIELDS[2], 'PERFECT');
+  buildNumRow('num-good', SETTINGS_FIELDS[3], 'GOOD');
+  buildNumRow('num-ok', SETTINGS_FIELDS[4], 'OK');
 }
 let settingsReturnScreen = 'screen-title';
 function openSettings(fromScreen){
@@ -931,7 +979,7 @@ document.getElementById('btn-settings-title').addEventListener('click', ()=> ope
 document.getElementById('btn-settings-select').addEventListener('click', ()=> openSettings('screen-select'));
 document.getElementById('btn-settings-close').addEventListener('click', ()=> showScreen(settingsReturnScreen));
 document.getElementById('btn-settings-reset').addEventListener('click', ()=>{
-  settings = { speed:'normal', judgeline:'mid', window:'normal' };
+  settings = Object.assign({}, SETTINGS_DEFAULT);
   saveSettings(); buildSettingsUI();
 });
 
@@ -1040,7 +1088,6 @@ let finished = false;
 
 // これらは設定によって毎ステージ開始時に再計算される(下のrecalcFromSettingsを参照)
 const BASE_TRAVEL_TIME = 2.2;   // 秒: 速度係数1.0のときの基準到達時間
-const BASE_HIT_WINDOW = { perfect:0.08, good:0.16, ok:0.26 }; // 判定の厳しさ係数1.0のときの基準値
 let TRAVEL_TIME = BASE_TRAVEL_TIME;
 let SCHEDULE_AHEAD = TRAVEL_TIME + 0.3;
 let JUDGE_LINE_RATIO = 0.80;
@@ -1051,12 +1098,10 @@ let score = { perfect:0, good:0, ok:0, miss:0, combo:0, maxCombo:0 };
 let HIT_WINDOW = { perfect:0.08, good:0.16, ok:0.26 };
 
 function recalcFromSettings(){
-  const spd = getOpt(SPEED_OPTIONS, settings.speed).factor;
-  TRAVEL_TIME = BASE_TRAVEL_TIME / spd;
+  TRAVEL_TIME = BASE_TRAVEL_TIME / settings.speedFactor;
   SCHEDULE_AHEAD = TRAVEL_TIME + 0.3;
-  JUDGE_LINE_RATIO = getOpt(JUDGELINE_OPTIONS, settings.judgeline).ratio;
-  const wm = getOpt(WINDOW_OPTIONS, settings.window).mult;
-  HIT_WINDOW = { perfect: BASE_HIT_WINDOW.perfect*wm, good: BASE_HIT_WINDOW.good*wm, ok: BASE_HIT_WINDOW.ok*wm };
+  JUDGE_LINE_RATIO = settings.judgeLinePct / 100;
+  HIT_WINDOW = { perfect: settings.perfectMs/1000, good: settings.goodMs/1000, ok: settings.okMs/1000 };
 }
 
 /* ============================================================
