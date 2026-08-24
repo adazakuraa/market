@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ビート道場 | Beat Dojo</title>
+<meta name="theme-color" content="#15110d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Antique&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110d;
+  --bg2:#1e1710;
+  --panel:#241b12;
+  --line:#3a2c1a;
+  --wood:#c98a3b;
+  --wood-dim:#8a5a22;
+  --crimson:#c23b3b;
+  --gold:#d8c9a3;
+  --indigo:#5a6fae;
+  --paper:#eee6d6;
+  --paper-dim:#a99a7f;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0; padding:0; height:100%; overflow:hidden;
+  background:var(--bg); color:var(--paper);
+  font-family:'Zen Kaku Gothic New', -apple-system, 'Hiragino Sans', sans-serif;
+  touch-action:none; overscroll-behavior:none; user-select:none;
+}
+.disp{ font-family:'Shippori Antique', 'Zen Kaku Gothic New', serif; }
+#app{ position:fixed; inset:0; display:flex; flex-direction:column; }
+
+/* ---------- shared screen chrome ---------- */
+.screen{ position:absolute; inset:0; display:none; flex-direction:column; }
+.screen.active{ display:flex; }
+.bgtex{
+  position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(201,138,59,.18), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(90,111,174,.10), transparent 55%);
+}
+
+/* ---------- title screen ---------- */
+#screen-title{ align-items:center; justify-content:center; text-align:center; gap:6px; padding:24px; }
+.torii{ font-size:42px; opacity:.85; margin-bottom:2px; letter-spacing:2px;}
+.title-jp{ font-size:14vw; line-height:1; color:var(--wood); letter-spacing:.08em; text-shadow:0 0 24px rgba(201,138,59,.35); }
+.title-en{ font-size:12px; letter-spacing:.5em; color:var(--paper-dim); margin-top:8px; text-transform:uppercase;}
+.title-sub{ margin-top:22px; font-size:13px; color:var(--paper-dim); max-width:320px; line-height:1.8; }
+.btn{
+  font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700; font-size:16px; letter-spacing:.08em;
+  color:var(--paper); background:linear-gradient(180deg, var(--panel), var(--bg2));
+  border:1px solid var(--line); border-radius:6px; padding:14px 28px; cursor:pointer;
+}
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:linear-gradient(180deg,#e0a44e,var(--wood)); color:#1a1207; border:none; box-shadow:0 4px 0 var(--wood-dim), 0 8px 18px rgba(0,0,0,.4);}
+.btn-primary:active{ box-shadow:0 2px 0 var(--wood-dim); transform:translateY(2px);}
+#btn-start{ margin-top:30px; padding:16px 44px; font-size:18px;}
+
+/* ---------- stage select ---------- */
+#screen-select{ padding:16px 14px 10px; }
+.select-header{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 10px; border-bottom:1px solid var(--line);}
+.select-header h2{ font-family:'Shippori Antique',serif; font-size:20px; margin:0; color:var(--wood);}
+.iconbtn{ background:none; border:1px solid var(--line); color:var(--paper-dim); border-radius:50%; width:36px; height:36px; font-size:16px; cursor:pointer;}
+#stage-list{ flex:1; overflow-y:auto; padding:10px 2px 24px; display:flex; flex-direction:column; gap:12px; -webkit-overflow-scrolling:touch;}
+.stage-card{
+  display:flex; align-items:center; gap:14px; background:var(--panel);
+  border:1px solid var(--line); border-radius:12px; padding:16px 16px; min-height:64px; position:relative; overflow:hidden;
+}
+.stage-card.locked{ opacity:.42; }
+.stage-belt{
+  width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'Shippori Antique',serif; font-size:16px; flex-shrink:0; border:2px solid var(--beltcolor,var(--wood));
+  color:var(--beltcolor,var(--wood)); background:rgba(0,0,0,.25); padding:2px; text-align:center; line-height:1.1;
+}
+.stage-info{ flex:1; min-width:0; }
+.stage-info .name{ font-family:'Shippori Antique',serif; font-size:17px; color:var(--paper); }
+.stage-info .meta{ font-size:12px; color:var(--paper-dim); margin-top:5px; letter-spacing:.03em; line-height:1.5;}
+.stage-grade{ font-family:'Shippori Antique',serif; font-size:24px; width:32px; text-align:center; color:var(--gold); flex-shrink:0;}
+.stage-card .lock-ic{ font-size:22px; color:var(--paper-dim); }
+#cat-tabs{ display:flex; gap:6px; padding:10px 2px 2px; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+#cat-tabs button{
+  flex:none; font-family:'Zen Kaku Gothic New',sans-serif; font-size:12px; font-weight:700; letter-spacing:.03em;
+  color:var(--paper-dim); background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:8px 14px;
+}
+#cat-tabs button.active{ color:#1a1207; background:var(--tabcolor,var(--wood)); border-color:transparent; }
+.cat-heading{ font-family:'Shippori Antique',serif; font-size:13px; color:var(--headcolor,var(--paper-dim)); padding:10px 2px 0; letter-spacing:.05em; border-top:1px dashed var(--line); margin-top:4px;}
+.cat-heading:first-child{ border-top:none; margin-top:0; }
+.sub-heading{ font-size:11px; color:var(--paper-dim); padding:2px 4px; letter-spacing:.08em; opacity:.75;}
+
+/* ---------- settings ---------- */
+#settings-body{ flex:1; overflow-y:auto; padding:14px 4px 30px; -webkit-overflow-scrolling:touch;}
+.set-group{ margin-bottom:26px; }
+.set-title{ font-family:'Shippori Antique',serif; font-size:15px; color:var(--wood); margin-bottom:4px;}
+.set-desc{ font-size:11px; color:var(--paper-dim); line-height:1.6; margin-bottom:10px;}
+.set-pills{ display:flex; gap:8px; flex-wrap:wrap; }
+.set-pills button{
+  font-family:'Zen Kaku Gothic New',sans-serif; font-size:13px; font-weight:700;
+  color:var(--paper-dim); background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:10px 16px;
+}
+.set-pills button.active{ color:#1a1207; background:var(--wood); border-color:transparent; }
+
+/* ---------- play screen ---------- */
+#screen-play{ background:var(--bg); }
+#play-topbar{ display:flex; align-items:center; justify-content:space-between; padding:8px 14px; font-size:12px; color:var(--paper-dim); z-index:5;}
+#play-topbar .stagename{ font-family:'Shippori Antique',serif; font-size:14px; color:var(--wood);}
+#hud{ display:flex; gap:16px; align-items:center; }
+#hud .combo{ font-family:'Shippori Antique',serif; font-size:16px; color:var(--gold);}
+#canvas-wrap{ flex:1; position:relative; min-height:0;}
+#gamecanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+#judge-popup{
+  position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); pointer-events:none;
+  font-family:'Shippori Antique',serif; font-size:0; font-weight:700; opacity:0; z-index:6;
+}
+#countdown{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'Shippori Antique',serif; font-size:64px; color:var(--wood); pointer-events:none; z-index:7;
+  text-shadow:0 0 30px rgba(201,138,59,.5);
+}
+#pads{ display:flex; gap:0; padding:6px 6px calc(10px + env(safe-area-inset-bottom)); z-index:5;}
+.pad{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  border-radius:16px; border:2px solid var(--padcolor,#555); background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.06), rgba(0,0,0,.35));
+  color:var(--padcolor,#eee); height:118px; position:relative; overflow:visible; margin:0 3px;
+}
+.pad::before{
+  /* 見た目より広いタップ領域(隙間もカバーして押し逃しを防ぐ) */
+  content:''; position:absolute; top:-8px; bottom:-8px; left:-6px; right:-6px;
+}
+.pad .pad-label{ font-size:14px; font-weight:700; letter-spacing:.05em; }
+.pad .pad-key{ font-size:10px; opacity:.55; }
+.pad .flash{
+  position:absolute; inset:0; background:var(--padcolor,#fff); opacity:0; border-radius:14px;
+}
+#play-controls{ position:absolute; top:6px; right:8px; display:flex; gap:8px; z-index:8;}
+#play-controls button{ background:rgba(0,0,0,.3); border:1px solid var(--line); color:var(--paper-dim); border-radius:6px; padding:6px 10px; font-size:12px;}
+
+/* ---------- result screen ---------- */
+#screen-result{ align-items:center; justify-content:center; text-align:center; gap:6px; padding:20px;}
+#result-grade{ font-family:'Shippori Antique',serif; font-size:96px; color:var(--gold); line-height:1; text-shadow:0 0 40px rgba(216,201,163,.35);}
+#result-stagename{ font-size:13px; color:var(--paper-dim); margin-top:2px;}
+#result-stats{ display:flex; gap:22px; margin:20px 0 6px; }
+#result-stats div{ text-align:center; }
+#result-stats .val{ font-family:'Shippori Antique',serif; font-size:22px; color:var(--paper); }
+#result-stats .lbl{ font-size:10px; color:var(--paper-dim); letter-spacing:.05em; margin-top:2px;}
+#result-best{ font-size:12px; color:var(--wood); margin-top:2px;}
+#result-btns{ display:flex; gap:10px; margin-top:26px; }
+
+::-webkit-scrollbar{ width:6px; }
+::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TITLE -->
+  <section id="screen-title" class="screen active">
+    <div class="bgtex"></div>
+    <div class="torii">⛩</div>
+    <div class="title-jp disp">ビート道場</div>
+    <div class="title-en">B E A T &nbsp; D O J O</div>
+    <div class="title-sub">太鼓のリズムを、体で覚える。<br>基本の四拍子から、フィルを交えた上級グルーヴまで。<br>画面をタップして稽古を始めよう。</div>
+    <button id="btn-start" class="btn btn-primary">入門する</button>
+    <div style="margin-top:14px;font-size:11px;color:var(--paper-dim);">🔊 音を鳴らします。イヤホン推奨</div>
+    <button id="btn-settings-title" class="btn" style="margin-top:22px; font-size:13px; padding:10px 20px;">⚙ 設定</button>
+  </section>
+
+  <!-- STAGE SELECT -->
+  <section id="screen-select" class="screen">
+    <div class="bgtex"></div>
+    <div class="select-header">
+      <h2 class="disp">帯を選ぶ</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="iconbtn" id="btn-settings-select">⚙</button>
+        <button class="iconbtn" id="btn-mute-select">🔊</button>
+      </div>
+    </div>
+    <div id="cat-tabs"></div>
+    <div id="stage-list"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <div class="bgtex"></div>
+    <div class="select-header">
+      <h2 class="disp">設定</h2>
+      <button class="iconbtn" id="btn-settings-close">✕</button>
+    </div>
+    <div id="settings-body">
+      <div class="set-group">
+        <div class="set-title">ノーツの速さ</div>
+        <div class="set-desc">速いほどノーツ同士の間隔が広がって見やすくなりますが、画面に出てから判定ラインに届くまでの時間は短くなります。</div>
+        <div class="set-pills" id="set-speed"></div>
+      </div>
+      <div class="set-group">
+        <div class="set-title">判定ラインの位置</div>
+        <div class="set-desc">タップする位置の高さを調整します。</div>
+        <div class="set-pills" id="set-judgeline"></div>
+      </div>
+      <div class="set-group">
+        <div class="set-title">判定の厳しさ</div>
+        <div class="set-desc">タイミングのズレをどこまで許容するかです。押しても反映されない場合は「甘め」を。</div>
+        <div class="set-pills" id="set-window"></div>
+      </div>
+      <button class="btn" id="btn-settings-reset" style="margin-top:20px;">初期設定に戻す</button>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="screen-play" class="screen">
+    <div id="play-topbar">
+      <div class="stagename disp" id="play-stagename">-</div>
+      <div id="hud"><span id="hud-bpm">BPM --</span><span class="combo" id="hud-combo">0 combo</span></div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="gamecanvas"></canvas>
+      <div id="judge-popup"></div>
+      <div id="countdown"></div>
+      <div id="play-controls">
+        <button id="btn-mute-play">🔊</button>
+        <button id="btn-quit">✕ やめる</button>
+      </div>
+    </div>
+    <div id="pads"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="screen">
+    <div class="bgtex"></div>
+    <div id="result-stagename" class="disp"></div>
+    <div id="result-grade" class="disp">C</div>
+    <div id="result-stats">
+      <div><div class="val" id="stat-acc">0%</div><div class="lbl">精度</div></div>
+      <div><div class="val" id="stat-combo">0</div><div class="lbl">最大コンボ</div></div>
+      <div><div class="val" id="stat-score">0</div><div class="lbl">スコア</div></div>
+    </div>
+    <div id="result-best"></div>
+    <div id="result-btns">
+      <button class="btn" id="btn-retry">もう一度</button>
+      <button class="btn btn-primary" id="btn-tolist">帯選びへ</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   0. データ: 帯(ステージ)定義
+   16分音符グリッド(1小節=16ステップ) の文字列パターン
+   x = 打点 / - = 休符
+============================================================ */
+const LANES_DEF = {
+  hihat:{ label:'ハイハット', short:'HH', color:'#d8c9a3', key:'A' },
+  snare:{ label:'スネア',     short:'SN', color:'#c23b3b', key:'S' },
+  kick :{ label:'キック',     short:'KC', color:'#c98a3b', key:'D' },
+  tom  :{ label:'タム',       short:'TM', color:'#5a6fae', key:'F' },
+};
+
+const STAGES = [
+  { id:0, category:'basic', belt:'五級', name:'きほんのリズム', bpm:70, bars:8, rootFreq:98,
+    lanes:['hihat','snare','kick'],
+    pattern:{
+      hihat:'x---x---x---x---',
+      snare:'----x-------x---',
+      kick :'x-------x-------',
+    },
+    desc:'4拍子の基本。強拍で自然に体を揺らそう。' },
+
+  { id:1, category:'basic', belt:'四級', name:'エイトビート', bpm:90, bars:8, rootFreq:110,
+    lanes:['hihat','snare','kick'],
+    pattern:{
+      hihat:'x-x-x-x-x-x-x-x-',
+      snare:'----x-------x---',
+      kick :'x-------x---x---',
+    },
+    desc:'ハイハットが8分音符に。ロックの定番グルーヴ。' },
+
+  { id:2, category:'basic', belt:'三級', name:'うらのリズム', bpm:100, bars:10, rootFreq:87,
+    lanes:['hihat','snare','kick'],
+    pattern:{
+      hihat:'x-x-x-x-x-x-x-x-',
+      snare:'----x-------x---',
+      kick :'x--x--x-x--x----',
+    },
+    desc:'キックが裏拍に食い込むシンコペーション入門。' },
+
+  { id:3, category:'basic', belt:'二級', name:'十六ビート', bpm:92, bars:10, rootFreq:110,
+    lanes:['hihat','snare','kick'],
+    pattern:{
+      hihat:'xxxxxxxxxxxxxxxx',
+      snare:'----x-------x---',
+      kick :'x--x----x--x----',
+    },
+    desc:'ハイハットが16分音符。手首の速さがカギ。' },
+
+  { id:4, category:'basic', belt:'一級', name:'グルーヴ&フィル', bpm:100, bars:12, rootFreq:73,
+    lanes:['hihat','snare','kick','tom'],
+    pattern:{
+      hihat:'x-x-x-x-x-x-x-x-',
+      snare:'----x-------x---',
+      kick :'x--x--x-x-------',
+      tom  :'----------------',
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:'--x-x-x-x-x-x-x-',
+      tom  :'x-x-x-----x-x-x-',
+      kick :'x---------------',
+    },
+    desc:'4小節ごとにタムのフィルインが入る実戦グルーヴ。' },
+
+  { id:5, category:'basic', belt:'免許皆伝', name:'完全なる一打', bpm:112, bars:14, rootFreq:98,
+    lanes:['hihat','snare','kick','tom'],
+    pattern:{
+      hihat:'x-x-x-x-x-x-x-x-',
+      snare:'--x-x-------x-x-',
+      kick :'x--x-x--x--x-x--',
+      tom  :'----------------',
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:'x-x-x-x-x-x-x-xx',
+      tom  :'--x-x-x---x-x-x-',
+      kick :'x-------x-------',
+    },
+    desc:'全要素を統合した免許皆伝の一曲。テンポも一段速い。' },
+];
+
+/* ============================================================
+   0-b. 実践コース: J-POP / アニソン / ボカロ 全30パターン
+   ※特定の楽曲ではなく、各ジャンルに典型的なリズムパターンを
+     オリジナルで再構成したものです。
+============================================================ */
+const EXTRA_STAGES = [
+  { id:6, category:"jpop", belt:"J・1", name:"王道アイドルポップ", bpm:128, bars:8, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+    },
+    desc:"元気なアイドルソング定番の四つ打ち。" },
+  { id:7, category:"jpop", belt:"J・2", name:"夏フェスアンセム", bpm:150, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x-----x-x-----",
+    },
+    desc:"フェスで盛り上がる疾走ロックポップ。" },
+  { id:8, category:"jpop", belt:"J・3", name:"切ないバラード", bpm:70, bars:8, rootFreq:87,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x---x---x---x---",
+      snare:"--------x-------",
+      kick:"x-------x-x-----",
+    },
+    desc:"サビ前にぴったりの、しっとりハーフタイムバラード。" },
+  { id:9, category:"jpop", belt:"J・4", name:"シティポップ グルーヴ", bpm:100, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x--x----x-x-----",
+    },
+    desc:"洗練された裏ノリのシティポップグルーヴ。" },
+  { id:10, category:"jpop", belt:"J・5", name:"青春パンクロック", bpm:175, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x-x-x-x-x-x-x-",
+    },
+    desc:"突っ走る2ビート系パンクロック。" },
+  { id:11, category:"jpop", belt:"J・6", name:"ダンスポップ四つ打ち", bpm:128, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+    },
+    desc:"EDM由来のダンスポップキック、16分ハイハットで華やかに。" },
+  { id:12, category:"jpop", belt:"J・7", name:"R&Bグルーヴ", bpm:90, bars:10, rootFreq:82,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"--x---x---x---x-",
+    },
+    desc:"ゆったり後ろに突っ込むR&B系裏ノリ。" },
+  { id:13, category:"jpop", belt:"J・8", name:"エモロックバラード", bpm:140, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x-x-x---x-x-",
+      tom:"----------------",
+    },
+    fillEvery:5,
+    fillPattern:{
+      snare:"--x-x-x-x-x-x-x-",
+      kick:"x---------------",
+      tom:"x-x-x-----x-x-x-",
+    },
+    desc:"静と動を行き来する、盛り上がるエモロック。" },
+  { id:14, category:"jpop", belt:"J・9", name:"ミディアムポップ8ビート", bpm:112, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x-x-x-------",
+    },
+    desc:"王道J-POPのAメロ〜サビをつなぐミディアムビート。" },
+  { id:15, category:"jpop", belt:"J・10", name:"アリーナロック", bpm:132, bars:12, rootFreq:110,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x-----x-x-----",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"--x-x-x-x-x-x-xx",
+      kick:"x-------x-------",
+      tom:"----x-x---x-x-x-",
+    },
+    desc:"スタジアムを揺らす、スケールの大きいロックビート。" },
+  { id:16, category:"anison", belt:"A・1", name:"疾走感全開OP", bpm:190, bars:12, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x-x-x-x-x-x-x-",
+    },
+    desc:"疾走感全開のオープニングテーマ定番ビート。" },
+  { id:17, category:"anison", belt:"A・2", name:"熱血バトルテーマ", bpm:175, bars:12, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"xx--x-x-xx--x-x-",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"--x---x---x---x-",
+      kick:"x---x---x---x---",
+      tom:"x-x-x-x-x-x-x-x-",
+    },
+    desc:"ダブルキック風の連打で熱く盛り上げるバトル曲。" },
+  { id:18, category:"anison", belt:"A・3", name:"変則ノリの間奏曲", bpm:160, bars:10, rootFreq:87,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"--x---x---x---x-",
+      kick:"x--x--x-x--x----",
+    },
+    desc:"裏拍スネアが印象的な変則グルーヴ。" },
+  { id:19, category:"anison", belt:"A・4", name:"涙のエンディング", bpm:76, bars:8, rootFreq:73,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x---x---x---x---",
+      snare:"--------x-------",
+      kick:"x-------x-------",
+    },
+    desc:"エンディングにふさわしい静かなバラード。" },
+  { id:20, category:"anison", belt:"A・5", name:"学園コメディOP", bpm:150, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-----x-----",
+      kick:"x-----x-x-----x-",
+    },
+    desc:"コミカルで弾むような明るいOPビート。" },
+  { id:21, category:"anison", belt:"A・6", name:"サビ前の溜め", bpm:140, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-----x-x-------",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"----x---x---x---",
+      kick:"x---------------",
+      tom:"--x---x---x---xx",
+    },
+    desc:"サビ前のブレイクで期待感を煽るグルーヴ。" },
+  { id:22, category:"anison", belt:"A・7", name:"変身シーンの高揚感", bpm:168, bars:12, rootFreq:110,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x--x--x-x--x--x-",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"--x---x---x---x-",
+      kick:"x-------x-------",
+      tom:"----x-------x---",
+    },
+    desc:"力がみなぎる、変身シーンにぴったりの高揚グルーヴ。" },
+  { id:23, category:"anison", belt:"A・8", name:"ロボットアニメ主題歌", bpm:150, bars:10, rootFreq:82,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+    },
+    desc:"キックとスネアが重なる力強いユニゾンビート。" },
+  { id:24, category:"anison", belt:"A・9", name:"魔法少女変身BGM", bpm:132, bars:10, rootFreq:130,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    desc:"きらきらした16分ハイハットが特徴の変身BGM。" },
+  { id:25, category:"anison", belt:"A・10", name:"エンドカードの余韻", bpm:60, bars:8, rootFreq:73,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-------x-------",
+      snare:"--------x-------",
+      kick:"x---------------",
+    },
+    desc:"エンドカードの静かな余韻。ゆっくり丁寧に。" },
+  { id:26, category:"vocaloid", belt:"V・1", name:"高速チップチューン", bpm:200, bars:12, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x-x-x-x-x-x-x-",
+    },
+    desc:"超高速で駆け抜けるチップチューン風ビート。" },
+  { id:27, category:"vocaloid", belt:"V・2", name:"ハイテンポポップ", bpm:175, bars:12, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"----x-------x---",
+      kick:"x--x--x-x--x--x-",
+    },
+    desc:"ボーカロイド曲によくある超高速ポップビート。" },
+  { id:28, category:"vocaloid", belt:"V・3", name:"ボカロバラード", bpm:85, bars:8, rootFreq:73,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-----x-x-x-----",
+    },
+    desc:"切なさを歌い上げるボカロバラード。" },
+  { id:29, category:"vocaloid", belt:"V・4", name:"ボカロロック", bpm:190, bars:12, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-x---x-x-x---x-",
+    },
+    desc:"突っ走るボカロロックの定番ビート。" },
+  { id:30, category:"vocaloid", belt:"V・5", name:"グリッチステップ風", bpm:140, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x--x--x-x--x--x-",
+      snare:"----x--x----x--x",
+      kick:"x----x--xx------",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"--x-x--x--x-x--x",
+      kick:"x--------x------",
+      tom:"---x--x----x--x-",
+    },
+    desc:"意図的に崩したグリッチ感のある変則ビート。" },
+  { id:31, category:"vocaloid", belt:"V・6", name:"電波ソング風", bpm:180, bars:12, rootFreq:130,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"--x-x-----x-x---",
+      kick:"x-----x-x-----x-",
+    },
+    desc:"目まぐるしく動く電波ソング風の忙しいビート。" },
+  { id:32, category:"vocaloid", belt:"V・7", name:"EDMクロスオーバー", bpm:128, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+    },
+    desc:"ボカロEDMクロスオーバー系の四つ打ち。" },
+  { id:33, category:"vocaloid", belt:"V・8", name:"早口言葉ラップ調", bpm:170, bars:12, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"--x-x-x---x-x-x-",
+      kick:"x--x---xx--x---x",
+    },
+    desc:"高速歌詞に合わせた、細かく刻むラップ調ビート。" },
+  { id:34, category:"vocaloid", belt:"V・9", name:"ボカロバラード→サビ", bpm:100, bars:10, rootFreq:87,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-----x-x-------",
+      tom:"----------------",
+    },
+    fillEvery:5,
+    fillPattern:{
+      snare:"----x--x----x--x",
+      kick:"x-------x-------",
+      tom:"--x---x---x---x-",
+    },
+    desc:"静かなAメロから一気に開けるサビへの展開ビート。" },
+  { id:35, category:"vocaloid", belt:"V・10", name:"怒涛の転調ソング", bpm:200, bars:14, rootFreq:110,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"----x-------x---",
+      kick:"x-x-x-x-x-x-x-x-",
+      tom:"----------------",
+    },
+    fillEvery:3,
+    fillPattern:{
+      snare:"--x-x-x-x-x-x-xx",
+      kick:"x--x--x--x--x---",
+      tom:"-x---x---x---x--",
+    },
+    desc:"免許皆伝をも超える、全要素全開の最難関ビート。" },
+];
+STAGES.push(...EXTRA_STAGES);
+
+/* ============================================================
+   0-c. 定番&オカズ(フィルイン)コース 20パターン
+============================================================ */
+const ESSENTIAL_STAGES = [
+  { id:36, category:'essentials', subtype:"groove", belt:"定・1", name:"シャッフルビート", bpm:100, bars:8, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x--xx--xx--xx--x",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    desc:"跳ねるようなスウィング感を16分グリッドで近似したグルーヴ。" },
+  { id:37, category:'essentials', subtype:"groove", belt:"定・2", name:"ファンク16分ゴースト", bpm:100, bars:10, rootFreq:82,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"--x-x-x---x-x-x-",
+      kick:"x--x--x---x--x--",
+    },
+    desc:"16分の細かい刻みが特徴のファンクグルーヴ。" },
+  { id:38, category:'essentials', subtype:"groove", belt:"定・3", name:"レゲエ ワンドロップ", bpm:80, bars:8, rootFreq:73,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"--------x-------",
+      kick:"--------x-------",
+    },
+    desc:"1拍目を空け、3拍目にキックとスネアが重なるレゲエ特有のグルーヴ。" },
+  { id:39, category:'essentials', subtype:"groove", belt:"定・4", name:"ディスコ四つ打ち", bpm:124, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+    },
+    desc:"ミラーボールが似合う、王道のディスコビート。" },
+  { id:40, category:'essentials', subtype:"groove", belt:"定・5", name:"ハーフタイムロック", bpm:86, bars:8, rootFreq:87,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"--------x-------",
+      kick:"x-----x---x-----",
+    },
+    desc:"どっしり重く聴かせるハーフタイムのロックビート。" },
+  { id:41, category:'essentials', subtype:"groove", belt:"定・6", name:"ファンク裏ノリキック", bpm:96, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x--x---x--x---x-",
+    },
+    desc:"裏拍にキックが食い込む、ノリの良いファンクビート。" },
+  { id:42, category:'essentials', subtype:"groove", belt:"定・7", name:"スカ アップビート", bpm:150, bars:10, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"--x---x---x---x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    desc:"裏拍だけを刻む、スカ特有の突き上げるようなアップビート。" },
+  { id:43, category:'essentials', subtype:"groove", belt:"定・8", name:"ラテン・ボサノヴァ風", bpm:120, bars:10, rootFreq:98,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"---x---x---x---x",
+      kick:"x--x--x-x--x--x-",
+    },
+    desc:"裏ノリのラテンリズムを取り入れたボサノヴァ風グルーヴ。" },
+  { id:44, category:'essentials', subtype:"groove", belt:"定・9", name:"ギャロップキック", bpm:150, bars:10, rootFreq:82,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-xxx-xxx-xxx-xx",
+    },
+    desc:"メタル定番、「タッカタッカ」と刻むギャロップキック。" },
+  { id:45, category:'essentials', subtype:"groove", belt:"定・10", name:"高速ブラストビート風", bpm:190, bars:12, rootFreq:73,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"xxxxxxxxxxxxxxxx",
+      snare:"x-x-x-x-x-x-x-x-",
+      kick:"-x-x-x-x-x-x-x-x",
+    },
+    desc:"キックとスネアが交互に連打される高速ブラストビート風。" },
+  { id:46, category:'essentials', subtype:"fill", belt:"フ・1", name:"8分タム回し", bpm:100, bars:8, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x---x---x---x---",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+      tom:"--x---x---x---x-",
+    },
+    desc:"基本ビートに8分のタム回しを重ねた練習パターン。" },
+  { id:47, category:'essentials', subtype:"fill", belt:"フ・2", name:"16分スネアロール前フリ", bpm:90, bars:8, rootFreq:87,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x---x---x---x---",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    fillEvery:2,
+    fillPattern:{
+      snare:"--------xxxxxxxx",
+      kick:"x---------------",
+      hihat:"x---x-----------",
+    },
+    desc:"2小節ごとに16分のスネアロールでフレーズを締めくくる練習。" },
+  { id:48, category:'essentials', subtype:"fill", belt:"フ・3", name:"下降タムフィル", bpm:100, bars:8, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"----x-----------",
+      kick:"x---------------",
+      tom:"--------x-x-x-x-",
+    },
+    desc:"4小節ごとに高音から低音へ下降するタムフィルが入る定番パターン。" },
+  { id:49, category:'essentials', subtype:"fill", belt:"フ・4", name:"キック&スネア交互フィル", bpm:110, bars:8, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"-x-x-x-x-x-x-x-x",
+      kick:"x-x-x-x-x-x-x-x-",
+    },
+    desc:"キックとスネアが16分で交互に刻まれる定番フィル。" },
+  { id:50, category:'essentials', subtype:"fill", belt:"フ・5", name:"3連風フィル", bpm:100, bars:8, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x---x---x---x---",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"---------x--x--x",
+      kick:"x---------------",
+      tom:"--------x--x--x-",
+    },
+    desc:"3連符のノリを16分グリッドで近似したフィル。" },
+  { id:51, category:'essentials', subtype:"fill", belt:"フ・6", name:"アクセント強調フィル", bpm:120, bars:8, rootFreq:110,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"x-x-x-x-x-x-x-x-",
+      kick:"----------------",
+    },
+    desc:"全パートを強く打ち鳴らす、勢いのあるアクセント強調フィル。" },
+  { id:52, category:'essentials', subtype:"fill", belt:"フ・7", name:"クラッシュ前ノリ", bpm:128, bars:8, rootFreq:110,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"----x-------x---",
+      kick:"x---x---x---x---",
+      tom:"------------xxxx",
+    },
+    desc:"次のセクション頭を呼び込む、助走のようなフィル。" },
+  { id:53, category:'essentials', subtype:"fill", belt:"フ・8", name:"ツーバス風連打フィル", bpm:140, bars:8, rootFreq:82,
+    lanes:["hihat","snare","kick"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"----------------",
+      kick:"xxxxxxxxxxxxxxxx",
+    },
+    desc:"一気に畳み掛ける、ツーバス風16分キック連打フィル。" },
+  { id:54, category:'essentials', subtype:"fill", belt:"フ・9", name:"スネア→タム→キック下降フィル", bpm:110, bars:8, rootFreq:98,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+      tom:"----------------",
+    },
+    fillEvery:4,
+    fillPattern:{
+      snare:"--------x-------",
+      kick:"--------------x-",
+      tom:"----------x-x---",
+    },
+    desc:"スネア→タム→キックと下降していく定番フィル。" },
+  { id:55, category:'essentials', subtype:"fill", belt:"フ・10", name:"ターンアラウンドフィル", bpm:100, bars:16, rootFreq:87,
+    lanes:["hihat","snare","kick","tom"],
+    pattern:{
+      hihat:"x-x-x-x-x-x-x-x-",
+      snare:"----x-------x---",
+      kick:"x-------x-------",
+      tom:"----------------",
+    },
+    fillEvery:8,
+    fillPattern:{
+      snare:"--------x-x-x-x-",
+      kick:"x--------------x",
+      tom:"---------x-x-x--",
+    },
+    desc:"8小節に一度、フレーズの折り返しを示すターンアラウンドフィル。" },
+];
+STAGES.push(...ESSENTIAL_STAGES);
+
+const CATEGORY_META = {
+  basic:     { label:'基本(級)',   tabColor:'#c98a3b', headColor:'#c98a3b' },
+  jpop:      { label:'J-POP',      tabColor:'#e0a44e', headColor:'#e0a44e' },
+  anison:    { label:'アニソン',   tabColor:'#c23b3b', headColor:'#c23b3b' },
+  vocaloid:  { label:'ボカロ',     tabColor:'#5a6fae', headColor:'#5a6fae' },
+  essentials:{ label:'定番&オカズ', tabColor:'#6b8f5a', headColor:'#6b8f5a' },
+};
+const CATEGORY_ORDER = ['basic','jpop','anison','vocaloid','essentials'];
+
+/* ============================================================
+   1. 進捗保存 (localStorageが使えない環境ではメモリ内で代替)
+============================================================ */
+const Store = (function(){
+  let mem = {};
+  let ok = true;
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }catch(e){ ok=false; }
+  return {
+    get(k, d){ try{ const v = ok?localStorage.getItem(k):mem[k]; return v==null?d:JSON.parse(v);}catch(e){return d;} },
+    set(k, v){ try{ if(ok) localStorage.setItem(k, JSON.stringify(v)); else mem[k]=JSON.stringify(v);}catch(e){} }
+  };
+})();
+let progress = Store.get('beatdojo_progress', {unlocked:1, best:{}}); // best[stageId] = {grade,acc,combo,score}
+function saveProgress(){ Store.set('beatdojo_progress', progress); }
+
+/* ============================================================
+   4-b. ユーザー設定 (速度・判定ライン・判定の厳しさ)
+============================================================ */
+const SPEED_OPTIONS = [
+  { key:'slow',    label:'遅め',     factor:0.8 },
+  { key:'normal',  label:'標準',     factor:1.1 },
+  { key:'fast',    label:'速め',     factor:1.4 },
+  { key:'vfast',   label:'かなり速い', factor:1.8 },
+];
+const JUDGELINE_OPTIONS = [
+  { key:'high',   label:'高め', ratio:0.68 },
+  { key:'mid',    label:'標準', ratio:0.80 },
+  { key:'low',    label:'低め', ratio:0.90 },
+];
+const WINDOW_OPTIONS = [
+  { key:'easy',   label:'甘め', mult:1.5 },
+  { key:'normal', label:'標準', mult:1.0 },
+  { key:'hard',   label:'厳しめ', mult:0.6 },
+];
+let settings = Object.assign({ speed:'normal', judgeline:'mid', window:'normal' }, Store.get('beatdojo_settings', {}));
+function saveSettings(){ Store.set('beatdojo_settings', settings); }
+function getOpt(list, key){ return list.find(o=>o.key===key) || list[0]; }
+
+function buildSettingsUI(){
+  buildPills('set-speed', SPEED_OPTIONS, settings.speed, v=>{ settings.speed=v; saveSettings(); buildSettingsUI(); });
+  buildPills('set-judgeline', JUDGELINE_OPTIONS, settings.judgeline, v=>{ settings.judgeline=v; saveSettings(); buildSettingsUI(); });
+  buildPills('set-window', WINDOW_OPTIONS, settings.window, v=>{ settings.window=v; saveSettings(); buildSettingsUI(); });
+}
+function buildPills(containerId, options, currentKey, onPick){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = '';
+  options.forEach(o=>{
+    const b = document.createElement('button');
+    b.textContent = o.label;
+    if(o.key===currentKey) b.classList.add('active');
+    b.addEventListener('click', ()=> onPick(o.key));
+    wrap.appendChild(b);
+  });
+}
+let settingsReturnScreen = 'screen-title';
+function openSettings(fromScreen){
+  settingsReturnScreen = fromScreen;
+  buildSettingsUI();
+  showScreen('screen-settings');
+}
+document.getElementById('btn-settings-title').addEventListener('click', ()=> openSettings('screen-title'));
+document.getElementById('btn-settings-select').addEventListener('click', ()=> openSettings('screen-select'));
+document.getElementById('btn-settings-close').addEventListener('click', ()=> showScreen(settingsReturnScreen));
+document.getElementById('btn-settings-reset').addEventListener('click', ()=>{
+  settings = { speed:'normal', judgeline:'mid', window:'normal' };
+  saveSettings(); buildSettingsUI();
+});
+
+/* ============================================================
+   2. オーディオエンジン (すべて合成音、外部ファイル不要)
+============================================================ */
+let actx = null, masterGain = null, muted = false;
+let noiseBuffer = null;
+
+function initAudio(){
+  if(actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = actx.createGain();
+  masterGain.gain.value = 0.9;
+  masterGain.connect(actx.destination);
+  const len = actx.sampleRate * 1.0;
+  noiseBuffer = actx.createBuffer(1, len, actx.sampleRate);
+  const d = noiseBuffer.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+}
+function toggleMute(){
+  muted = !muted;
+  if(masterGain) masterGain.gain.value = muted?0:0.9;
+  const label = muted?'🔇':'🔊';
+  document.getElementById('btn-mute-select').textContent = label;
+  document.getElementById('btn-mute-play').textContent = label;
+}
+function noiseSrc(){
+  const s = actx.createBufferSource();
+  s.buffer = noiseBuffer;
+  return s;
+}
+function envGain(g0, g1, t, dur, curve){
+  g0.gain.cancelScheduledValues(t);
+  g0.gain.setValueAtTime(g1, t);
+  if(curve==='exp') g0.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  else g0.gain.linearRampToValueAtTime(0, t+dur);
+}
+
+function playKick(t){
+  const o = actx.createOscillator(); const g = actx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(42,t+0.14);
+  g.gain.setValueAtTime(1.0,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t+0.3);
+  // click transient
+  const n = noiseSrc(); const nf = actx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=1200;
+  const ng = actx.createGain(); ng.gain.setValueAtTime(0.5,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+  n.connect(nf); nf.connect(ng); ng.connect(masterGain); n.start(t); n.stop(t+0.04);
+}
+function playSnare(t){
+  const n = noiseSrc(); const bp = actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800; bp.Q.value=0.7;
+  const ng = actx.createGain(); ng.gain.setValueAtTime(0.9,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+  n.connect(bp); bp.connect(ng); ng.connect(masterGain); n.start(t); n.stop(t+0.18);
+  const o = actx.createOscillator(); const og = actx.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(120,t+0.1);
+  og.gain.setValueAtTime(0.5,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+  o.connect(og); og.connect(masterGain); o.start(t); o.stop(t+0.13);
+}
+function playHihat(t){
+  const n = noiseSrc(); const hp = actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7500;
+  const g = actx.createGain(); g.gain.setValueAtTime(0.35,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+  n.connect(hp); hp.connect(g); g.connect(masterGain); n.start(t); n.stop(t+0.05);
+}
+function playTom(t){
+  const o = actx.createOscillator(); const g = actx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(220,t); o.frequency.exponentialRampToValueAtTime(100,t+0.18);
+  g.gain.setValueAtTime(0.8,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t+0.24);
+}
+function playBass(t, freq){
+  const o = actx.createOscillator(); const g = actx.createGain();
+  o.type='triangle'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0,t); g.gain.linearRampToValueAtTime(0.22,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+0.32);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t+0.34);
+}
+function playPad(t, freq){
+  [1,1.5].forEach(mul=>{
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type='sine'; o.frequency.value = freq*mul;
+    g.gain.setValueAtTime(0.0,t); g.gain.linearRampToValueAtTime(0.05,t+0.4); g.gain.linearRampToValueAtTime(0.0,t+ (60/currentStage.bpm)*4 - 0.05);
+    o.connect(g); g.connect(masterGain); o.start(t); o.stop(t+ (60/currentStage.bpm)*4);
+  });
+}
+function playTick(t, accent){
+  const o = actx.createOscillator(); const g = actx.createGain();
+  o.type='square'; o.frequency.value = accent?1500:1000;
+  g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t+0.06);
+}
+const SOUND_FN = { hihat:playHihat, snare:playSnare, kick:playKick, tom:playTom };
+
+/* ============================================================
+   3. ゲーム状態
+============================================================ */
+let currentStage = null;
+let notes = [];          // {time, lane, hit, judged, missed}
+let noteIdSeq = 0;
+let stepDur = 0;
+let nextStepTime = 0;
+let curStep = 0;
+let curBar = 0;
+let totalBars = 0;
+let schedTimer = null;
+let started = false;
+let finished = false;
+
+// これらは設定によって毎ステージ開始時に再計算される(下のrecalcFromSettingsを参照)
+const BASE_TRAVEL_TIME = 2.2;   // 秒: 速度係数1.0のときの基準到達時間
+const BASE_HIT_WINDOW = { perfect:0.08, good:0.16, ok:0.26 }; // 判定の厳しさ係数1.0のときの基準値
+let TRAVEL_TIME = BASE_TRAVEL_TIME;
+let SCHEDULE_AHEAD = TRAVEL_TIME + 0.3;
+let JUDGE_LINE_RATIO = 0.80;
+const LOOKAHEAD_MS = 25;
+
+let score = { perfect:0, good:0, ok:0, miss:0, combo:0, maxCombo:0 };
+
+let HIT_WINDOW = { perfect:0.08, good:0.16, ok:0.26 };
+
+function recalcFromSettings(){
+  const spd = getOpt(SPEED_OPTIONS, settings.speed).factor;
+  TRAVEL_TIME = BASE_TRAVEL_TIME / spd;
+  SCHEDULE_AHEAD = TRAVEL_TIME + 0.3;
+  JUDGE_LINE_RATIO = getOpt(JUDGELINE_OPTIONS, settings.judgeline).ratio;
+  const wm = getOpt(WINDOW_OPTIONS, settings.window).mult;
+  HIT_WINDOW = { perfect: BASE_HIT_WINDOW.perfect*wm, good: BASE_HIT_WINDOW.good*wm, ok: BASE_HIT_WINDOW.ok*wm };
+}
+
+/* ============================================================
+   4. 画面遷移
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---- タイトル ---- */
+document.getElementById('btn-start').addEventListener('click', ()=>{
+  initAudio();
+  if(actx.state==='suspended') actx.resume();
+  buildStageList();
+  showScreen('screen-select');
+});
+
+/* ---- ステージ選択 ---- */
+let currentFilter = 'all';
+function isLocked(st){
+  if(st.category !== 'basic') return false; // 実践コースは常に解放
+  return st.id > progress.unlocked;
+}
+function buildCatTabs(){
+  const tabs = document.getElementById('cat-tabs');
+  tabs.innerHTML = '';
+  const defs = [{ key:'all', label:'すべて', color:'#c98a3b' }].concat(
+    CATEGORY_ORDER.map(k=>({ key:k, label:CATEGORY_META[k].label, color:CATEGORY_META[k].tabColor }))
+  );
+  defs.forEach(d=>{
+    const b = document.createElement('button');
+    b.textContent = d.label;
+    b.style.setProperty('--tabcolor', d.color);
+    if(d.key===currentFilter) b.classList.add('active');
+    b.addEventListener('click', ()=>{ currentFilter = d.key; buildStageList(); });
+    tabs.appendChild(b);
+  });
+}
+function buildStageList(){
+  buildCatTabs();
+  const wrap = document.getElementById('stage-list');
+  wrap.innerHTML = '';
+  const cats = currentFilter==='all' ? CATEGORY_ORDER : [currentFilter];
+  cats.forEach(cat=>{
+    const list = STAGES.filter(s=>s.category===cat);
+    if(list.length===0) return;
+    if(currentFilter==='all'){
+      const h = document.createElement('div');
+      h.className = 'cat-heading';
+      h.style.setProperty('--headcolor', CATEGORY_META[cat].headColor);
+      h.textContent = CATEGORY_META[cat].label;
+      wrap.appendChild(h);
+    }
+    list.forEach((st, i)=>{
+      if(st.category==='essentials' && (i===0 || list[i-1].subtype!==st.subtype)){
+        const sh = document.createElement('div');
+        sh.className = 'sub-heading';
+        sh.textContent = st.subtype==='fill' ? '★ 定番オカズ(フィルイン)' : '● 定番グルーヴ';
+        wrap.appendChild(sh);
+      }
+      const locked = isLocked(st);
+      const card = document.createElement('div');
+      card.className = 'stage-card' + (locked?' locked':'');
+      const beltColor = CATEGORY_META[st.category].tabColor;
+      card.innerHTML = `
+        <div class="stage-belt" style="--beltcolor:${beltColor}">${st.belt}</div>
+        <div class="stage-info">
+          <div class="name">${st.name}</div>
+          <div class="meta">BPM ${st.bpm} ・ ${st.bars}小節 ・ ${st.lanes.map(l=>LANES_DEF[l].short).join('/')}</div>
+          <div class="meta">${st.desc}</div>
+        </div>
+        ${locked ? '<div class="lock-ic">🔒</div>' : `<div class="stage-grade">${progress.best[st.id]?progress.best[st.id].grade:'-'}</div>`}
+      `;
+      if(!locked){
+        card.addEventListener('click', ()=> startStage(st.id));
+      }
+      wrap.appendChild(card);
+    });
+  });
+}
+document.getElementById('btn-mute-select').addEventListener('click', toggleMute);
+
+/* ============================================================
+   5. パッド生成 & 入力
+============================================================ */
+function buildPads(stage){
+  const wrap = document.getElementById('pads');
+  wrap.innerHTML = '';
+  stage.lanes.forEach(laneKey=>{
+    const def = LANES_DEF[laneKey];
+    const pad = document.createElement('div');
+    pad.className = 'pad';
+    pad.style.setProperty('--padcolor', def.color);
+    pad.dataset.lane = laneKey;
+    pad.innerHTML = `<div class="flash"></div><div class="pad-label">${def.label}</div><div class="pad-key">PC: ${def.key}</div>`;
+    pad.addEventListener('pointerdown', (e)=>{ e.preventDefault(); hitLane(laneKey, pad); });
+    wrap.appendChild(pad);
+  });
+}
+const keyToLane = {};
+function refreshKeyMap(stage){
+  Object.keys(keyToLane).forEach(k=>delete keyToLane[k]);
+  stage.lanes.forEach(l=> keyToLane[LANES_DEF[l].key] = l);
+}
+window.addEventListener('keydown', (e)=>{
+  if(!started || finished) return;
+  const k = e.key.toUpperCase();
+  if(keyToLane[k]){
+    const laneKey = keyToLane[k];
+    const pad = document.querySelector('.pad[data-lane="'+laneKey+'"]');
+    hitLane(laneKey, pad);
+  }
+});
+
+function flashPad(pad){
+  if(!pad) return;
+  const f = pad.querySelector('.flash');
+  f.style.transition = 'none'; f.style.opacity = '0.55';
+  requestAnimationFrame(()=>{
+    f.style.transition = 'opacity .18s ease-out';
+    f.style.opacity = '0';
+  });
+}
+
+function hitLane(laneKey, padEl){
+  flashPad(padEl);
+  if(!started || finished || !actx) return;
+  const now = actx.currentTime;
+  let best = null, bestDiff = Infinity;
+  for(const n of notes){
+    if(n.lane!==laneKey || n.judged) continue;
+    const diff = Math.abs(n.time - now);
+    if(diff < bestDiff){ bestDiff = diff; best = n; }
+  }
+  if(best && bestDiff <= HIT_WINDOW.ok){
+    best.judged = true; best.hit = true;
+    let label, cls;
+    if(bestDiff<=HIT_WINDOW.perfect){ label='PERFECT'; cls='#d8c9a3'; score.perfect++; }
+    else if(bestDiff<=HIT_WINDOW.good){ label='GOOD'; cls='#c98a3b'; score.good++; }
+    else { label='OK'; cls='#5a6fae'; score.ok++; }
+    score.combo++; score.maxCombo = Math.max(score.maxCombo, score.combo);
+    popupJudge(label, cls);
+    updateHud();
+  }
+  // 何もヒットしなければ空打ち(ペナルティなし、初心者に優しく)
+}
+
+function popupJudge(text, color){
+  const el = document.getElementById('judge-popup');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.fontSize = '26px';
+  el.style.opacity = '1';
+  el.style.transform = 'translate(-50%,-50%) scale(1.15)';
+  clearTimeout(popupJudge._t);
+  popupJudge._t = setTimeout(()=>{
+    el.style.transition = 'opacity .25s, transform .25s';
+    el.style.opacity = '0';
+    el.style.transform = 'translate(-50%,-50%) scale(0.9)';
+  }, 160);
+}
+
+function updateHud(){
+  document.getElementById('hud-combo').textContent = score.combo + ' combo';
+}
+
+/* ============================================================
+   6. スケジューラ (先読み方式で音とビジュアルを同期)
+============================================================ */
+function scheduleStep(step, time, bar){
+  const useFill = currentStage.fillEvery && ((bar+1) % currentStage.fillEvery === 0) && currentStage.fillPattern;
+  const src = useFill ? currentStage.fillPattern : currentStage.pattern;
+  currentStage.lanes.forEach(laneKey=>{
+    const patt = src[laneKey];
+    if(patt && patt[step]==='x'){
+      SOUND_FN[laneKey](time);
+      notes.push({ id:noteIdSeq++, time, lane:laneKey, hit:false, judged:false });
+      if(laneKey==='kick') playBass(time, currentStage.rootFreq);
+    }
+  });
+  if(step===0){ playPad(time, currentStage.rootFreq*2); }
+}
+
+function schedulerLoop(){
+  while(nextStepTime < actx.currentTime + SCHEDULE_AHEAD){
+    if(curBar >= totalBars){
+      // 全ノート発音済み。終了待ち。
+      stopSchedulerOnly();
+      return;
+    }
+    scheduleStep(curStep, nextStepTime, curBar);
+    nextStepTime += stepDur;
+    curStep++;
+    if(curStep>=16){ curStep=0; curBar++; }
+  }
+  schedTimer = setTimeout(schedulerLoop, LOOKAHEAD_MS);
+}
+function stopSchedulerOnly(){
+  if(schedTimer) clearTimeout(schedTimer);
+  schedTimer = null;
+}
+
+/* ============================================================
+   7. カウントイン
+============================================================ */
+function runCountIn(stage, cb){
+  const cd = document.getElementById('countdown');
+  const beatDur = 60/stage.bpm;
+  const lead = 0.15;
+  for(let i=0;i<4;i++){
+    playTick(actx.currentTime + lead + i*beatDur, i===0);
+  }
+  const labels = ['3','2','1','叩け！'];
+  labels.forEach((l,i)=>{
+    setTimeout(()=>{ cd.textContent = l; cd.style.opacity='1';
+      cd.style.transform='scale(1.3)';
+      requestAnimationFrame(()=>{ cd.style.transition='opacity .5s, transform .5s'; cd.style.opacity='0'; cd.style.transform='scale(1)'; });
+    }, (lead + i*beatDur)*1000);
+  });
+  setTimeout(cb, (lead + 4*beatDur)*1000);
+}
+
+/* ============================================================
+   8. ステージ開始/終了
+============================================================ */
+function startStage(id){
+  currentStage = STAGES[id];
+  recalcFromSettings();
+  buildPads(currentStage);
+  refreshKeyMap(currentStage);
+  notes = []; noteIdSeq = 0;
+  score = { perfect:0, good:0, ok:0, miss:0, combo:0, maxCombo:0 };
+  curStep = 0; curBar = 0; totalBars = currentStage.bars; started = false; finished = false;
+  document.getElementById('play-stagename').textContent = currentStage.belt + ' ' + currentStage.name;
+  document.getElementById('hud-bpm').textContent = 'BPM ' + currentStage.bpm;
+  document.getElementById('hud-combo').textContent = '0 combo';
+  document.getElementById('btn-mute-play').textContent = muted?'🔇':'🔊';
+  showScreen('screen-play');
+  resizeCanvas();
+  if(actx.state==='suspended') actx.resume();
+  stepDur = 60/currentStage.bpm/4;
+  runCountIn(currentStage, ()=>{
+    nextStepTime = actx.currentTime + 0.05;
+    started = true;
+    schedulerLoop();
+    requestAnimationFrame(renderLoop);
+  });
+}
+
+function endStage(){
+  finished = true;
+  stopSchedulerOnly();
+  const total = score.perfect + score.good + score.ok + score.miss;
+  const acc = total>0 ? (score.perfect*1 + score.good*0.7 + score.ok*0.4)/total*100 : 0;
+  let grade = 'D';
+  if(acc>=96) grade='S'; else if(acc>=88) grade='A'; else if(acc>=72) grade='B'; else if(acc>=50) grade='C';
+  const points = score.perfect*100 + score.good*70 + score.ok*40;
+
+  const prevBest = progress.best[currentStage.id];
+  const isNewBest = !prevBest || points > prevBest.score;
+  if(isNewBest) progress.best[currentStage.id] = { grade, acc:Math.round(acc), combo:score.maxCombo, score:points };
+  const basicCount = STAGES.filter(s=>s.category==='basic').length;
+  if(grade!=='D' && currentStage.category==='basic' && currentStage.id === progress.unlocked && progress.unlocked < basicCount-1){
+    progress.unlocked++;
+  }
+  saveProgress();
+
+  document.getElementById('result-stagename').textContent = currentStage.belt + ' ' + currentStage.name;
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('stat-acc').textContent = Math.round(acc)+'%';
+  document.getElementById('stat-combo').textContent = score.maxCombo;
+  document.getElementById('stat-score').textContent = points;
+  const best = progress.best[currentStage.id];
+  document.getElementById('result-best').textContent = 'ベスト: ' + best.grade + ' ・ ' + best.acc + '% ・ ' + best.score + '点' + (isNewBest?'  ✨更新！':'');
+  showScreen('screen-result');
+}
+
+document.getElementById('btn-quit').addEventListener('click', ()=>{
+  stopSchedulerOnly(); started=false; finished=true;
+  buildStageList();
+  showScreen('screen-select');
+});
+document.getElementById('btn-mute-play').addEventListener('click', toggleMute);
+document.getElementById('btn-retry').addEventListener('click', ()=> startStage(currentStage.id));
+document.getElementById('btn-tolist').addEventListener('click', ()=>{ buildStageList(); showScreen('screen-select'); });
+
+/* ============================================================
+   9. 描画ループ (canvas)
+============================================================ */
+const canvas = document.getElementById('gamecanvas');
+const ctx = canvas.getContext('2d');
+let dpr = Math.min(window.devicePixelRatio||1, 2);
+
+function resizeCanvas(){
+  const wrap = document.getElementById('canvas-wrap');
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ if(document.getElementById('screen-play').classList.contains('active')) resizeCanvas(); });
+
+function renderLoop(){
+  if(!started) return;
+  const w = canvas.width/dpr, h = canvas.height/dpr;
+  ctx.clearRect(0,0,w,h);
+  const now = actx.currentTime;
+  const judgeY = h*JUDGE_LINE_RATIO;
+  const laneCount = currentStage.lanes.length;
+  const laneW = w/laneCount;
+
+  // レーンの区切り線
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for(let i=1;i<laneCount;i++){
+    ctx.beginPath(); ctx.moveTo(i*laneW,0); ctx.lineTo(i*laneW,h); ctx.stroke();
+  }
+
+  // 判定ライン (太鼓の綴じ紐風ジグザグ)
+  ctx.save();
+  ctx.strokeStyle = '#c98a3b'; ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(201,138,59,0.6)'; ctx.shadowBlur = 10;
+  ctx.beginPath();
+  const zz = 14;
+  for(let x=0;x<=w;x+=zz){
+    const y = judgeY + ((x/zz)%2===0 ? -4 : 4);
+    if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // ノート
+  notes.forEach(n=>{
+    if(n.judged && n.time < now - 0.3) return;
+    const laneIdx = currentStage.lanes.indexOf(n.lane);
+    const cx = laneIdx*laneW + laneW/2;
+    const remain = n.time - now; // 正なら未来
+    const progressRatio = 1 - (remain / TRAVEL_TIME); // 0=上端 1=判定ライン
+    const y = progressRatio * judgeY;
+    if(y < -30 || y > h+30) {
+      if(!n.judged && remain < -HIT_WINDOW.ok){ n.judged = true; n.missed = true; score.miss++; score.combo=0; updateHud(); }
+      return;
+    }
+    const color = LANES_DEF[n.lane].color;
+    ctx.save();
+    if(n.hit){
+      ctx.globalAlpha = Math.max(0, 1 - (now-n.time)/0.25);
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(cx,y,15+ (now-n.time)*40,0,Math.PI*2); ctx.lineWidth=2; ctx.strokeStyle=color; ctx.stroke();
+    } else if(n.missed){
+      ctx.globalAlpha = 0.4; ctx.strokeStyle = '#666'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(cx-8,y-8); ctx.lineTo(cx+8,y+8); ctx.moveTo(cx+8,y-8); ctx.lineTo(cx-8,y+8); ctx.stroke();
+    } else {
+      ctx.fillStyle = color;
+      ctx.shadowColor = color; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(cx,y,13,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath(); ctx.arc(cx,y,5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+    if(!n.judged && remain < -HIT_WINDOW.ok){ n.judged = true; n.missed = true; score.miss++; score.combo=0; updateHud(); }
+  });
+
+  // 古いノートを間引き
+  if(notes.length > 400) notes = notes.filter(n=> n.time > now-2);
+
+  // 終了判定: スケジュール済みが尽き、残りノートも全部判定済みなら結果画面へ
+  if(curBar>=totalBars && !schedTimer){
+    const pending = notes.some(n=> !n.judged);
+    if(!pending){ endStage(); return; }
+  }
+
+  requestAnimationFrame(renderLoop);
+}
+
+/* 初期リサイズ */
+window.addEventListener('load', resizeCanvas);
+})();
+</script>
+</body>
+</html>
