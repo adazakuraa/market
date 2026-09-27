@@ -30,7 +30,7 @@ EXCLUDE_KEYWORDS = [
     "パラリンピック", "ワールドカップ", "W杯", "テニス", "ゴルフ", "バレー", "バスケ",
     "柔道", "駅伝", "マラソン大会", "F1", "競馬", "格闘技", "ボクシング",
     "芸能", "俳優", "女優", "タレント", "アイドル", "歌手", "ドラマ", "映画賞",
-    "紅白歌合戦", "お笑い", "コンサート", "ライブ", "アニメ映画","神",
+    "紅白歌合戦", "お笑い", "コンサート", "ライブ", "アニメ映画",
 ]
 
 # ==== 国内ニュース(政治/経済/国際/社会)のジャンル判定キーワード ====
@@ -203,7 +203,6 @@ def add_items(buckets, items, category_fn=None, fixed_category=None):
 def build_domestic_sources(buckets):
     sources = {
         "NHKニュース": "https://www3.nhk.or.jp/rss/news/cat0.xml",
-        "JCASTニュース": "https://www.j-cast.com/index.xml",
         "CNN.co.jp": "https://feeds.cnn.co.jp/rss/cnn/cnn.rdf",
         "朝日新聞デジタル": "http://rss.asahi.com/rss/asahi/newsheadlines.rdf",
         "毎日新聞": "https://mainichi.jp/rss/etc/mainichi-flash.rss",
