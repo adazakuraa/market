@@ -16,6 +16,8 @@ from urllib.parse import urljoin
 import requests
 import pandas as pd
 
+from universe import TARGET_CLASSES, size_class
+
 # 銘柄一覧Excelの掲載ページ。Excel自体のURLはJPX側で時々変わるため、
 # このページからリンクを探して取得する。見つからなければ下の固定URLを試す。
 JPX_LIST_PAGE_URL = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html"
@@ -27,10 +29,10 @@ HEADERS = {
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 OUT_PATH = os.path.join(OUT_DIR, "master.csv")
 
-# 規模コード: 1=TOPIX Core30, 2=Large70, 3=Mid400, 4=Small1, 5=Small2, 6=対象外/その他
-# Small1(小型株)まで対象に含める。Small2はさらに流動性が乏しくなりがちなため除外。
+# 規模区分は universe.py で名称から判定する(JPXの規模コードは 1,2,4,6,7 と飛び番のため)。
+# 対象: TOPIX Core30 / Large70 / Mid400(中〜大型株) + Small 1(小型株)。
+# Small 2はさらに流動性が乏しくなりがちなため除外。
 # 小型株のボラティリティ条件はscreen_stocks.py側で別途フィルタする。
-TARGET_SIZE_CODES = {"1", "2", "3", "4"}
 
 
 def find_xls_urls():
@@ -107,15 +109,16 @@ def main():
     # プライム市場のみ
     df = df[df["market"].astype(str).str.contains("プライム", na=False)]
 
-    # 中〜大型株のみ（TOPIX Core30 + Large70 + Mid400）
-    df = df[df["size_code"].isin(TARGET_SIZE_CODES)]
+    # TOPIX Core30 + Large70 + Mid400 + Small 1
+    df["size_class"] = df["size"].map(size_class)
+    df = df[df["size_class"].isin(TARGET_CLASSES)]
 
     # 業種コードが空（ETFやREIT等）の行を除外
     df = df[df["sector33"].notna() & (df["sector33"].astype(str).str.strip() != "-")]
 
     df["ticker"] = df["code"] + ".T"
 
-    out = df[["code", "ticker", "name", "market", "sector33_code", "sector33", "size_code", "size"]]
+    out = df[["code", "ticker", "name", "market", "sector33_code", "sector33", "size_code", "size", "size_class"]]
     out = out.drop_duplicates(subset=["code"]).reset_index(drop=True)
 
     out.to_csv(OUT_PATH, index=False, encoding="utf-8-sig")

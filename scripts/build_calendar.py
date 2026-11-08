@@ -31,6 +31,15 @@ BOJ_MEETINGS = [
     {"date": "2026-09-18", "range": "9/17-18"},
     {"date": "2026-10-30", "range": "10/29-30"},
     {"date": "2026-12-18", "range": "12/17-18"},
+    # 2027年分(日銀が2026年7月31日に公表)
+    {"date": "2027-01-22", "range": "1/21-22"},
+    {"date": "2027-03-18", "range": "3/17-18"},
+    {"date": "2027-04-28", "range": "4/27-28"},
+    {"date": "2027-06-11", "range": "6/10-11"},
+    {"date": "2027-07-22", "range": "7/21-22"},
+    {"date": "2027-09-22", "range": "9/21-22"},
+    {"date": "2027-10-29", "range": "10/28-29"},
+    {"date": "2027-12-17", "range": "12/16-17"},
 ]
 
 # FOMC(米国時間、結果公表日=2日目の日付を採用)。日本時間では通常翌日未明(深夜)に発表。
@@ -43,10 +52,20 @@ FOMC_MEETINGS = [
     {"date": "2026-09-16", "range": "9/15-16(米国時間)"},
     {"date": "2026-10-28", "range": "10/27-28(米国時間)"},
     {"date": "2026-12-09", "range": "12/8-9(米国時間)"},
-    # 2027年分(参考、FRBが2025年9月に発表済み)
+    # 2027年分(FRB公表の予定。各回の日程は直前の会合で正式確定)
     {"date": "2027-01-27", "range": "1/26-27(米国時間)"},
     {"date": "2027-03-17", "range": "3/16-17(米国時間)"},
+    {"date": "2027-04-28", "range": "4/27-28(米国時間)"},
+    {"date": "2027-06-09", "range": "6/8-9(米国時間)"},
+    {"date": "2027-07-28", "range": "7/27-28(米国時間)"},
+    {"date": "2027-09-15", "range": "9/14-15(米国時間)"},
+    {"date": "2027-10-27", "range": "10/26-27(米国時間)"},
+    {"date": "2027-12-08", "range": "12/7-8(米国時間)"},
 ]
+
+# 登録済みの最終日程がこの日数以内に迫ったら、翌年分の追加が必要として失敗扱いにする
+# (ワークフローが赤くなり、GitHubアプリに通知が届く)
+REFILL_WARNING_DAYS = 60
 
 
 def build_events():
@@ -69,6 +88,16 @@ def build_events():
     return events
 
 
+def check_schedule_coverage():
+    today = datetime.now(JST).date()
+    problems = []
+    for name, meetings in (("日銀", BOJ_MEETINGS), ("FOMC", FOMC_MEETINGS)):
+        last = max(datetime.strptime(m["date"], "%Y-%m-%d").date() for m in meetings)
+        if (last - today).days <= REFILL_WARNING_DAYS:
+            problems.append(f"{name}の日程が{last}までしか登録されていません")
+    return problems
+
+
 def main():
     events = build_events()
     now = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
@@ -78,6 +107,11 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
     print(f"Saved {len(events)}件 -> {OUT_PATH}")
+
+    problems = check_schedule_coverage()
+    if problems:
+        # カレンダー自体は保存したうえで、翌年分の追加が必要なことを知らせるため失敗終了する
+        raise SystemExit("[要更新] " + " / ".join(problems) + "。build_calendar.py に翌年分の日程を追加してください。")
 
 
 if __name__ == "__main__":

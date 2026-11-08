@@ -3,8 +3,9 @@ name: update-dashboard
 on:
   workflow_dispatch: {}
   schedule:
-    # 平日 16:00 JST(=07:00 UTC) 大引け後に更新
-    - cron: '0 7 * * 1-5'
+    # 平日 16:17 JST(=07:17 UTC) 大引け後に更新。
+    # 毎時0分ちょうどはGitHub側が混雑して大幅に遅れやすいため、半端な分にしている
+    - cron: '17 7 * * 1-5'
 
 concurrency:
   group: dashboard-write
@@ -18,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -29,66 +30,82 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Fetch master list (JPX)
+        id: fetch_master_list_jpx
         continue-on-error: true
         run: python scripts/fetch_master.py
 
       - name: Build sector strength (yfinance)
+        id: build_sector_strength_yfinance
         continue-on-error: true
         run: python scripts/build_sector_strength.py
 
       - name: Render site
+        id: render_site
         continue-on-error: true
         run: python scripts/render_site.py
 
       - name: Screen stocks
+        id: screen_stocks
         continue-on-error: true
         run: python scripts/screen_stocks.py
 
       - name: Render screening page
+        id: render_screening_page
         continue-on-error: true
         run: python scripts/render_screening.py
 
       - name: Render stock detail page
+        id: render_stock_detail_page
         continue-on-error: true
         run: python scripts/render_stock_detail.py
 
       - name: Render watchlist page
+        id: render_watchlist_page
         continue-on-error: true
         run: python scripts/render_watchlist.py
 
       - name: Build macro data (FX / US indices / commodities)
+        id: build_macro_data_fx_us_indices_commoditi
         continue-on-error: true
         run: python scripts/build_macro_data.py
 
       - name: Render overseas page
+        id: render_overseas_page
         continue-on-error: true
         run: python scripts/render_overseas.py
 
       - name: Render commodities page
+        id: render_commodities_page
         continue-on-error: true
         run: python scripts/render_commodities.py
 
       - name: Build Japan economy data (JGB yields / CGPI)
+        id: build_japan_economy_data_jgb_yields_cgpi
         continue-on-error: true
         run: python scripts/build_japan_economy.py
 
       - name: Render Japan economy page
+        id: render_japan_economy_page
         continue-on-error: true
         run: python scripts/render_japan_economy.py
 
       - name: Render portfolio allocation page
+        id: render_portfolio_allocation_page
         continue-on-error: true
         run: python scripts/render_portfolio.py
 
       - name: Build calendar (BOJ / FOMC)
+        id: build_calendar_boj_fomc
         continue-on-error: true
         run: python scripts/build_calendar.py
 
       - name: Render calendar page
+        id: render_calendar_page
         continue-on-error: true
         run: python scripts/render_calendar.py
 
       - name: Train prediction models (ML)
+        id: train_prediction_models_ml
         continue-on-error: true
         run: python scripts/ml_predict.py
 
@@ -97,3 +114,21 @@ jobs:
         with:
           commit_message: 'auto update dashboard'
           file_pattern: 'docs data'
+
+      # 上の各ステップは「1つ失敗しても他を止めない」設定にしているため、
+      # 最後に失敗があったかをまとめて確認し、あれば実行結果を失敗(赤)にする。
+      # (データの保存は済んでいる。失敗に気づけるように、GitHubアプリへの通知を出すのが目的)
+      - name: Report failed steps
+        if: always()
+        env:
+          STEPS_JSON: ${{ toJSON(steps) }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          steps = json.loads(os.environ["STEPS_JSON"])
+          failed = [name for name, st in steps.items() if st.get("outcome") == "failure"]
+          if failed:
+              print("失敗したステップ: " + ", ".join(failed))
+              sys.exit(1)
+          print("すべてのステップが成功しました")
+          PY

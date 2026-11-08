@@ -16,17 +16,24 @@ except ImportError:
     from sklearn.ensemble import HistGradientBoostingClassifier
     HAS_LIGHTGBM = False
 
-TEST_SIZE_DAYS = 40
-VALIDATION_SIZE_DAYS = 40  # 学習データの中からさらに切り出す、閾値調整用の検証期間
-MIN_TRAIN_ROWS = 120  # これ未満なら学習しない
+TEST_SIZE_DAYS = 120        # 最終評価に使う直近の期間(学習にも閾値決めにも使わない)
+VALIDATION_SIZE_DAYS = 120  # 学習データの中から切り出す、閾値・売買ルールを決めるための検証期間
+MIN_TRAIN_ROWS = 200        # これ未満なら学習しない
+GAP_DAYS = 5                # 予測期間(5営業日)ぶん、学習と検証/テストの間を空ける
+COST_PER_TRADE = 0.002      # 売買1往復あたりのコスト想定(手数料・スプレッド等 0.2%)
 
 
-def time_series_split(X, y, test_size=TEST_SIZE_DAYS):
-    """時系列順を保ったまま、末尾test_size行をテスト、それより前を学習に使う"""
+def time_series_split(X, y, test_size=TEST_SIZE_DAYS, gap=GAP_DAYS):
+    """
+    時系列順を保ったまま、末尾test_size行をテスト、それより前を学習に使う。
+    目的変数は「5営業日後の値動き」なので、学習データの末尾gap行はテスト期間の値動きを
+    含んでしまう。その分を学習から外して、テスト期間の情報が学習に漏れないようにする。
+    """
     n = len(X)
     split_idx = n - test_size
-    X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
-    y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
+    train_end = max(split_idx - gap, 0)
+    X_train, X_test = X.iloc[:train_end], X.iloc[split_idx:]
+    y_train, y_test = y.iloc[:train_end], y.iloc[split_idx:]
     return X_train, X_test, y_train, y_test
 
 
@@ -73,7 +80,7 @@ def train_logistic(X_train, y_train, scaler):
     return model
 
 
-def train_ensemble(X_train, y_train):
+def train_ensemble(X_train, y_train, gap=GAP_DAYS):
     """
     学習データをさらに「内部学習用」と「検証用(閾値調整用)」に時系列分割し、
     検証データでF1最大の閾値を決めてから、学習データ全体で最終モデルを再学習する。
@@ -83,8 +90,9 @@ def train_ensemble(X_train, y_train):
     val_size = min(VALIDATION_SIZE_DAYS, max(int(n * 0.2), 10))
     inner_train_size = n - val_size
 
-    X_inner, X_val = X_train.iloc[:inner_train_size], X_train.iloc[inner_train_size:]
-    y_inner, y_val = y_train.iloc[:inner_train_size], y_train.iloc[inner_train_size:]
+    # 内部学習と検証の間もgap行空ける(検証期間の値動きが内部学習に漏れないように)
+    X_inner, X_val = X_train.iloc[:max(inner_train_size - gap, 1)], X_train.iloc[inner_train_size:]
+    y_inner, y_val = y_train.iloc[:max(inner_train_size - gap, 1)], y_train.iloc[inner_train_size:]
 
     gbm_inner = train_gbm(X_inner, y_inner)
     scaler_inner = StandardScaler()
@@ -108,6 +116,7 @@ def train_ensemble(X_train, y_train):
         "threshold": best_threshold,
         "X_val": X_val,
         "y_val": y_val,
+        "val_probs": ensemble_val_probs,   # 検証期間の予測確率(内部学習モデルによる)。売買ルールの決定に使う
     }
 
 
@@ -123,6 +132,10 @@ def evaluate(y_true, y_pred):
         "precision": round(float(precision_score(y_true, y_pred, zero_division=0)), 3),
         "recall": round(float(recall_score(y_true, y_pred, zero_division=0)), 3),
         "f1": round(float(f1_score(y_true, y_pred, zero_division=0)), 3),
+        # 比較用: テスト期間に実際に「上昇」だった日の割合。
+        # 毎日やみくもに買っても precision はこの値くらいになるので、これを上回っているかが目安
+        "base_rate": round(float(np.mean(y_true)), 3) if len(y_true) else None,
+        "n_signals": int(np.sum(y_pred)),
     }
 
 
@@ -144,32 +157,32 @@ def get_feature_importance(gbm_model, feature_names, X_val=None, y_val=None, top
     ]
 
 
-def extract_high_confidence_rules(X, y, min_leaf_ratio=0.05, max_depth=3):
+def extract_high_confidence_rules(X_train, y_train, X_test=None, y_test=None, min_leaf_ratio=0.05, max_depth=3):
     """
-    浅い決定木を学習し、精度が高い葉(買いやすいパターン・売りやすいパターン)を抽出する。
-    X, yは学習・テストを合わせた全期間のデータ(ルール発見が目的で、予測精度の検証はしないため)。
+    浅い決定木を学習期間だけで学習し、上昇しやすい/しにくい条件(葉)を抽出する。
+    学習期間での的中率に加えて、学習に使っていないテスト期間で同じ条件に当てはまった日の
+    的中率も出す(学習期間の数字だけだと実際より良く見えるため)。
     """
-    min_samples_leaf = max(int(len(X) * min_leaf_ratio), 5)
+    min_samples_leaf = max(int(len(X_train) * min_leaf_ratio), 5)
     tree = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=min_samples_leaf, random_state=42)
-    tree.fit(X, y)
+    tree.fit(X_train, y_train)
 
-    feature_names = list(X.columns)
+    feature_names = list(X_train.columns)
     t = tree.tree_
-
     leaves = []
 
     def walk(node_id, path):
         left = t.children_left[node_id]
         right = t.children_right[node_id]
         if left == -1 and right == -1:  # 葉ノード
-            n_samples = int(t.n_node_samples[node_id])  # 生の件数はn_node_samplesから取る(確実)
+            n_samples = int(t.n_node_samples[node_id])
             values = t.value[node_id][0]
             # sklearnのバージョンにより、value が「件数」か「割合(合計1)」かが異なるため両対応する
             if abs(float(values.sum()) - 1.0) < 1e-6:
                 precision_up = float(values[1]) if len(values) > 1 else 0.0
             else:
                 precision_up = float(values[1]) / n_samples if n_samples > 0 and len(values) > 1 else 0.0
-            leaves.append({"path": list(path), "n_samples": n_samples, "precision_up": precision_up})
+            leaves.append({"node": node_id, "path": list(path), "n_samples": n_samples, "precision_up": precision_up})
             return
         feature = feature_names[t.feature[node_id]]
         threshold = t.threshold[node_id]
@@ -177,65 +190,96 @@ def extract_high_confidence_rules(X, y, min_leaf_ratio=0.05, max_depth=3):
         walk(right, path + [f"{feature} > {threshold:.3f}"])
 
     walk(0, [])
-
     if not leaves:
         return None, None
 
-    # 買いシグナル: 上昇的中率が最も高い葉(十分なサンプル数があるもの)
-    buy_candidates = [l for l in leaves if l["n_samples"] >= min_samples_leaf]
-    best_buy = max(buy_candidates, key=lambda l: l["precision_up"]) if buy_candidates else None
-    # 売りシグナル: 上昇的中率が最も低い(=下落しやすい)葉
-    best_sell = min(buy_candidates, key=lambda l: l["precision_up"]) if buy_candidates else None
+    test_leaf = tree.apply(X_test) if X_test is not None and len(X_test) else None
+    y_test_arr = np.asarray(y_test) if y_test is not None else None
 
-    return best_buy, best_sell
+    def finish(leaf):
+        if leaf is None:
+            return None
+        out = {k: leaf[k] for k in ("path", "n_samples", "precision_up")}
+        out["precision_up"] = round(float(out["precision_up"]), 3)
+        if test_leaf is not None:
+            mask = test_leaf == leaf["node"]
+            n_test = int(mask.sum())
+            out["test_n_samples"] = n_test
+            out["test_precision_up"] = round(float(y_test_arr[mask].mean()), 3) if n_test > 0 else None
+        return out
+
+    candidates = [l for l in leaves if l["n_samples"] >= min_samples_leaf]
+    best_buy = max(candidates, key=lambda l: l["precision_up"]) if candidates else None
+    best_sell = min(candidates, key=lambda l: l["precision_up"]) if candidates else None
+    return finish(best_buy), finish(best_sell)
 
 
-def backtest_thresholds(dates, probs, close_series, buy_grid=None, sell_grid=None, max_hold_days=10):
+def simulate_trades(probs, close_arr, buy_th, sell_th, max_hold_days=10, cost=COST_PER_TRADE):
+    """確率が buy_th 以上で買い、sell_th 以下 or max_hold_days 経過で売る。1取引ごとのリターン(コスト控除後)を返す"""
+    trades = []
+    position = False
+    entry_price = None
+    entry_idx = None
+    for i, p in enumerate(probs):
+        price = close_arr[i]
+        if price is None or not np.isfinite(price):
+            continue
+        if not position and p >= buy_th:
+            position, entry_price, entry_idx = True, price, i
+        elif position and (p <= sell_th or i - entry_idx >= max_hold_days):
+            trades.append(price / entry_price - 1 - cost)
+            position = False
+    if position:  # 期間末に保有中なら最終日に手じまい
+        last = close_arr[-1]
+        if last is not None and np.isfinite(last):
+            trades.append(last / entry_price - 1 - cost)
+    return trades
+
+
+def backtest_thresholds(val_dates, val_probs, test_dates, test_probs, close_series,
+                        buy_grid=None, sell_grid=None, max_hold_days=10, cost=COST_PER_TRADE):
     """
-    予測確率の時系列を使い、買い/売り閾値の組み合わせをグリッドサーチして
-    過去データ上の累積リターンが最大になる組み合わせを探す。
+    売買の閾値は「検証期間」で一番成績の良い組み合わせを選び、
+    その閾値を「テスト期間」(閾値選びにもモデルの学習にも使っていない期間)に当てはめた成績を返す。
+    同じ期間で選んで同じ期間で評価すると、成績が実際より良く見えてしまうため。
+    成績は売買コスト(1往復 cost)を差し引いた値。比較用に、テスト期間をずっと持ち続けた場合のリターンも返す。
     """
     if buy_grid is None:
-        buy_grid = [0.55, 0.60, 0.65, 0.70, 0.75]
+        buy_grid = [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75]
     if sell_grid is None:
-        sell_grid = [0.30, 0.35, 0.40, 0.45, 0.50]
+        sell_grid = [0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
 
-    close_arr = close_series.reindex(dates).values
+    val_close = close_series.reindex(val_dates).values
+    test_close = close_series.reindex(test_dates).values
+
     best = None
-
     for buy_th in buy_grid:
         for sell_th in sell_grid:
             if sell_th >= buy_th:
                 continue
-            position = False
-            entry_price = None
-            entry_idx = None
-            total_return = 0.0
-            n_trades = 0
-
-            for i, p in enumerate(probs):
-                if not position and p >= buy_th:
-                    position = True
-                    entry_price = close_arr[i]
-                    entry_idx = i
-                elif position:
-                    held = i - entry_idx
-                    if p <= sell_th or held >= max_hold_days:
-                        total_return += (close_arr[i] / entry_price) - 1
-                        n_trades += 1
-                        position = False
-
-            if n_trades < 3:  # 取引数が少なすぎる組み合わせはノイズなので除外
+            trades = simulate_trades(val_probs, val_close, buy_th, sell_th, max_hold_days, cost)
+            if len(trades) < 3:  # 取引数が少なすぎる組み合わせはノイズなので除外
                 continue
+            avg = float(np.mean(trades))
+            if best is None or avg > best["val_avg"]:
+                best = {"buy": buy_th, "sell": sell_th, "val_avg": avg, "val_n": len(trades)}
+    if best is None:
+        return None
 
-            avg_return = total_return / n_trades
-            if best is None or avg_return > best["avg_return_per_trade"]:
-                best = {
-                    "buy_threshold": buy_th,
-                    "sell_threshold": sell_th,
-                    "n_trades": n_trades,
-                    "total_return": round(float(total_return), 4),
-                    "avg_return_per_trade": round(float(avg_return), 4),
-                }
-
-    return best
+    test_trades = simulate_trades(test_probs, test_close, best["buy"], best["sell"], max_hold_days, cost)
+    finite = test_close[np.isfinite(test_close)]
+    hold_return = float(finite[-1] / finite[0] - 1) if len(finite) >= 2 else None
+    return {
+        "buy_threshold": best["buy"],
+        "sell_threshold": best["sell"],
+        "selected_on": "validation",
+        "val_n_trades": best["val_n"],
+        "val_avg_return_per_trade": round(best["val_avg"], 4),
+        "n_trades": len(test_trades),
+        "total_return": round(float(np.sum(test_trades)), 4) if test_trades else 0.0,
+        "avg_return_per_trade": round(float(np.mean(test_trades)), 4) if test_trades else None,
+        "win_rate": round(float(np.mean([r > 0 for r in test_trades])), 3) if test_trades else None,
+        "cost_per_trade": cost,
+        "buy_and_hold_return": round(hold_return, 4) if hold_return is not None else None,
+        "test_days": int(len(test_dates)),
+    }
