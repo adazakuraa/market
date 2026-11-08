@@ -30,7 +30,7 @@ MOF_JGB_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.
 
 BOJ_API_URL = "https://www.stat-search.boj.or.jp/api/v1/getDataCode?format=json&lang=jp&db=PR01&code=PRCG20_2200000000&startDate=201501"
 JGB_TARGET_COLUMNS = {"短期(2年)": "2年", "中期(5年)": "5年", "長期(10年)": "10年"}
-DAYS_TO_KEEP = 200
+DAYS_TO_KEEP = 800  # 予測モデルの特徴量として3年分使うため(画面表示は最大6ヶ月)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"

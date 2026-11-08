@@ -12,6 +12,8 @@ import json
 import pandas as pd
 import yfinance as yf
 
+from universe import LARGE_MID_CLASSES, add_size_class
+
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 MASTER_PATH = os.path.join(BASE_DIR, "data", "master.csv")
 OUT_PATH = os.path.join(BASE_DIR, "data", "sector_strength.csv")
@@ -63,34 +65,43 @@ def download_close_prices(tickers):
     return pd.concat(all_frames, axis=1)
 
 
-DESPIKE_THRESHOLD = 0.15  # 前後の中央値からこの割合を超えて乖離したら異常値とみなす(15%)
-DESPIKE_WINDOW = 7        # 前後を含めた中央値の算出に使う日数
+DESPIKE_THRESHOLD = 0.15  # 前後の値からこの割合を超えて離れ、かつすぐ戻った値を異常値とみなす(15%)
+DESPIKE_WINDOW = 7        # 互換性のため残している引数(現在の判定では使わない)
 
 
 def despike(df, threshold=DESPIKE_THRESHOLD, window=DESPIKE_WINDOW):
     """
-    yfinance側の誤ティックや、配当調整のタイミングのズレなどによる異常値対策。
-    「前日比」ではなく「前後window日の中央値からの乖離」で判定することで、
-    異常値の翌日まで連鎖的に誤検出してしまう問題を避ける。
-    TOPIX代理ETFのような値が数日だけ異常だと全セクターの相対強度に同じ歪みが
-    伝播するため、ここで弾いておく。
+    yfinance側の誤ティックなど「1日だけ飛んで、翌日には元に戻る」値を異常値として補完する。
+
+    判定条件(すべて満たすときだけ異常値):
+    - 前日の値からthreshold超、かつ翌日の値からもthreshold超、同じ方向に離れている
+    - 前日と翌日の値どうしは近い(threshold/2以内) = すぐ元の水準に戻っている
+
+    以前は「前後7日の中央値からの乖離」で判定していたが、それだと決算やストップ高・安などの
+    本物の急変まで、発生当日(とその翌日)に前日の値へ置き換えてしまっていた。
+    最新日は翌日の値がまだないため、判定せずそのまま使う。
     """
-    med = df.rolling(window=window, center=True, min_periods=3).median()
-    dev = (df - med).abs() / med.abs()
-    bad = dev > threshold
+    prev = df.ffill().shift(1)
+    nxt = df.bfill().shift(-1)
+    up = (df / prev - 1 > threshold) & (df / nxt - 1 > threshold)
+    down = (df / prev - 1 < -threshold) & (df / nxt - 1 < -threshold)
+    reverts = ((prev / nxt - 1).abs() <= threshold / 2)
+    bad = (up | down) & reverts
+    bad = bad.fillna(False).astype(bool)
 
     n_bad = int(bad.sum().sum())
     if n_bad > 0:
         flagged = []
         for col in df.columns:
-            bad_dates = df.index[bad[col]]
-            for d in bad_dates:
-                flagged.append(f"{col} @ {d.date()}")
+            for d in df.index[bad[col]]:
+                flagged.append(f"{col} @ {getattr(d, 'date', lambda: d)()}")
         print(f"[despike] {n_bad}件の異常値を検出し補完します: {flagged[:20]}")
 
     cleaned = df.mask(bad)
     cleaned = cleaned.ffill().bfill()
     return cleaned
+
+
 def period_return(series, days):
     """直近値と、営業日で概ねdays日前の値との変化率(%)を返す"""
     series = series.dropna()
@@ -149,10 +160,10 @@ def build_timeseries(close_df, master):
 
 
 def main():
-    master = pd.read_csv(MASTER_PATH, dtype=str)
-    # セクター指数の算出は、指数のブレを抑えるため中〜大型株のみを対象にする
+    master = add_size_class(pd.read_csv(MASTER_PATH, dtype=str))
+    # セクター指数の算出は、指数のブレを抑えるため中〜大型株(Core30/Large70/Mid400)のみを対象にする
     # (小型株はscreen_stocks.py側のスクリーニング候補としてのみ別途対象に含める)
-    master = master[master["size_code"].isin(["1", "2", "3"])].copy()
+    master = master[master["size_class"].isin(LARGE_MID_CLASSES)].copy()
     tickers = master["ticker"].tolist()
     all_tickers = tickers + [TOPIX_PROXY_TICKER]
 

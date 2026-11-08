@@ -285,9 +285,18 @@ def main():
         ? ((1 - rule.precision_up) * 100).toFixed(1)
         : (rule.precision_up * 100).toFixed(1);
       const label = isSell ? '下落的中率' : '上昇的中率';
+      let testLine = '';
+      if (rule.test_n_samples !== undefined) {{
+        if (rule.test_n_samples > 0 && rule.test_precision_up !== null) {{
+          const tp = isSell ? ((1 - rule.test_precision_up) * 100).toFixed(1) : (rule.test_precision_up * 100).toFixed(1);
+          testLine = `<br>テスト期間（学習に使っていない直近期間）: 該当${{rule.test_n_samples}}件中 <b>${{tp}}%</b>`;
+        }} else {{
+          testLine = '<br>テスト期間（学習に使っていない直近期間）には該当する日がありませんでした。';
+        }}
+      }}
       return `<div class="rule-box ${{kind}}">
         条件: ${{rule.path.join(' かつ ')}}<br>
-        該当${{rule.n_samples}}件中、${{label}} <b>${{pct}}%</b>
+        学習期間: 該当${{rule.n_samples}}件中、${{label}} <b>${{pct}}%</b>${{testLine}}
       </div>`;
     }}
 
@@ -312,7 +321,9 @@ def main():
           <div class="metric-chip">Precision<b>${{(m.precision*100).toFixed(0)}}%</b></div>
           <div class="metric-chip">Recall<b>${{(m.recall*100).toFixed(0)}}%</b></div>
           <div class="metric-chip">F1<b>${{(m.f1*100).toFixed(0)}}%</b></div>
-        </div>`;
+        </div>
+        ${{m.base_rate !== undefined && m.base_rate !== null ? `<div class="analysis-note">比較の目安: テスト期間に実際に上昇した日の割合は <b>${{(m.base_rate*100).toFixed(0)}}%</b>。
+          何も考えずに毎日買ってもPrecisionはこのくらいになるので、Precisionがこれを<b>${{m.precision > m.base_rate ? '上回っています' : '上回っていません'}}</b>（シグナル${{m.n_signals}}回）。</div>` : ''}}`;
 
       const maxImp = result.feature_importance.length ? result.feature_importance[0].importance : 1;
       const impHtml = result.feature_importance.map(f => `
@@ -325,10 +336,23 @@ def main():
       let btHtml = '<div class="analysis-note">有効な売買閾値の組み合わせが見つかりませんでした。</div>';
       if (result.backtest) {{
         const bt = result.backtest;
-        btHtml = `<div class="rule-box">
-          確率${{(bt.buy_threshold*100).toFixed(0)}}%以上で買い、${{(bt.sell_threshold*100).toFixed(0)}}%以下(または保有10日)で売る場合:<br>
-          過去${{bt.n_trades}}回の取引で、平均リターン <b>${{(bt.avg_return_per_trade*100).toFixed(2)}}%/回</b>
-        </div>`;
+        if (bt.selected_on === 'validation') {{
+          const pctS = (v) => v === null || v === undefined ? '-' : `${{v >= 0 ? '+' : ''}}${{(v*100).toFixed(2)}}%`;
+          const testLine = bt.n_trades > 0
+            ? `${{bt.n_trades}}回の取引で、平均 <b>${{pctS(bt.avg_return_per_trade)}}/回</b>（合計 ${{pctS(bt.total_return)}}、勝率 ${{(bt.win_rate*100).toFixed(0)}}%）`
+            : '取引は発生しませんでした';
+          btHtml = `<div class="rule-box">
+            検証期間で選んだルール: 確率${{(bt.buy_threshold*100).toFixed(0)}}%以上で買い、${{(bt.sell_threshold*100).toFixed(0)}}%以下(または保有10日)で売る<br>
+            → テスト期間（直近${{bt.test_days}}営業日）に当てはめると: ${{testLine}}<br>
+            比較: 同じ期間ずっと持ち続けた場合 <b>${{pctS(bt.buy_and_hold_return)}}</b><br>
+            <span style="color:#888;">売買1回ごとにコスト${{(bt.cost_per_trade*100).toFixed(1)}}%を差し引いています。</span>
+          </div>`;
+        }} else {{
+          btHtml = `<div class="rule-box">
+            確率${{(bt.buy_threshold*100).toFixed(0)}}%以上で買い、${{(bt.sell_threshold*100).toFixed(0)}}%以下(または保有10日)で売る場合:<br>
+            過去${{bt.n_trades}}回の取引で、平均リターン <b>${{(bt.avg_return_per_trade*100).toFixed(2)}}%/回</b>
+          </div>`;
+        }}
       }}
 
       area.innerHTML = `
@@ -341,7 +365,8 @@ def main():
             ${{signalHtml}}
           </div>
           ${{metricsHtml}}
-          <div class="analysis-note">評価指標はテスト期間(直近${{result.n_test}}営業日、学習には使っていない期間)での成績です。学習データ${{result.n_train}}件。使用モデル: ${{result.model_used}}</div>
+          <div class="analysis-note">評価指標はテスト期間(直近${{result.n_test}}営業日${{result.test_start ? `：${{result.test_start}}〜${{result.test_end}}` : ''}}、学習にも閾値決めにも使っていない期間)での成績です。学習データ${{result.n_train}}件。使用モデル: ${{result.model_used}}。
+            1銘柄・数年分のデータでの学習なので、数字は偶然の影響を大きく受けます。参考程度にしてください。</div>
 
           <h3 style="margin-top:16px;">特徴量重要度</h3>
           ${{impHtml}}
@@ -354,7 +379,7 @@ def main():
 
           <h3 style="margin-top:16px;">売買閾値バックテスト</h3>
           ${{btHtml}}
-          <div class="analysis-note">※ 過去データ上の最適化であり、将来の利益を保証するものではありません。投資判断はご自身の責任でお願いします。</div>
+          <div class="analysis-note">※ 過去データでの検証であり、将来の利益を保証するものではありません。投資判断はご自身の責任でお願いします。</div>
         </div>`;
       area.style.display = 'block';
     }}

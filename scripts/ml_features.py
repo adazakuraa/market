@@ -9,6 +9,20 @@ import numpy as np
 from indicators import sma, rsi, macd, atr, adx, obv
 
 
+def align_macro(series, index):
+    """
+    マクロ系列を株価の日付に揃える。未来の情報が混ざらないように:
+    - 過去方向の穴埋め(ffill)だけを使い、bfill(未来の値で過去を埋める)はしない
+    - 1営業日ずらす(為替・原油・国債利回りは東証の大引け後に確定するため、
+      その日の予測にはまだ使えない)
+    """
+    s = series.sort_index()
+    s = s[~s.index.duplicated(keep="last")]
+    union = s.index.union(index)
+    aligned = s.reindex(union).ffill().reindex(index)
+    return aligned.shift(1)
+
+
 def bollinger_width(close, window=20, num_std=2):
     """ボリンジャーバンドの幅(標準化済み、価格に対する比率)"""
     mid = close.rolling(window).mean()
@@ -63,9 +77,9 @@ def build_features(close, high, low, volume, macro=None, fundamentals=None):
     # ==== マクロ特徴量(為替・原油・企業物価指数など) ====
     if macro:
         for name, series in macro.items():
-            aligned = series.reindex(df.index).ffill().bfill()  # 先頭がわずかに欠けても切り捨てないための保険
+            aligned = align_macro(series, df.index)
             df[f"macro_{name}"] = aligned
-            df[f"macro_{name}_chg20d"] = aligned.pct_change(20)
+            df[f"macro_{name}_chg20d"] = aligned.pct_change(20, fill_method=None)
 
     # ==== ファンダメンタル特徴量(現在値を定数として使用) ====
     if fundamentals:
@@ -131,9 +145,9 @@ def build_features_from_timeseries(ts, macro=None, fundamentals=None):
 
     if macro:
         for name, series in macro.items():
-            aligned = series.reindex(df.index).ffill().bfill()  # 先頭がわずかに欠けても切り捨てないための保険
+            aligned = align_macro(series, df.index)
             df[f"macro_{name}"] = aligned
-            df[f"macro_{name}_chg20d"] = aligned.pct_change(20)
+            df[f"macro_{name}_chg20d"] = aligned.pct_change(20, fill_method=None)
 
     if fundamentals:
         for name, value in fundamentals.items():

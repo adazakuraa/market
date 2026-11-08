@@ -3,10 +3,11 @@ name: update-news
 on:
   workflow_dispatch: {}
   schedule:
-    # 朝7時・昼12時・夜19時 JST に更新 (UTC: 22:00前日・03:00・10:00)
-    - cron: '0 22 * * *'
-    - cron: '0 3 * * *'
-    - cron: '0 10 * * *'
+    # 朝7時・昼12時・夜19時 JST ごろに更新 (UTC: 22:07前日・03:07・10:07)。
+    # 毎時0分ちょうどはGitHub側が混雑して遅れやすいため7分にしている
+    - cron: '7 22 * * *'
+    - cron: '7 3 * * *'
+    - cron: '7 10 * * *'
 
 concurrency:
   group: dashboard-write
@@ -20,15 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
       - name: Install minimal dependencies (ニュース取得に必要な分だけ)
-        run: pip install feedparser requests
+        run: pip install feedparser==6.0.14 requests==2.34.2
 
       - name: Fetch news
         run: python scripts/fetch_news.py

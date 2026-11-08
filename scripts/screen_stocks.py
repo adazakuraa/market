@@ -24,6 +24,7 @@ import yfinance as yf
 
 from build_sector_strength import despike
 from indicators import sma, rsi, macd, atr, adx, obv
+from universe import SMALL_CLASS, add_size_class
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 MASTER_PATH = os.path.join(BASE_DIR, "data", "master.csv")
@@ -39,7 +40,6 @@ TOP_N_SECTORS = 15      # 「強いセクター」上位いくつを既定表示
 GC_LOOKBACK_DAYS = 10       # 直近何日以内のゴールデンクロスを「済み」とみなすか
 GC_APPROACH_PCT = 0.03      # MA75に対してこの割合以内に接近していたら「接近中」
 
-SMALL_CAP_SIZE_CODE = "4"        # 小型株(Small1)の規模コード
 SMALL_CAP_MIN_VOLATILITY = 0.02  # 小型株を対象に含める最低ボラティリティ(ATR14/株価が2%以上)
 # 「ADX初動」シグナル: 無トレンド状態から上昇トレンドが生まれ始めた銘柄を検知する
 EARLY_TREND_LOOKBACK = 10   # 何営業日前のADXと比較するか
@@ -56,14 +56,14 @@ def get_strong_sectors(sector_strength):
     return sector_strength.sort_values("1m", ascending=False).head(TOP_N_SECTORS).index.tolist()
 
 
-def download_ohlcv(tickers):
+def download_ohlcv(tickers, period=LOOKBACK_PERIOD):
     """複数銘柄のOHLCVを取得し、{ticker: DataFrame(Open,High,Low,Close,Volume)}で返す"""
     result = {}
     for chunk in chunked(tickers, CHUNK_SIZE):
         print(f"Downloading OHLCV for {len(chunk)} tickers...")
         df = yf.download(
             tickers=chunk,
-            period=LOOKBACK_PERIOD,
+            period=period,
             interval="1d",
             group_by="ticker",
             auto_adjust=True,
@@ -191,7 +191,7 @@ def save_timeseries_file(ticker, s):
 
 
 def main():
-    master = pd.read_csv(MASTER_PATH, dtype=str)
+    master = add_size_class(pd.read_csv(MASTER_PATH, dtype=str))
     sector_strength = pd.read_csv(SECTOR_STRENGTH_PATH, index_col=0)
     strong_sectors = get_strong_sectors(sector_strength)
 
@@ -204,7 +204,7 @@ def main():
 
     ticker_to_name = dict(zip(master["ticker"], master["name"]))
     ticker_to_sector = dict(zip(master["ticker"], master["sector33"]))
-    ticker_to_size = dict(zip(master["ticker"], master["size_code"]))
+    ticker_to_size = dict(zip(master["ticker"], master["size_class"]))
 
     records = []
     for ticker, df in ohlcv.items():
@@ -237,8 +237,7 @@ def main():
             continue
 
         latest_atr = atr14.iloc[-1]
-        size_code = ticker_to_size.get(ticker)
-        if size_code == SMALL_CAP_SIZE_CODE:
+        if ticker_to_size.get(ticker) == SMALL_CLASS:
             if pd.isna(latest_atr) or latest_price <= 0:
                 continue
             volatility_ratio = latest_atr / latest_price
@@ -293,6 +292,16 @@ def main():
 
     print(f"Saved {len(result_df)} stocks -> {OUT_JSON_PATH}")
     print(f"Saved {len(records)} timeseries files -> {TIMESERIES_DIR}")
+
+    # 今回の対象外になった銘柄の古いチャートデータを消す(銘柄詳細ページで古いデータが出ないように)
+    keep = {ticker_code(r["ticker"]) for r in records}
+    removed = 0
+    for fname in os.listdir(TIMESERIES_DIR):
+        if fname.endswith(".json") and fname[:-5] not in keep:
+            os.remove(os.path.join(TIMESERIES_DIR, fname))
+            removed += 1
+    if removed:
+        print(f"古いtimeseriesファイルを{removed}件削除しました")
 
 
 if __name__ == "__main__":
