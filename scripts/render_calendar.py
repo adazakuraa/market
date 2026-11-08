@@ -102,6 +102,7 @@ def main():
     <a href="overseas.html">海外指標</a>
     <a href="commodities.html">資源</a>
     <a href="calendar.html" class="active">経済指標カレンダー</a>
+    <a href="portfolio.html">資金配分</a>
   </nav>
   <h1>経済指標カレンダー</h1>
   <div class="updated">最終更新: {now}（データ更新: {generated_at}）</div>
