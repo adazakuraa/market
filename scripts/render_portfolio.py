@@ -60,6 +60,7 @@ DEFAULT_INPUTS = {
     "nisaUsed": 0,        # NISA生涯枠の使用済み額(簿価)
     "idecoBal": 0,        # iDeCo残高
     "idecoLimit": 4000,   # 掛金の月額上限(iDeCo・企業型DCのマッチング拠出とも勤務先の制度により異なる)
+    "dcFixedAmount": 4000,  # 固定額で払っている場合の確定拠出年金の掛金(月額・円)
     "idecoFee": 171,      # iDeCo口座の手数料(月額, 国民年金基金連合会105円+事務委託66円の一般的な例)。マッチング拠出ではかからない
     "idecoOutTax": 0,     # iDeCo受取時の想定税率(%) 退職所得控除の範囲内なら0
     "lossLimit": 20,      # 1年で耐えられる損失(%)
@@ -255,6 +256,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div class="form-row" id="idecoFee-row"><label>iDeCo口座手数料（月額・円）</label><input type="number" id="idecoFee" min="0" step="1"></div>
       <div class="form-row"><label>iDeCo受取時の想定税率（%）</label><input type="number" id="idecoOutTax" min="0" max="55" step="1"></div>
     </div>
+    <label class="check-row"><input type="checkbox" id="dcFixed"> 掛金を固定額で払っている（給与天引きなど。「毎月投資に回すお金」とは別枠として計算）</label>
+    <div class="form-row" id="dcFixed-row" style="margin-top:8px;"><label>固定の掛金（月額・円）</label><input type="number" id="dcFixedAmount" min="0" step="1000"></div>
     <label class="check-row"><input type="checkbox" id="useIdeco"> 確定拠出年金（iDeCo／マッチング拠出）を使う（60歳まで引き出せないお金にしてよい）</label>
     <label class="check-row"><input type="checkbox" id="useGrowth"> NISA成長投資枠も使う（年120万円→360万円に拡大。中身は同じS&amp;P500として計算）</label>
     <div class="hint">iDeCo受取時の税率: 一時金で受け取り、退職所得控除の範囲内に収まるなら0%。退職金が多い場合などは5〜10%程度を入れておくと保守的です。</div>
@@ -339,19 +342,21 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     // 最適化の結果(実質の金額)を、実際に買える単位に丸める。端数は預金に回す。
     // defl: その年の物価水準(名目 = 実質 × defl)
-    function applyUnits(newH, H, defl, fee) {
+    function applyUnits(newH, H, defl, fee, fixedMonthly) {
       const out = newH.slice();
-      // iDeCo: 月の掛金を1,000円単位に切り下げ、5,000円未満なら拠出しない
+      // 確定拠出年金: 月の掛金を1,000円単位に切り下げ、下限未満なら拠出しない(固定額の場合はその額のまま)
       const add = Math.max(0, out[4] - H[4]);
-      let m = Math.floor(add * defl / 12 / IDECO_STEP + 1e-9) * IDECO_STEP;
+      // 最適化の計算誤差(1円未満)で上限ちょうどが1,000円下に切り下がらないよう、1円の余裕を持たせる
+      let m = Math.floor((add * defl / 12 + 1) / IDECO_STEP) * IDECO_STEP;
       if (m < dcMin) m = 0;
+      if (fixedMonthly !== null && fixedMonthly !== undefined) m = fixedMonthly;
       out[0] += add - m * 12 / defl;
       out[4] = H[4] + m * 12 / defl;
       // 手数料は預金から払う
       out[0] -= (m > 0 ? fee : 0);
       // 国債: 保有額を額面単位に切り下げ
       for (const [i, unit] of [[1, SHORT_UNIT], [2, LONG_UNIT]]) {
-        const r = Math.floor(out[i] * defl / unit + 1e-9) * unit / defl;
+        const r = Math.floor((out[i] * defl + 1) / unit) * unit / defl;
         out[0] += out[i] - r;
         out[i] = r;
       }
@@ -386,6 +391,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         $('taxMode').value = 'auto';
         $('spouse').value = 'none';
         $('dcType').value = 'matching';
+        $('dcFixed').checked = true;
         $('useIdeco').checked = true;
         $('useGrowth').checked = false;
       }
@@ -396,6 +402,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       o.taxMode = $('taxMode').value;
       o.spouse = $('spouse').value;
       o.dcType = $('dcType').value;
+      o.dcFixed = $('dcFixed').checked;
       o.useIdeco = $('useIdeco').checked;
       o.useGrowth = $('useGrowth').checked;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); } catch (e) { /* 保存できない環境では無視 */ }
@@ -409,6 +416,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       if (o.taxMode) $('taxMode').value = o.taxMode;
       if (o.spouse) $('spouse').value = o.spouse;
       if (o.dcType) $('dcType').value = o.dcType;
+      if (typeof o.dcFixed === 'boolean') $('dcFixed').checked = o.dcFixed;
       if (typeof o.useIdeco === 'boolean') $('useIdeco').checked = o.useIdeco;
       if (typeof o.useGrowth === 'boolean') $('useGrowth').checked = o.useGrowth;
     }
@@ -476,6 +484,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       p.rho = Math.max(-1, Math.min(1, p.rho));
       p.spouse = $('spouse').value;
       p.dcType = $('dcType').value;
+      p.dcFixed = $('dcFixed').checked;
+      p.dcFixedAmount = Math.max(0, Math.round(p.dcFixedAmount));
+      $('dcFixed-row').style.display = p.dcFixed ? '' : 'none';
       dcMin = p.dcType === 'ideco' ? 5000 : IDECO_STEP;
       if (p.dcType !== 'ideco') p.idecoFee = 0;   // マッチング拠出には個人の口座手数料はかからない
       $('idecoFee-row').style.display = p.dcType === 'ideco' ? '' : 'none';
@@ -563,11 +574,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         const out = new Set();
         if (center === null) {
           for (let v = 0; v < cap[i] - 1e-12 && v <= 1; v += step) out.add(+v.toFixed(6));
-          out.add(+Math.min(cap[i], 1).toFixed(6));
+          out.add(Math.min(cap[i], 1));   // 上限ちょうどは丸めずに候補に入れる
         } else {
           for (let k = -radius; k <= radius; k++) {
             const v = Math.min(cap[i], Math.min(1, Math.max(0, center[i] + k * step)));
-            out.add(+v.toFixed(6));
+            out.add(v === cap[i] || v === 1 ? v : +v.toFixed(6));
           }
         }
         return Array.from(out);
@@ -607,6 +618,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       let H = [0, 0, 0, p.nisaBal, p.idecoBal];
       let nisaBook = p.nisaUsed;
       const annualSave = p.monthly * 12;
+      // 掛金を固定額で払っている場合: 「毎月投資に回すお金」とは別枠で、毎年その額(名目)を拠出する
+      const fixedOn = p.dcFixed && p.useIdeco;
       let refund = 0;
       const years = [];
       let infeasibleYears = 0, nisaBindingYears = 0;
@@ -614,7 +627,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       for (let y = 1; y <= p.years; y++) {
         const defl = Math.pow(1 + infl, y - 1);
         const age = p.age + y - 1;
-        const add = annualSave + refund;
+        const fixedMonthlyNow = fixedOn && age < IDECO_MAX_CONTRIB_AGE ? p.dcFixedAmount : 0;
+        const fixedReal = fixedMonthlyNow * 12 / defl;
+        const add = annualSave + refund + fixedReal;
         refund = 0;
         const start = H.slice();
         H[0] += add;
@@ -622,20 +637,20 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         const nisaAnnual = p.useGrowth ? 3600000 : 1200000;
         const capN = Math.min(nisaAnnual, Math.max(0, NISA_LIFETIME - nisaBook)) / defl;
         const idecoOpen = p.useIdeco && age < IDECO_MAX_CONTRIB_AGE;
-        const capI = idecoOpen ? idecoEffectiveLimit(p.idecoLimit) * 12 / defl : 0;
+        const capI = fixedOn ? fixedReal : (idecoOpen ? idecoEffectiveLimit(p.idecoLimit) * 12 / defl : 0);
         const feeAnnual = p.idecoFee * 12 / defl;
         let w, feasible = true;
         if (T <= 1) {
           w = [1, 0, 0, 0, 0];
         } else {
-          const lb = [0, 0, 0, H[3] / T, H[4] / T];
+          const lb = [0, 0, 0, H[3] / T, (H[4] + (fixedOn ? fixedReal : 0)) / T];   // 固定額なら必ずその額を拠出
           const ub = [1, 1, 1, (H[3] + capN) / T, (H[4] + capI) / T];
           const res = optimize(lb, ub, mu, cov, L, ded, feeAnnual / T);
           w = res.w; feasible = res.feasible;
           if (!feasible) infeasibleYears++;
           if (feasible && capN > 0 && w[3] >= ub[3] - 1e-6) nisaBindingYears++;
         }
-        const units = applyUnits(w.map(wi => wi * T), H, defl, feeAnnual);
+        const units = applyUnits(w.map(wi => wi * T), H, defl, feeAnnual, fixedOn ? fixedMonthlyNow : null);
         const newH = units.H;
         const fee = units.fee;
         const flow = newH.map((v, i) => v - H[i]);
@@ -759,6 +774,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       if (p.useIdeco && p.age < IDECO_UNLOCK_AGE && p.age + p.years < IDECO_UNLOCK_AGE) warns.push(`運用期間（${p.years}年後＝${p.age + p.years}歳）の時点ではiDeCoはまだ引き出せません（${IDECO_UNLOCK_AGE}歳から）。その時にお金が必要なら「iDeCoを使う」のチェックを外して比べてください。`);
       if (p.useIdeco && p.age >= IDECO_MAX_CONTRIB_AGE) warns.push('65歳以上のため、iDeCoへの新規拠出はない計算です。');
       if (p.useIdeco && p.dcType === 'ideco' && p.idecoLimit > 0 && idecoEffectiveLimit(p.idecoLimit) === 0) warns.push(`iDeCoの掛金は月5,000円以上（1,000円単位）のため、月額上限${yen(p.idecoLimit)}ではiDeCoに拠出できない計算になります。会社の企業型DCのマッチング拠出なら「自分で出す確定拠出年金の掛金」で選び直してください。`);
+      if (p.useIdeco && p.dcFixed && p.dcType === 'ideco' && p.dcFixedAmount > 0 && p.dcFixedAmount < 5000) warns.push('iDeCoの掛金は月5,000円以上のため、固定の掛金がそれ未満になっています。金額か「自分で出す確定拠出年金の掛金」の種類を確認してください。');
+      if (p.useIdeco && p.dcFixed && p.dcFixedAmount > p.idecoLimit) warns.push(`固定の掛金（${yen(p.dcFixedAmount)}）が月額上限（${yen(p.idecoLimit)}）を超えています。固定の掛金のまま計算しています。`);
       if (sim.infeasibleYears > 0) warns.push(`${sim.infeasibleYears}年分で、どう配分しても許容損失（実質${p.lossLimit}%）に収まりません（現金でもインフレで目減りする／すでに持っているNISA・iDeCoの株式だけで超えている、など）。その年は「悪い年の損失」が最も小さくなる配分にしています。`);
       if (warns.length) html += `<div class="warn-box">${warns.join('<br>')}</div>`;
 
@@ -779,7 +796,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const flows = [y1.newH[0], y1.newH[1], y1.newH[2], Math.max(0, y1.flow[3]), Math.max(0, y1.flow[4])];
       const flowTotal = flows.reduce((a, b) => a + b, 0);
       html += `<h2>② 毎月の振り分け（1年目・リスク上限 ${p.lossLimit}%）</h2><div class="box">
-        <div class="note" style="margin-top:0;">毎月 <b>${yen(p.monthly)}</b>（年間 ${man(p.monthly * 12)}）の振り分け先です。</div>
+        <div class="note" style="margin-top:0;">毎月 <b>${yen(p.monthly)}</b>（年間 ${man(p.monthly * 12)}）${p.dcFixed && p.useIdeco ? `＋ 確定拠出年金の固定の掛金 <b>${yen(p.dcFixedAmount)}</b>` : ''}の振り分け先です。</div>
         <div class="bar-track">`;
       flows.forEach((f, i) => {
         const pc = flowTotal > 0 ? f / flowTotal * 100 : 0;
@@ -791,6 +808,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         `個人向け国債(変動10年)など。1万円単位（今年 ${Math.round(flows[1] / SHORT_UNIT)}口）`,
         `新窓販国債の10年債など。5万円単位（今年 ${Math.round(flows[2] / LONG_UNIT)}口）。時価で売却可`,
         `年間枠 ${man(y1.capN)} のうち`,
+        (p.dcFixed && p.useIdeco) ? `固定額で拠出（別枠）。掛金は全額所得控除で、翌年 約${man(y1.refundNext)} 税金が戻る（減る）` :
         y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち（${p.dcType === 'ideco' ? '月5,000円以上・' : ''}1,000円単位）。掛金は全額所得控除で、翌年 約${man(y1.refundNext)} 税金が戻る（減る）` : '確定拠出年金は使わない設定・または対象外',
       ];
       ASSETS.forEach((a, i) => {
@@ -814,6 +832,21 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div class="kpi"><div class="k">20年に1度の悪い年</div><div class="v">${signPct(worst, 1)}</div></div>
         </div>
         <div class="note">リスク・リターンは1年目末の運用資産全体（既存のNISA・iDeCo残高を含む）の値です。国債は毎月ではなく、数ヶ月分たまったら購入（1万円〜5万円単位）するのが現実的です。ちなみに現金のままだと実質 ${signPct(cashReal)}／年です。</div>`;
+      // 掛金を固定している場合: 見直せるなら何円が最適かを参考に出す(同じ合計額で比較)
+      if (p.dcFixed && p.useIdeco && p.age < IDECO_MAX_CONTRIB_AGE) {
+        const alt = simulate(Object.assign({}, p, { dcFixed: false, monthly: p.monthly + p.dcFixedAmount }), stats, p.lossLimit);
+        const altM = alt.years[0].idecoMonthly;
+        const diff = alt.years[alt.years.length - 1].endTotal - sim.years[sim.years.length - 1].endTotal;
+        const lim = idecoEffectiveLimit(p.idecoLimit);
+        let msg;
+        if (Math.abs(altM - p.dcFixedAmount) < IDECO_STEP) {
+          msg = `今の固定額（月${yen(p.dcFixedAmount)}）が、この条件での最適額とほぼ同じです。`;
+        } else {
+          msg = `掛金を見直せる場合、同じ合計額（毎月${yen(p.monthly + p.dcFixedAmount)}）で最適化すると、掛金は<b>月${yen(altM)}</b>が最適です（月額上限${yen(lim)}）。
+            ${p.years}年後の期待値は約${man(Math.abs(diff))}${diff >= 0 ? '多く' : '少なく'}なります。`;
+        }
+        html += `<div class="info-box">${msg}<br><span style="color:#888;">マッチング拠出は会社の掛金を超えられないなどの制限があります。上限額は勤務先の制度で確認してください。</span></div>`;
+      }
       const stockW = y1.w[3] + y1.w[4];
       if (y1.feasible && y1.capN > 0 && y1.w[3] >= (y1.start[3] + y1.capN) / y1.T - 1e-6 && worst > -p.lossLimit / 100 + 0.005) {
         html += `<div class="info-box">株式の比率（${pctf(stockW, 0)}）はリスク上限ではなく<b>NISA・iDeCoの年間枠</b>で止まっています。枠を超える分は国債・現金に回しています。株式を増やしたい場合は「成長投資枠も使う」を試してください。</div>`;
@@ -882,6 +915,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     $('taxMode').addEventListener('change', render);
     $('spouse').addEventListener('change', render);
     $('dcType').addEventListener('change', render);
+    $('dcFixed').addEventListener('change', render);
     $('useIdeco').addEventListener('change', render);
     $('useGrowth').addEventListener('change', render);
 
