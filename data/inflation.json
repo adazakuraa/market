@@ -1,8 +1,9 @@
 {
  "status": "ok",
- "value": -1.0,
+ "value": 2.077,
  "date": "2026-10-22",
  "source": "財務省 10年ブレーク・イーブン・インフレ率(BEI)",
  "source_url": "https://www.mof.go.jp/jgbs/topics/bond/10year_inflation-indexed/bei.pdf",
- "fetched_at": "2026-11-08 18:29 JST"
+ "fetched_at": "2026-11-08 18:29 JST",
+ "note": "2026-11-08 18:29の取得時にグラフの目盛り(-1.0)を誤読していたため、同じPDFの記載値(BEI 2.077% = 10年固定利付債 2.837% − 10年物価連動債 0.760%)に手動で訂正"
 }

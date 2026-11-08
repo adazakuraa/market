@@ -32,7 +32,6 @@ HEADERS = {
 }
 VALID_RANGE = (-2.0, 8.0)   # これを外れる値は読み取りミスとみなす
 
-NUM = r"(-?\d{1,2}\.\d{1,4})"
 DATE_RE = re.compile(r"(20\d{2})\s*[/年.\-]\s*(\d{1,2})\s*[/月.\-]\s*(\d{1,2})")
 
 
@@ -57,20 +56,23 @@ def pdf_text(raw):
 def parse_bei(text):
     """
     PDFの文字から最新のBEI(%)と日付を読み取る。
-    「BEI」という語のすぐ後ろ(または直前)にある数値を候補にし、
-    名目利回り・実質利回りも読み取れた場合は「名目 − 実質 ≒ BEI」で検算する。
+
+    PDFはグラフで、軸の目盛り(-1.0, -0.5, ... 3.5)も文字として入っているため、
+    「%」が付いた数値だけを候補にする。実際のPDFでは次のように並んでいる:
+        BEI(10年債) 2.077% / 10年固定利付債 2.837% / 10年物価連動債 0.760% / 2026/10/22現在
+    名目(10年固定利付債)と実質(10年物価連動債)の利回りも読み取り、
+    「名目 − 実質 ≒ BEI」で検算する。
     """
     flat = re.sub(r"\s+", " ", text)
 
-    def near(label_pattern):
-        vals = []
-        for m in re.finditer(label_pattern + r"[^0-9\-]{0,30}" + NUM, flat, flags=re.IGNORECASE):
-            vals.append(float(m.group(m.lastindex)))
-        return vals
+    def pct_after(label_pattern):
+        # ラベルの後ろ20文字以内にある「数値%」(数字や%をまたがない)
+        pat = label_pattern + r"[^0-9%\-]{0,20}?(-?\d{1,2}\.\d{1,4})\s*%"
+        return [float(m.group(m.lastindex)) for m in re.finditer(pat, flat)]
 
-    bei_vals = near(r"(BEI|ブレーク・?イーブン・?インフレ率)")
-    nominal_vals = near(r"(名目|利付国債|10年利付)")
-    real_vals = near(r"(実質|物価連動)")
+    bei_vals = pct_after(r"BEI\s*\(10年債?\)")
+    nominal_vals = pct_after(r"10年固定利付債")
+    real_vals = pct_after(r"10年物価連動債")
     bei_vals = [v for v in bei_vals if VALID_RANGE[0] <= v <= VALID_RANGE[1]]
 
     dates = []
@@ -81,17 +83,13 @@ def parse_bei(text):
             pass
     latest_date = max(dates).isoformat() if dates else None
 
-    value = None
-    if bei_vals:
-        # 注記の「最新値」はグラフの説明文の中で最後に出てくることが多いので、最後の候補を使う
-        value = bei_vals[-1]
-    elif nominal_vals and real_vals:
+    value = bei_vals[-1] if bei_vals else None
+    if value is None and nominal_vals and real_vals:
         value = round(nominal_vals[-1] - real_vals[-1], 3)
 
     check = None
     if value is not None and nominal_vals and real_vals:
-        diff = nominal_vals[-1] - real_vals[-1]
-        check = abs(diff - value) <= 0.05
+        check = abs((nominal_vals[-1] - real_vals[-1]) - value) <= 0.05
     return value, latest_date, check, {"bei": bei_vals[-5:], "nominal": nominal_vals[-3:], "real": real_vals[-3:]}
 
 
@@ -110,8 +108,9 @@ def main():
         print(f"読み取り候補: {debug} / 日付: {date} / 検算: {check}")
         if value is None:
             raise ValueError("PDFからBEIの値を読み取れませんでした")
-        if check is False:
-            raise ValueError(f"BEI {value} が 名目−実質 と一致しません({debug})")
+        if check is not True:
+            # 名目・実質利回りで検算できない場合は、読み違いの可能性があるので採用しない
+            raise ValueError(f"BEI {value} を 名目−実質 で検算できませんでした({debug})")
         payload = {
             "status": "ok",
             "value": round(value, 3),
