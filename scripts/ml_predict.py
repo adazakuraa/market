@@ -85,7 +85,11 @@ def load_macro_series():
     return macro
 
 
-def process_ticker(ohlcv, macro):
+def process_ticker(ohlcv, macro, details=False):
+    """
+    details=True のときは、検証用(validate_signals.py)にテスト期間の予測確率などを
+    "_details" に入れて返し、最新予測用の再学習は省く。
+    """
     cleaned = despike(ohlcv[["Close", "High", "Low"]])
     close, high, low = cleaned["Close"], cleaned["High"], cleaned["Low"]
     volume = ohlcv["Volume"].astype("float64")
@@ -127,6 +131,17 @@ def process_ticker(ohlcv, macro):
     bt = backtest_thresholds(
         models["X_val"].index, models["val_probs"], X_test.index, test_probs, close,
     )
+
+    if details:
+        return {
+            "status": "ok",
+            "metrics": metrics,
+            "backtest": bt,
+            "_details": {
+                "test_index": X_test.index, "test_probs": test_probs, "threshold": models["threshold"],
+                "X_train": X_train, "y_train": y_train, "X_test": X_test, "y_test": y_test, "close": close,
+            },
+        }
 
     # 最新時点(特徴量が揃っている最終行)での予測。
     # 評価が終わったので、直近のテスト期間も含めた全データで学習し直したモデルを使う
