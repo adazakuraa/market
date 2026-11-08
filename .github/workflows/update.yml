@@ -29,51 +29,67 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Fetch master list (JPX)
+        continue-on-error: true
         run: python scripts/fetch_master.py
 
       - name: Build sector strength (yfinance)
+        continue-on-error: true
         run: python scripts/build_sector_strength.py
 
       - name: Render site
+        continue-on-error: true
         run: python scripts/render_site.py
 
       - name: Screen stocks
+        continue-on-error: true
         run: python scripts/screen_stocks.py
 
       - name: Render screening page
+        continue-on-error: true
         run: python scripts/render_screening.py
 
       - name: Render stock detail page
+        continue-on-error: true
         run: python scripts/render_stock_detail.py
 
       - name: Render watchlist page
+        continue-on-error: true
         run: python scripts/render_watchlist.py
 
       - name: Build macro data (FX / US indices / commodities)
+        continue-on-error: true
         run: python scripts/build_macro_data.py
 
       - name: Render overseas page
+        continue-on-error: true
         run: python scripts/render_overseas.py
 
       - name: Render commodities page
+        continue-on-error: true
         run: python scripts/render_commodities.py
 
       - name: Build Japan economy data (JGB yields / CGPI)
+        continue-on-error: true
         run: python scripts/build_japan_economy.py
 
       - name: Render Japan economy page
+        continue-on-error: true
         run: python scripts/render_japan_economy.py
 
       - name: Render portfolio allocation page
+        continue-on-error: true
         run: python scripts/render_portfolio.py
 
       - name: Build calendar (BOJ / FOMC)
+        continue-on-error: true
         run: python scripts/build_calendar.py
 
       - name: Render calendar page
+        continue-on-error: true
         run: python scripts/render_calendar.py
 
       - name: Train prediction models (ML)
+        continue-on-error: true
         run: python scripts/ml_predict.py
 
       - name: Commit and push if changed
