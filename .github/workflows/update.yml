@@ -89,6 +89,11 @@ jobs:
         continue-on-error: true
         run: python scripts/render_japan_economy.py
 
+      - name: Build inflation expectation (MOF BEI)
+        id: build_inflation_expectation_mof_bei
+        continue-on-error: true
+        run: python scripts/build_inflation.py
+
       - name: Render portfolio allocation page
         id: render_portfolio_allocation_page
         continue-on-error: true

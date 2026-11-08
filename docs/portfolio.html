@@ -92,7 +92,7 @@
     <a href="portfolio.html" class="active">資金配分</a>
   </nav>
   <h1>余剰資金の配分シミュレーター</h1>
-  <div class="updated">最終更新: 2026-11-08 17:33 JST</div>
+  <div class="updated">最終更新: 2026-11-08 17:51 JST</div>
 
   <div class="disclaimer">
     ⚠️ 投資助言ではありません。前提（期待リターン・リスク・インフレ率）を置いたときに「リスク上限の範囲で実質の期待値が最大になる配分」を計算する試算ツールです。将来のリターンは保証されません。入力内容はこの端末内で計算され、外部には送信されません（入力の保存はこのブラウザ内のみ）。
@@ -199,6 +199,7 @@
     ・iDeCoは掛金が全額所得控除となり、掛金×（所得税＋住民税の税率）が翌年の税金から戻る（減る）として計算します。受取時の税金は「受取時の想定税率」で差し引きます。60歳まで引き出せません。掛金を出せるのは65歳になるまでとして計算しています。<br>
     ・NISAはつみたて投資枠 年120万円（成長投資枠も使う場合は年360万円）、生涯1,800万円が上限です。枠は名目額なので、インフレが進むと実質的な枠は少しずつ小さくなる計算にしています。<br>
     ・毎年「その年に使えるお金（預金・国債と新たな積立額）」を配分し直します。国債は必要に応じて売却して組み替える想定、NISA・iDeCoは一度買ったら売らない（買い増しのみ）想定です。長期国債の途中売却による価格変動はリスク（標準偏差）として織り込んでいます。課税口座での株式投資は対象外のため、NISA・iDeCoの枠を超える株式は買いません。<br>
+    ・国債は個人向け国債を1万円単位、新窓販国債(10年)を5万円単位、iDeCoは月5,000円以上・1,000円単位で配分し、端数は預金に回しています。国債は毎月ではなく、たまった分を年に数回まとめて購入する想定です。<br>
     ・生活防衛資金は別に十分確保してある前提です。毎月の投資額は実質で一定（給料がインフレ並みに上がる）と仮定しています。年の途中の積立タイミングは年初にまとめて計算しています。<br>
     ・短期国債は個人向け国債（変動10年、1年経てば中途換金可）や新窓販国債の2年債など、長期国債は新窓販国債の10年債を想定しています。初期値は財務省の国債金利データの最新値（2年 1.86%・10年 2.806%（2026-11-05時点））です。<br>
     ・将来の幅はモンテカルロ法（1,000通りの乱数シナリオ）で出した目安です。リターンは正規分布を仮定しているため、実際の暴落のような極端な値動きは過小評価されがちです。
@@ -209,12 +210,50 @@
     'use strict';
     const DEFAULT_ASSUMPTIONS = {"infl": 2.0, "rCash": 0.3, "rShort": 1.86, "vShort": 1.0, "rLong": 2.806, "vLong": 5.0, "rStock": 6.0, "vStock": 18.0, "fee": 0.1, "rho": 0.0, "taxInterest": 20.315};
     const DEFAULT_INPUTS = {"monthly": 50000, "age": 25, "income": 500, "spouseIncome": 0, "years": 20, "nisaBal": 0, "nisaUsed": 0, "idecoBal": 0, "idecoLimit": 4000, "idecoFee": 171, "idecoOutTax": 0, "lossLimit": 20};
-    const MARKET = {"jgb2y": {"value": 1.86, "date": "2026-11-05"}, "jgb10y": {"value": 2.806, "date": "2026-11-05"}};
+    const MARKET = {"jgb2y": {"value": 1.86, "date": "2026-11-05"}, "jgb10y": {"value": 2.806, "date": "2026-11-05"}, "infl": null};
     const STORAGE_KEY = 'portfolio-sim-v3';   // v3: 前提条件(利回り等)は保存しない
     const Z = 1.645;               // 20年に1度の悪い年(片側5%)
     const NISA_LIFETIME = 18000000;
     const IDECO_MAX_CONTRIB_AGE = 65;
     const IDECO_UNLOCK_AGE = 60;
+    // 購入単位(名目の円)。国債は額面単位でしか買えない
+    const SHORT_UNIT = 10000;   // 個人向け国債: 1万円単位
+    const LONG_UNIT = 50000;    // 新窓販国債(10年): 5万円単位
+    const IDECO_MIN = 5000;     // iDeCo掛金: 月5,000円以上
+    const IDECO_STEP = 1000;    //            1,000円単位
+
+    function idecoEffectiveLimit(limit) {
+      const m = Math.floor(limit / IDECO_STEP) * IDECO_STEP;
+      return m >= IDECO_MIN ? m : 0;
+    }
+
+    // 最適化の結果(実質の金額)を、実際に買える単位に丸める。端数は預金に回す。
+    // defl: その年の物価水準(名目 = 実質 × defl)
+    function applyUnits(newH, H, defl, fee) {
+      const out = newH.slice();
+      // iDeCo: 月の掛金を1,000円単位に切り下げ、5,000円未満なら拠出しない
+      const add = Math.max(0, out[4] - H[4]);
+      let m = Math.floor(add * defl / 12 / IDECO_STEP + 1e-9) * IDECO_STEP;
+      if (m < IDECO_MIN) m = 0;
+      out[0] += add - m * 12 / defl;
+      out[4] = H[4] + m * 12 / defl;
+      // 手数料は預金から払う
+      out[0] -= (m > 0 ? fee : 0);
+      // 国債: 保有額を額面単位に切り下げ
+      for (const [i, unit] of [[1, SHORT_UNIT], [2, LONG_UNIT]]) {
+        const r = Math.floor(out[i] * defl / unit + 1e-9) * unit / defl;
+        out[0] += out[i] - r;
+        out[i] = r;
+      }
+      // 預金がマイナスになったら国債を1単位ずつ売って埋める
+      for (const [i, unit] of [[1, SHORT_UNIT], [2, LONG_UNIT]]) {
+        while (out[0] < -1e-6 && out[i] > 1e-6) {
+          const u = Math.min(out[i], unit / defl);
+          out[i] -= u; out[0] += u;
+        }
+      }
+      return { H: out, idecoMonthly: m, fee: m > 0 ? fee : 0 };
+    }
 
     const ASSETS = [
       { key: 'cash',  name: '現金（預金）',        color: '#9e9e9e' },
@@ -465,7 +504,7 @@
         const nisaAnnual = p.useGrowth ? 3600000 : 1200000;
         const capN = Math.min(nisaAnnual, Math.max(0, NISA_LIFETIME - nisaBook)) / defl;
         const idecoOpen = p.useIdeco && age < IDECO_MAX_CONTRIB_AGE;
-        const capI = idecoOpen ? p.idecoLimit * 12 / defl : 0;
+        const capI = idecoOpen ? idecoEffectiveLimit(p.idecoLimit) * 12 / defl : 0;
         const feeAnnual = p.idecoFee * 12 / defl;
         let w, feasible = true;
         if (T <= 1) {
@@ -478,20 +517,18 @@
           if (!feasible) infeasibleYears++;
           if (feasible && capN > 0 && w[3] >= ub[3] - 1e-6) nisaBindingYears++;
         }
-        const newH = w.map(wi => wi * T);
+        const units = applyUnits(w.map(wi => wi * T), H, defl, feeAnnual);
+        const newH = units.H;
+        const fee = units.fee;
         const flow = newH.map((v, i) => v - H[i]);
         const idecoFlow = Math.max(0, flow[4]);
-        let fee = 0;
-        if (idecoFlow > 1) {
-          fee = feeAnnual;
-          let rest = fee;
-          for (const i of [0, 1, 2]) { const take = Math.min(rest, newH[i]); newH[i] -= take; rest -= take; }
-        }
         nisaBook += Math.max(0, flow[3]) * defl;
         refund = idecoFlow * p.taxRate / 100;
+        const Tn = newH.reduce((a, b) => a + b, 0);
+        w = Tn > 0 ? newH.map(v => v / Tn) : w;   // 単位に丸めた後の実際の配分でリスク・リターンを計算
         const st = portStats(w, mu, cov);
         years.push({
-          y, age, start, add, T, w, newH, flow, fee, refundNext: refund, feasible,
+          y, age, start, add, T, w, newH, flow, fee, refundNext: refund, feasible, idecoMonthly: units.idecoMonthly,
           mean: st.mean, sd: st.sd, capN, capI,
         });
         H = newH.map((v, i) => v * (1 + mu[i]));
@@ -603,6 +640,7 @@
       if (p.monthly <= 0) warns.push('毎月投資に回すお金を入力してください。');
       if (p.useIdeco && p.age < IDECO_UNLOCK_AGE && p.age + p.years < IDECO_UNLOCK_AGE) warns.push(`運用期間（${p.years}年後＝${p.age + p.years}歳）の時点ではiDeCoはまだ引き出せません（${IDECO_UNLOCK_AGE}歳から）。その時にお金が必要なら「iDeCoを使う」のチェックを外して比べてください。`);
       if (p.useIdeco && p.age >= IDECO_MAX_CONTRIB_AGE) warns.push('65歳以上のため、iDeCoへの新規拠出はない計算です。');
+      if (p.useIdeco && p.idecoLimit > 0 && idecoEffectiveLimit(p.idecoLimit) === 0) warns.push(`iDeCoの掛金は月5,000円以上（1,000円単位）のため、月額上限${yen(p.idecoLimit)}ではiDeCoに拠出できない計算になります。ご自身の上限額を確認してください。`);
       if (sim.infeasibleYears > 0) warns.push(`${sim.infeasibleYears}年分で、どう配分しても許容損失（実質${p.lossLimit}%）に収まりません（現金でもインフレで目減りする／すでに持っているNISA・iDeCoの株式だけで超えている、など）。その年は「悪い年の損失」が最も小さくなる配分にしています。`);
       if (warns.length) html += `<div class="warn-box">${warns.join('<br>')}</div>`;
 
@@ -632,14 +670,22 @@
       html += `</div>`;
       const notes = [
         '普通預金のまま置いておく分',
-        '個人向け国債(変動10年)や2年債など。1万円〜5万円単位',
-        '新窓販国債の10年債など。時価で売却可',
+        `個人向け国債(変動10年)など。1万円単位（今年 ${Math.round(flows[1] / SHORT_UNIT)}口）`,
+        `新窓販国債の10年債など。5万円単位（今年 ${Math.round(flows[2] / LONG_UNIT)}口）。時価で売却可`,
         `年間枠 ${man(y1.capN)} のうち`,
-        y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち。節税で翌年 約${man(y1.refundNext)} 戻る` : 'iDeCoは使わない設定・または対象外',
+        y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち（月5,000円以上・1,000円単位）。節税で翌年 約${man(y1.refundNext)} 戻る` : 'iDeCoは使わない設定・または対象外',
       ];
       ASSETS.forEach((a, i) => {
+        let val;
+        if (i === 1 || i === 2) {
+          val = `${man(flows[i])}<span class="alloc-sub">/年（毎月 約${yen(Math.round(flows[i] / 12 / 100) * 100)}を預金にためて購入）</span>`;
+        } else if (i === 4) {
+          val = `${yen(y1.idecoMonthly)}<span class="alloc-sub">/月（年 ${man(flows[i])}）</span>`;
+        } else {
+          val = `${yen(Math.round(flows[i] / 12 / 100) * 100)}<span class="alloc-sub">/月（年 ${man(flows[i])}）</span>`;
+        }
         html += `<div class="alloc-row"><div class="alloc-name"><span class="dot" style="background:${a.color}"></span><div>${a.name}<span class="alloc-sub">${notes[i]}</span></div></div>
-          <div class="alloc-val">${yen(Math.round(flows[i] / 12 / 100) * 100)}<span class="alloc-sub">/月（年 ${man(flows[i])}）</span></div></div>`;
+          <div class="alloc-val">${val}</div></div>`;
       });
       if (y1.fee > 0) html += `<div class="note">iDeCo口座手数料 年${yen(y1.fee)}は差し引き済みです。</div>`;
       const worst = y1.mean - Z * y1.sd;
@@ -723,6 +769,11 @@
     const hints = [];
     if (MARKET.jgb2y) hints.push(`短期国債の初期値: 2年国債利回り ${MARKET.jgb2y.value}%（${MARKET.jgb2y.date}）`);
     if (MARKET.jgb10y) hints.push(`長期国債の初期値: 10年国債利回り ${MARKET.jgb10y.value}%（${MARKET.jgb10y.date}）`);
+    if (MARKET.infl) {
+      hints.push(`インフレ率の初期値: 財務省の10年ブレーク・イーブン・インフレ率（国債市場が見込む今後10年の平均インフレ率）${MARKET.infl.value}%（${MARKET.infl.date || '日付不明'}）${MARKET.infl.status === 'stale' ? '※最新の取得に失敗したため前回の値' : ''}`);
+    } else {
+      hints.push('インフレ率の初期値: 市場データが取得できなかったため、日銀の物価目標2%');
+    }
     hints.push('S&P500の期待リターン6%は、過去の長期平均(円建てで年7〜10%程度)より控えめに置いた値です。');
     $('assump-hint').textContent = hints.join(' / ');
 
