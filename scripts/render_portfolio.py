@@ -50,11 +50,7 @@ DEFAULT_ASSUMPTIONS = {
 
 # 入力項目のデフォルト
 DEFAULT_INPUTS = {
-    "savings": 3000000,   # 現在の預貯金
-    "expense": 200000,    # 月の生活費
-    "emMonths": 6,        # 生活防衛資金(生活費の何ヶ月分)
-    "monthly": 50000,     # 毎月投資に回せる額
-    "bonus": 200000,      # ボーナスから年間に回せる額(合計)
+    "monthly": 50000,     # 毎月投資に回すお金(生活防衛資金は別に確保済みの前提)
     "age": 25,
     "income": 500,        # 年収(万円)
     "years": 20,          # 運用期間
@@ -197,15 +193,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   </div>
 
   <div class="box">
-    <h3>お金の状況</h3>
+    <h3>投資に回すお金</h3>
     <div class="grid2">
-      <div class="form-row"><label>現在の預貯金（円）</label><input type="number" id="savings" min="0" step="10000"></div>
-      <div class="form-row"><label>月の生活費（円）</label><input type="number" id="expense" min="0" step="10000"></div>
-      <div class="form-row"><label>生活防衛資金（生活費の何ヶ月分を現金で残すか）</label><input type="number" id="emMonths" min="0" step="1"></div>
-      <div class="form-row"><label>毎月投資に回せる額（円）</label><input type="number" id="monthly" min="0" step="1000"></div>
-      <div class="form-row"><label>ボーナスから回せる額（年間合計・円）</label><input type="number" id="bonus" min="0" step="10000"></div>
+      <div class="form-row"><label>毎月投資に回すお金（円）</label><input type="number" id="monthly" min="0" step="1000"></div>
       <div class="form-row"><label>運用期間（年）＝このお金を使う予定の時期</label><input type="number" id="years" min="1" max="50" step="1"></div>
     </div>
+    <div class="hint">生活防衛資金（生活費の数ヶ月分の現金）は別に十分確保してある前提で、毎月のこの金額をどこに振り分けるかを計算します。</div>
 
     <h3 style="margin-top:16px;">あなたについて（税金の計算用）</h3>
     <div class="grid2">
@@ -251,7 +244,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div class="risk-btn" data-loss="30">30%</div>
     </div>
     <div class="form-row"><label>許容損失（%・自由入力）</label><input type="number" id="lossLimit" min="0" max="80" step="1"></div>
-    <div class="hint">「20年に1回くらい来る悪い年」（平均−1.645×標準偏差）に、運用資産全体（生活防衛資金を除く）が<b>実質で</b>（インフレによる目減り込みで）この%以上減らないように配分します。現金でもインフレ分は目減りするため、0%は「現金と同程度」の意味になります。実際にはこれ以上下がる年もあり得ます（リーマンショック級など）。</div>
+    <div class="hint">「20年に1回くらい来る悪い年」（平均−1.645×標準偏差）に、運用資産全体が<b>実質で</b>（インフレによる目減り込みで）この%以上減らないように配分します。現金でもインフレ分は目減りするため、0%は「現金と同程度」の意味になります。実際にはこれ以上下がる年もあり得ます（リーマンショック級など）。</div>
   </div>
 
   <div class="box">
@@ -288,7 +281,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     ・iDeCoは掛金が全額所得控除となり、掛金×（所得税＋住民税の税率）が翌年の税金から戻る（減る）として計算します。受取時の税金は「受取時の想定税率」で差し引きます。60歳まで引き出せません。掛金を出せるのは65歳になるまでとして計算しています。<br>
     ・NISAはつみたて投資枠 年120万円（成長投資枠も使う場合は年360万円）、生涯1,800万円が上限です。枠は名目額なので、インフレが進むと実質的な枠は少しずつ小さくなる計算にしています。<br>
     ・毎年「その年に使えるお金（預金・国債と新たな積立額）」を配分し直します。国債は必要に応じて売却して組み替える想定、NISA・iDeCoは一度買ったら売らない（買い増しのみ）想定です。長期国債の途中売却による価格変動はリスク（標準偏差）として織り込んでいます。課税口座での株式投資は対象外のため、NISA・iDeCoの枠を超える株式は買いません。<br>
-    ・毎月の積立額・ボーナスは実質で一定（給料がインフレ並みに上がる）と仮定しています。年の途中の積立タイミングは年初にまとめて計算しています。<br>
+    ・生活防衛資金は別に十分確保してある前提です。毎月の投資額は実質で一定（給料がインフレ並みに上がる）と仮定しています。年の途中の積立タイミングは年初にまとめて計算しています。<br>
     ・短期国債は個人向け国債（変動10年、1年経てば中途換金可）や新窓販国債の2年債など、長期国債は新窓販国債の10年債を想定しています。初期値は財務省の国債金利データの最新値（__JGB_NOTE__）です。<br>
     ・将来の幅はモンテカルロ法（1,000通りの乱数シナリオ）で出した目安です。リターンは正規分布を仮定しているため、実際の暴落のような極端な値動きは過小評価されがちです。
   </div>
@@ -299,7 +292,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     const DEFAULT_ASSUMPTIONS = __DEFAULT_ASSUMPTIONS__;
     const DEFAULT_INPUTS = __DEFAULT_INPUTS__;
     const MARKET = __MARKET__;
-    const STORAGE_KEY = 'portfolio-sim-v2';
+    const STORAGE_KEY = 'portfolio-sim-v3';   // v3: 前提条件(利回り等)は保存しない
     const Z = 1.645;               // 20年に1度の悪い年(片側5%)
     const NISA_LIFETIME = 18000000;
     const IDECO_MAX_CONTRIB_AGE = 65;
@@ -314,6 +307,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     ];
     const N_ASSET = ASSETS.length;
     const NUM_FIELDS = Object.keys(DEFAULT_INPUTS).concat(Object.keys(DEFAULT_ASSUMPTIONS));
+    // 保存するのは個人の入力だけ。国債利回りなどの前提条件は毎回最新の初期値から始める
+    const SAVE_FIELDS = Object.keys(DEFAULT_INPUTS);
     const $ = (id) => document.getElementById(id);
 
     // ---------------- 入力の保存・復元 ----------------
@@ -328,7 +323,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
     function saveInputs() {
       const o = {};
-      NUM_FIELDS.forEach(k => { o[k] = $(k).value; });
+      SAVE_FIELDS.forEach(k => { o[k] = $(k).value; });
       o.taxMode = $('taxMode').value;
       o.useIdeco = $('useIdeco').checked;
       o.useGrowth = $('useGrowth').checked;
@@ -339,7 +334,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       let o = null;
       try { o = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { o = null; }
       if (!o) return;
-      NUM_FIELDS.forEach(k => { if (o[k] !== undefined && o[k] !== '') $(k).value = o[k]; });
+      SAVE_FIELDS.forEach(k => { if (o[k] !== undefined && o[k] !== '') $(k).value = o[k]; });
       if (o.taxMode) $('taxMode').value = o.taxMode;
       if (typeof o.useIdeco === 'boolean') $('useIdeco').checked = o.useIdeco;
       if (typeof o.useGrowth === 'boolean') $('useGrowth').checked = o.useGrowth;
@@ -496,11 +491,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const L = Lpct / 100;
       const infl = p.infl / 100;
       const ded = p.useIdeco ? (p.taxRate - p.idecoOutTax) / 100 : 0;
-      const emergency = p.expense * p.emMonths;
-      let shortfall = Math.max(0, emergency - p.savings);
-      let H = [Math.max(0, p.savings - emergency), 0, 0, p.nisaBal, p.idecoBal];
+      let H = [0, 0, 0, p.nisaBal, p.idecoBal];
       let nisaBook = p.nisaUsed;
-      const annualSave = p.monthly * 12 + p.bonus;
+      const annualSave = p.monthly * 12;
       let refund = 0;
       const years = [];
       let infeasibleYears = 0, nisaBindingYears = 0;
@@ -508,8 +501,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       for (let y = 1; y <= p.years; y++) {
         const defl = Math.pow(1 + infl, y - 1);
         const age = p.age + y - 1;
-        let add = annualSave + refund;
-        if (shortfall > 0) { const fill = Math.min(shortfall, add); shortfall -= fill; add -= fill; }
+        const add = annualSave + refund;
         refund = 0;
         const start = H.slice();
         H[0] += add;
@@ -550,20 +542,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         years[years.length - 1].end = H.slice();
         years[years.length - 1].endTotal = H.reduce((a, b) => a + b, 0) - H[4] * p.idecoOutTax / 100 + refund;
       }
-      return { years, emergency, infeasibleYears, nisaBindingYears, shortfallInit: Math.max(0, emergency - p.savings) };
+      return { years, infeasibleYears, nisaBindingYears };
     }
 
     // 全額現金のまま置いておいた場合
     function simulateCash(p, stats) {
-      const emergency = p.expense * p.emMonths;
-      let shortfall = Math.max(0, emergency - p.savings);
-      let c = Math.max(0, p.savings - emergency) + p.nisaBal + p.idecoBal * (1 - p.idecoOutTax / 100);
-      const annualSave = p.monthly * 12 + p.bonus;
+      let c = p.nisaBal + p.idecoBal * (1 - p.idecoOutTax / 100);
+      const annualSave = p.monthly * 12;
       const out = [];
       for (let y = 1; y <= p.years; y++) {
-        let add = annualSave;
-        if (shortfall > 0) { const fill = Math.min(shortfall, add); shortfall -= fill; add -= fill; }
-        c = (c + add) * (1 + stats.mu[0]);
+        c = (c + annualSave) * (1 + stats.mu[0]);
         out.push(c);
       }
       return out;
@@ -656,7 +644,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
       // 警告
       const warns = [];
-      if (sim.shortfallInit > 0) warns.push(`生活防衛資金（${man(sim.emergency)}）に対して預貯金が${man(sim.shortfallInit)}足りません。まずは積立分で現金を貯め、その後に投資へ回す計算にしています。`);
+      if (p.monthly <= 0) warns.push('毎月投資に回すお金を入力してください。');
       if (p.useIdeco && p.age < IDECO_UNLOCK_AGE && p.age + p.years < IDECO_UNLOCK_AGE) warns.push(`運用期間（${p.years}年後＝${p.age + p.years}歳）の時点ではiDeCoはまだ引き出せません（${IDECO_UNLOCK_AGE}歳から）。その時にお金が必要なら「iDeCoを使う」のチェックを外して比べてください。`);
       if (p.useIdeco && p.age >= IDECO_MAX_CONTRIB_AGE) warns.push('65歳以上のため、iDeCoへの新規拠出はない計算です。');
       if (sim.infeasibleYears > 0) warns.push(`${sim.infeasibleYears}年分で、どう配分しても許容損失（実質${p.lossLimit}%）に収まりません（現金でもインフレで目減りする／すでに持っているNISA・iDeCoの株式だけで超えている、など）。その年は「悪い年の損失」が最も小さくなる配分にしています。`);
@@ -678,9 +666,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       // 2. 1年目の配分
       const flows = [y1.newH[0], y1.newH[1], y1.newH[2], Math.max(0, y1.flow[3]), Math.max(0, y1.flow[4])];
       const flowTotal = flows.reduce((a, b) => a + b, 0);
-      html += `<h2>② 今年の配分（リスク上限 ${p.lossLimit}%）</h2><div class="box">
-        <div class="note" style="margin-top:0;">今年動かせるお金 <b>${man(flowTotal + y1.fee)}</b>
-        ＝ 預貯金のうち生活防衛資金（${man(sim.emergency)}）を除いた分 ${man(y1.start[0])} ＋ 今年の積立・ボーナス ${man(y1.add)}</div>
+      html += `<h2>② 毎月の振り分け（1年目・リスク上限 ${p.lossLimit}%）</h2><div class="box">
+        <div class="note" style="margin-top:0;">毎月 <b>${yen(p.monthly)}</b>（年間 ${man(p.monthly * 12)}）の振り分け先です。</div>
         <div class="bar-track">`;
       flows.forEach((f, i) => {
         const pc = flowTotal > 0 ? f / flowTotal * 100 : 0;
@@ -688,16 +675,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       });
       html += `</div>`;
       const notes = [
-        '生活防衛資金とは別に、すぐ使える状態で置いておく分',
+        '普通預金のまま置いておく分',
         '個人向け国債(変動10年)や2年債など。1万円〜5万円単位',
         '新窓販国債の10年債など。時価で売却可',
         `年間枠 ${man(y1.capN)} のうち`,
         y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち。節税で翌年 約${man(y1.refundNext)} 戻る` : 'iDeCoは使わない設定・または対象外',
       ];
       ASSETS.forEach((a, i) => {
-        const monthly = (i >= 3) ? `<span class="alloc-sub">毎月 約${yen(Math.round(flows[i] / 12 / 100) * 100)}</span>` : '';
         html += `<div class="alloc-row"><div class="alloc-name"><span class="dot" style="background:${a.color}"></span><div>${a.name}<span class="alloc-sub">${notes[i]}</span></div></div>
-          <div class="alloc-val">${man(flows[i])}${monthly}</div></div>`;
+          <div class="alloc-val">${yen(Math.round(flows[i] / 12 / 100) * 100)}<span class="alloc-sub">/月（年 ${man(flows[i])}）</span></div></div>`;
       });
       if (y1.fee > 0) html += `<div class="note">iDeCo口座手数料 年${yen(y1.fee)}は差し引き済みです。</div>`;
       const worst = y1.mean - Z * y1.sd;
@@ -707,10 +693,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div class="kpi"><div class="k">リスク(標準偏差)</div><div class="v">${pctf(y1.sd)}</div></div>
           <div class="kpi"><div class="k">20年に1度の悪い年</div><div class="v">${signPct(worst, 1)}</div></div>
         </div>
-        <div class="note">リスク・リターンは生活防衛資金を除いた運用資産全体（既存のNISA・iDeCo残高を含む）の値です。ちなみに現金のままだと実質 ${signPct(cashReal)}／年です。</div>`;
+        <div class="note">リスク・リターンは1年目末の運用資産全体（既存のNISA・iDeCo残高を含む）の値です。国債は毎月ではなく、数ヶ月分たまったら購入（1万円〜5万円単位）するのが現実的です。ちなみに現金のままだと実質 ${signPct(cashReal)}／年です。</div>`;
       const stockW = y1.w[3] + y1.w[4];
       if (y1.feasible && y1.capN > 0 && y1.w[3] >= (y1.start[3] + y1.capN) / y1.T - 1e-6 && worst > -p.lossLimit / 100 + 0.005) {
-        html += `<div class="info-box">株式の比率（${pctf(stockW, 0)}）はリスク上限ではなく<b>NISA・iDeCoの年間枠</b>で止まっています。残りは国債・現金で待機させ、翌年以降の枠で順次株式に移す計算です。早く株式比率を上げたい場合は「成長投資枠も使う」を試してください。</div>`;
+        html += `<div class="info-box">株式の比率（${pctf(stockW, 0)}）はリスク上限ではなく<b>NISA・iDeCoの年間枠</b>で止まっています。枠を超える分は国債・現金に回しています。株式を増やしたい場合は「成長投資枠も使う」を試してください。</div>`;
       }
       html += `</div>`;
 
@@ -725,9 +711,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <td><b>${man(yr.endTotal)}</b></td><td>${man(cash[t])}</td></tr>`;
       });
       const last = sim.years[sim.years.length - 1];
-      const invested = Math.max(0, p.savings - sim.emergency) + p.nisaBal + p.idecoBal + (p.monthly * 12 + p.bonus) * p.years - sim.shortfallInit;
+      const invested = p.nisaBal + p.idecoBal + p.monthly * 12 * p.years;
       html += `</table></div>
-        <div class="note">生活防衛資金を除いた金額です（${man(sim.emergency)}は別に現金で保有）。元本合計（実質）は約${man(invested)}。
+        <div class="note">投資に回したお金（と既存のNISA・iDeCo残高）の合計額です。元本合計（実質）は約${man(invested)}。
         期待値は平均的なシナリオ、中央値は「半々の確率でこれより上/下」の値です。
         ${p.years}年後の内訳（期待値）: 現金 ${man(last.end[0])}・短期国債 ${man(last.end[1])}・長期国債 ${man(last.end[2])}・NISA ${man(last.end[3])}・iDeCo ${man(last.end[4])}（受取時課税前）。
         ${(p.age + p.years < IDECO_UNLOCK_AGE && last.end[4] > 0) ? '<b>うちiDeCo分はこの時点では引き出せません。</b>' : ''}</div></div>`;

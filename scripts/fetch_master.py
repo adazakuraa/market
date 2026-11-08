@@ -9,11 +9,20 @@ JPX公式サイトが無料公開している「東証上場銘柄一覧」Excel
 """
 import io
 import os
+import re
 import sys
+from urllib.parse import urljoin
+
 import requests
 import pandas as pd
 
-JPX_XLS_URL = "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
+# 銘柄一覧Excelの掲載ページ。Excel自体のURLはJPX側で時々変わるため、
+# このページからリンクを探して取得する。見つからなければ下の固定URLを試す。
+JPX_LIST_PAGE_URL = "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html"
+JPX_XLS_URL_FALLBACK = "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+}
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 OUT_PATH = os.path.join(OUT_DIR, "master.csv")
@@ -24,14 +33,48 @@ OUT_PATH = os.path.join(OUT_DIR, "master.csv")
 TARGET_SIZE_CODES = {"1", "2", "3", "4"}
 
 
+def find_xls_urls():
+    """掲載ページから data_j.xls(x) へのリンクを探す。固定URLも候補に含める。"""
+    urls = []
+    try:
+        page = requests.get(JPX_LIST_PAGE_URL, headers=HEADERS, timeout=30)
+        page.raise_for_status()
+        for href in re.findall(r'href="([^"]+?data_j\.xlsx?)"', page.text):
+            full = urljoin(JPX_LIST_PAGE_URL, href)
+            if full not in urls:
+                urls.append(full)
+    except Exception as e:
+        print(f"[WARN] 銘柄一覧ページの取得に失敗: {e}")
+    if JPX_XLS_URL_FALLBACK not in urls:
+        urls.append(JPX_XLS_URL_FALLBACK)
+    return urls
+
+
+def download_xls():
+    last_err = None
+    for url in find_xls_urls():
+        try:
+            print(f"Downloading {url} ...")
+            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp.raise_for_status()
+            return pd.read_excel(io.BytesIO(resp.content))
+        except Exception as e:
+            print(f"[WARN] {url} の取得に失敗: {e}")
+            last_err = e
+    raise RuntimeError(f"銘柄一覧Excelを取得できませんでした: {last_err}")
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    print(f"Downloading {JPX_XLS_URL} ...")
-    resp = requests.get(JPX_XLS_URL, timeout=60)
-    resp.raise_for_status()
-
-    df = pd.read_excel(io.BytesIO(resp.content))
+    try:
+        df = download_xls()
+    except Exception as e:
+        # 銘柄一覧はめったに変わらないので、取得できない日は前回の master.csv をそのまま使う
+        if os.path.exists(OUT_PATH):
+            print(f"[WARN] {e} -> 前回の {OUT_PATH} をそのまま使います")
+            return
+        raise
 
     # 列名はJPX側の仕様変更で微妙に変わることがあるので、部分一致で拾う
     def find_col(keyword):
