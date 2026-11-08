@@ -53,6 +53,7 @@ DEFAULT_INPUTS = {
     "monthly": 50000,     # 毎月投資に回すお金(生活防衛資金は別に確保済みの前提)
     "age": 25,
     "income": 500,        # 年収(万円)
+    "spouseIncome": 0,    # 扶養している配偶者の年収(万円・額面)。配偶者控除/特別控除の計算用
     "years": 20,          # 運用期間
     "nisaBal": 0,         # NISA残高(時価)
     "nisaUsed": 0,        # NISA生涯枠の使用済み額(簿価)
@@ -204,10 +205,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="grid2">
       <div class="form-row"><label>年齢</label><input type="number" id="age" min="18" max="80" step="1"></div>
       <div class="form-row"><label>年収（万円・額面）</label><input type="number" id="income" min="0" step="10"></div>
+      <div class="form-row">
+        <label>配偶者の扶養</label>
+        <select id="spouse">
+          <option value="none">扶養していない</option>
+          <option value="normal">扶養している（配偶者70歳未満）</option>
+          <option value="elderly">扶養している（配偶者70歳以上）</option>
+        </select>
+      </div>
+      <div class="form-row" id="spouse-income-row">
+        <label>配偶者の年収（万円・額面）※パート等。なしなら0</label>
+        <input type="number" id="spouseIncome" min="0" step="1">
+      </div>
       <div class="form-row" style="grid-column: 1 / -1;">
         <label>所得税＋住民税の税率（iDeCoの節税額の計算に使用）</label>
         <select id="taxMode">
-          <option value="auto">年収から自動推定（会社員・扶養なし想定）</option>
+          <option value="auto">年収から自動推定（会社員の場合）</option>
           <option value="15">15%（所得税5%＋住民税10%）</option>
           <option value="20">20%（所得税10%＋住民税10%）</option>
           <option value="30">30%（所得税20%＋住民税10%）</option>
@@ -317,6 +330,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       Object.keys(src).forEach(k => { if ($(k)) $(k).value = src[k]; });
       if (which !== 'assump') {
         $('taxMode').value = 'auto';
+        $('spouse').value = 'none';
         $('useIdeco').checked = true;
         $('useGrowth').checked = false;
       }
@@ -325,6 +339,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const o = {};
       SAVE_FIELDS.forEach(k => { o[k] = $(k).value; });
       o.taxMode = $('taxMode').value;
+      o.spouse = $('spouse').value;
       o.useIdeco = $('useIdeco').checked;
       o.useGrowth = $('useGrowth').checked;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); } catch (e) { /* 保存できない環境では無視 */ }
@@ -336,6 +351,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       if (!o) return;
       SAVE_FIELDS.forEach(k => { if (o[k] !== undefined && o[k] !== '') $(k).value = o[k]; });
       if (o.taxMode) $('taxMode').value = o.taxMode;
+      if (o.spouse) $('spouse').value = o.spouse;
       if (typeof o.useIdeco === 'boolean') $('useIdeco').checked = o.useIdeco;
       if (typeof o.useGrowth === 'boolean') $('useGrowth').checked = o.useGrowth;
     }
@@ -345,21 +361,52 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       return isFinite(v) ? v : (DEFAULT_INPUTS[id] !== undefined ? DEFAULT_INPUTS[id] : DEFAULT_ASSUMPTIONS[id]);
     }
 
-    // ---------------- 税率の推定(会社員・扶養なし・社会保険料14.5%の簡易計算) ----------------
-    function estimateTax(incomeMan) {
+    // ---------------- 税率の推定(会社員・社会保険料14.5%の簡易計算) ----------------
+    // 給与所得控除(2025年分以降、最低65万円)
+    function kyuyoKojo(g) {
+      if (g <= 1900000) return Math.min(g, 650000);
+      if (g <= 3600000) return g * 0.3 + 80000;
+      if (g <= 6600000) return g * 0.2 + 440000;
+      if (g <= 8500000) return g * 0.1 + 1100000;
+      return 1950000;
+    }
+
+    // 配偶者控除・配偶者特別控除(所得税)。本人の合計所得と、配偶者の合計所得で決まる
+    // ・配偶者の所得58万円以下(給与のみなら年収123万円以下) → 配偶者控除 38万円(70歳以上は48万円)
+    // ・58万円超〜133万円以下 → 配偶者特別控除(38万円から段階的に減る)
+    // ・本人の所得が900万円超で2/3、950万円超で1/3、1,000万円超で0
+    const SPOUSE_SPECIAL = [[950000, 380000], [1000000, 360000], [1050000, 310000], [1100000, 260000],
+      [1150000, 210000], [1200000, 160000], [1250000, 110000], [1300000, 60000], [1330000, 30000]];
+    function spouseDeduction(selfShotoku, spouseSalary, elderly) {
+      const spouseShotoku = Math.max(0, spouseSalary - kyuyoKojo(spouseSalary));
+      let amount = 0, kind = '';
+      if (spouseShotoku <= 580000) {
+        amount = elderly ? 480000 : 380000; kind = '配偶者控除';
+      } else {
+        const band = SPOUSE_SPECIAL.find(([lim]) => spouseShotoku <= lim);
+        amount = band ? band[1] : 0; kind = band ? '配偶者特別控除' : '';
+      }
+      if (selfShotoku > 10000000) amount = 0;
+      else if (selfShotoku > 9500000) amount = Math.ceil(amount / 3 / 10000) * 10000;
+      else if (selfShotoku > 9000000) amount = Math.ceil(amount * 2 / 3 / 10000) * 10000;
+      if (amount === 0) kind = selfShotoku > 10000000 ? '本人の所得が1,000万円超のため控除なし' : '配偶者の年収が多いため控除なし';
+      return { amount, kind };
+    }
+
+    function estimateTax(incomeMan, spouse) {
       const g = incomeMan * 10000;
-      let kyuyo;
-      if (g <= 1900000) kyuyo = 650000;
-      else if (g <= 3600000) kyuyo = g * 0.3 + 80000;
-      else if (g <= 6600000) kyuyo = g * 0.2 + 440000;
-      else if (g <= 8500000) kyuyo = g * 0.1 + 1100000;
-      else kyuyo = 1950000;
+      const shotoku = Math.max(0, g - kyuyoKojo(g));
       const shaho = g * 0.145;
-      const taxable = Math.max(0, g - kyuyo - shaho - 580000);
+      let sp = { amount: 0, kind: '' };
+      if (spouse && spouse.type !== 'none') {
+        sp = spouseDeduction(shotoku, spouse.incomeMan * 10000, spouse.type === 'elderly');
+      }
+      const taxable = Math.max(0, shotoku - shaho - 580000 - sp.amount);
       const brackets = [[1950000, 5], [3300000, 10], [6950000, 20], [9000000, 23], [18000000, 33], [40000000, 40], [Infinity, 45]];
       let incomeRate = 45;
       for (const [lim, r] of brackets) { if (taxable <= lim) { incomeRate = r; break; } }
-      return { taxable, incomeRate, total: incomeRate * 1.021 + 10 };
+      if (taxable <= 0) incomeRate = 0;   // 課税所得がなければ所得税の節税効果はない
+      return { taxable, incomeRate, total: incomeRate * 1.021 + 10, spouse: sp };
     }
 
     function readParams() {
@@ -370,10 +417,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       p.years = Math.max(1, Math.min(50, Math.round(p.years)));
       p.age = Math.round(p.age);
       p.rho = Math.max(-1, Math.min(1, p.rho));
-      const est = estimateTax(p.income);
+      p.spouse = $('spouse').value;
+      $('spouse-income-row').style.display = p.spouse === 'none' ? 'none' : '';
+      const est = estimateTax(p.income, { type: p.spouse, incomeMan: p.spouseIncome });
       if ($('taxMode').value === 'auto') {
         p.taxRate = est.total;
-        $('tax-hint').textContent = `推定課税所得 約${Math.round(est.taxable / 10000)}万円 → 所得税${est.incomeRate}%(復興税込${(est.incomeRate * 1.021).toFixed(1)}%)＋住民税10% ＝ ${p.taxRate.toFixed(1)}%。扶養・住宅ローン控除などがある場合は手動で選んでください。`;
+        const spText = p.spouse === 'none' ? '' :
+          (est.spouse.amount > 0 ? `（${est.spouse.kind} ${Math.round(est.spouse.amount / 10000)}万円を反映）` : `（${est.spouse.kind}）`);
+        $('tax-hint').textContent = `推定課税所得 約${Math.round(est.taxable / 10000)}万円${spText} → 所得税${est.incomeRate}%(復興税込${(est.incomeRate * 1.021).toFixed(1)}%)＋住民税10% ＝ ${p.taxRate.toFixed(1)}%。子どもや親の扶養・住宅ローン控除などがある場合は手動で選んでください。`;
       } else {
         p.taxRate = parseFloat($('taxMode').value);
         $('tax-hint').textContent = '';
@@ -760,6 +811,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       setDefaults('all'); syncRiskButtons(); render();
     });
     $('taxMode').addEventListener('change', render);
+    $('spouse').addEventListener('change', render);
     $('useIdeco').addEventListener('change', render);
     $('useGrowth').addEventListener('change', render);
 
