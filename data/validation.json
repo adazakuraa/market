@@ -1,0 +1,405 @@
+{
+ "generated_at": "2026-11-08 17:08 JST",
+ "period": {
+  "start": "2023-11-06",
+  "end": "2026-11-06"
+ },
+ "screening": {
+  "n_rows": 104356,
+  "n_dates": 128,
+  "n_tickers": 968,
+  "ic": {
+   "ex5": {
+    "mean_ic": 0.0132,
+    "t": 1.02,
+    "n_dates": 128
+   },
+   "ex20": {
+    "mean_ic": 0.0417,
+    "t": 1.8,
+    "n_dates": 32
+   },
+   "fwd5": {
+    "mean_ic": 0.0132,
+    "t": 1.02,
+    "n_dates": 128
+   }
+  },
+  "buckets": [
+   {
+    "label": "0〜2点未満",
+    "fwd5": {
+     "n": 20400,
+     "mean": 0.0047,
+     "hit_rate": 0.542
+    },
+    "ex5": {
+     "n": 20400,
+     "mean": -0.0004,
+     "hit_rate": 0.466
+    },
+    "ex20": {
+     "n": 20400,
+     "mean": -0.0006,
+     "hit_rate": 0.461
+    }
+   },
+   {
+    "label": "2〜4点未満",
+    "fwd5": {
+     "n": 58802,
+     "mean": 0.0054,
+     "hit_rate": 0.541
+    },
+    "ex5": {
+     "n": 58802,
+     "mean": 0.0003,
+     "hit_rate": 0.477
+    },
+    "ex20": {
+     "n": 58802,
+     "mean": 0.0016,
+     "hit_rate": 0.475
+    }
+   },
+   {
+    "label": "4〜6点未満",
+    "fwd5": {
+     "n": 22787,
+     "mean": 0.0049,
+     "hit_rate": 0.528
+    },
+    "ex5": {
+     "n": 22787,
+     "mean": 0.0021,
+     "hit_rate": 0.496
+    },
+    "ex20": {
+     "n": 22787,
+     "mean": 0.0069,
+     "hit_rate": 0.499
+    }
+   },
+   {
+    "label": "6〜7点",
+    "fwd5": {
+     "n": 2367,
+     "mean": 0.0025,
+     "hit_rate": 0.515
+    },
+    "ex5": {
+     "n": 2367,
+     "mean": 0.0016,
+     "hit_rate": 0.492
+    },
+    "ex20": {
+     "n": 2367,
+     "mean": 0.0104,
+     "hit_rate": 0.51
+    }
+   }
+  ],
+  "conditions": {
+   "high_score": {
+    "label": "スコア5点以上",
+    "all": {
+     "count": 7409,
+     "fwd5": {
+      "n": 7409,
+      "mean": 0.0037,
+      "hit_rate": 0.524
+     },
+     "ex5_vs_all": {
+      "mean_diff": 0.0001,
+      "t": 0.1,
+      "n_dates": 128
+     },
+     "ex20_vs_all": {
+      "mean_diff": 0.0069,
+      "t": 1.91,
+      "n_dates": 32
+     }
+    },
+    "up": {
+     "count": 6625,
+     "fwd5": {
+      "n": 6625,
+      "mean": 0.0035,
+      "hit_rate": 0.512
+     },
+     "ex5_vs_all": {
+      "mean_diff": 0.0003,
+      "t": 0.2,
+      "n_dates": 109
+     },
+     "ex20_vs_all": {
+      "mean_diff": 0.0022,
+      "t": 0.43,
+      "n_dates": 28
+     }
+    },
+    "down": {
+     "count": 784,
+     "fwd5": {
+      "n": 784,
+      "mean": 0.0052,
+      "hit_rate": 0.621
+     },
+     "ex5_vs_all": {
+      "mean_diff": -0.0008,
+      "t": -0.27,
+      "n_dates": 19
+     },
+     "ex20_vs_all": {
+      "mean_diff": -0.0042,
+      "t": -0.25,
+      "n_dates": 5
+     }
+    }
+   },
+   "screen_view": {
+    "label": "強いセクター内でスコア5点以上",
+    "all": {
+     "count": 4503,
+     "fwd5": {
+      "n": 4503,
+      "mean": 0.0045,
+      "hit_rate": 0.522
+     },
+     "ex5_vs_all": {
+      "mean_diff": 0.0011,
+      "t": 0.67,
+      "n_dates": 128
+     },
+     "ex20_vs_all": {
+      "mean_diff": 0.012,
+      "t": 2.23,
+      "n_dates": 32
+     }
+    },
+    "up": {
+     "count": 4038,
+     "fwd5": {
+      "n": 4038,
+      "mean": 0.0045,
+      "hit_rate": 0.512
+     },
+     "ex5_vs_all": {
+      "mean_diff": 0.0015,
+      "t": 0.77,
+      "n_dates": 109
+     },
+     "ex20_vs_all": {
+      "mean_diff": 0.0015,
+      "t": 0.21,
+      "n_dates": 28
+     }
+    },
+    "down": {
+     "count": 465,
+     "fwd5": {
+      "n": 465,
+      "mean": 0.0039,
+      "hit_rate": 0.613
+     },
+     "ex5_vs_all": {
+      "mean_diff": -0.0007,
+      "t": -0.21,
+      "n_dates": 19
+     },
+     "ex20_vs_all": {
+      "mean_diff": -0.0113,
+      "t": -0.69,
+      "n_dates": 5
+     }
+    }
+   },
+   "early": {
+    "label": "「初動」バッジあり",
+    "all": {
+     "count": 14652,
+     "fwd5": {
+      "n": 14652,
+      "mean": 0.0022,
+      "hit_rate": 0.511
+     },
+     "ex5_vs_all": {
+      "mean_diff": -0.0003,
+      "t": -0.3,
+      "n_dates": 128
+     },
+     "ex20_vs_all": {
+      "mean_diff": -0.0011,
+      "t": -0.31,
+      "n_dates": 32
+     }
+    },
+    "up": {
+     "count": 13388,
+     "fwd5": {
+      "n": 13388,
+      "mean": 0.0024,
+      "hit_rate": 0.505
+     },
+     "ex5_vs_all": {
+      "mean_diff": -0.0006,
+      "t": -0.55,
+      "n_dates": 109
+     },
+     "ex20_vs_all": {
+      "mean_diff": -0.0068,
+      "t": -1.14,
+      "n_dates": 28
+     }
+    },
+    "down": {
+     "count": 1264,
+     "fwd5": {
+      "n": 1264,
+      "mean": 0.0002,
+      "hit_rate": 0.583
+     },
+     "ex5_vs_all": {
+      "mean_diff": 0.0013,
+      "t": 0.39,
+      "n_dates": 19
+     },
+     "ex20_vs_all": {
+      "mean_diff": -0.0095,
+      "t": -1.16,
+      "n_dates": 5
+     }
+    }
+   }
+  },
+  "market": {
+   "up": {
+    "n": 87660,
+    "mean": 0.0035,
+    "hit_rate": 0.516
+   },
+   "down": {
+    "n": 16696,
+    "mean": 0.0132,
+    "hit_rate": 0.654
+   }
+  }
+ },
+ "ml": {
+  "real": {
+   "n_stocks": 80,
+   "share_signal_stocks": 0.963,
+   "share_precision_above_base": 0.506,
+   "precision_minus_base": {
+    "mean": 0.0327,
+    "t": 2.0
+   },
+   "edge5": {
+    "mean": 0.0046,
+    "t": 2.7,
+    "n": 77
+   },
+   "edge5_ex": {
+    "mean": 0.0061,
+    "t": 3.25
+   },
+   "bt_minus_hold": {
+    "mean": -0.0887,
+    "t": -2.64,
+    "n": 56
+   },
+   "tree": {
+    "n": 80,
+    "train_precision": 0.7917,
+    "test_precision": 0.3957,
+    "base_rate": 0.34,
+    "precision_drop": {
+     "mean": -0.3938,
+     "t": -8.18
+    },
+    "edge5": {
+     "mean": 0.001,
+     "t": 0.14,
+     "n": 38
+    },
+    "edge5_ex": {
+     "mean": 0.0036,
+     "t": 0.48,
+     "n": 38
+    },
+    "no_match_share": 0.525
+   }
+  },
+  "placebo": {
+   "n_stocks": 80,
+   "share_signal_stocks": 0.988,
+   "share_precision_above_base": 0.633,
+   "precision_minus_base": {
+    "mean": 0.0347,
+    "t": 2.8
+   },
+   "edge5": {
+    "mean": 0.004,
+    "t": 2.84,
+    "n": 79
+   },
+   "edge5_ex": {
+    "mean": 0.0004,
+    "t": 0.32
+   },
+   "bt_minus_hold": {
+    "mean": -0.2352,
+    "t": -5.77,
+    "n": 72
+   },
+   "tree": {
+    "n": 80,
+    "train_precision": 0.7636,
+    "test_precision": 0.5464,
+    "base_rate": 0.3967,
+    "precision_drop": {
+     "mean": -0.1982,
+     "t": -3.69
+    },
+    "edge5": {
+     "mean": 0.0138,
+     "t": 3.9,
+     "n": 32
+    },
+    "edge5_ex": {
+     "mean": 0.0063,
+     "t": 1.66,
+     "n": 32
+    },
+    "no_match_share": 0.6
+   }
+  }
+ },
+ "verdicts": [
+  {
+   "name": "スクリーニングのスコア（20日後・TOPIX比）",
+   "verdict": "偶然と区別できない",
+   "basis": "平均IC 0.042、t=+1.80"
+  },
+  {
+   "name": "画面の既定表示（強いセクター×高スコア）（20日後・全銘柄平均との差）",
+   "verdict": "効果あり（偶然とは言いにくい）",
+   "basis": "差 +1.20%、t=+2.23"
+  },
+  {
+   "name": "「初動」バッジ（20日後・全銘柄平均との差）",
+   "verdict": "偶然と区別できない",
+   "basis": "差 -0.11%、t=-0.31"
+  },
+  {
+   "name": "予測モデルの買い候補シグナル（5日後・TOPIX比）",
+   "verdict": "効果あり（偶然とは言いにくい）",
+   "basis": "差 +0.61%、t=+3.25（プラセボ +0.04%、t=+0.32）"
+  },
+  {
+   "name": "決定木の買いやすいパターン（5日後・TOPIX比）",
+   "verdict": "偶然と区別できない",
+   "basis": "差 +0.36%、t=+0.48（38銘柄）／的中率 学習79%→テスト40%／テスト期間に該当日がなかった銘柄 52%"
+  }
+ ]
+}

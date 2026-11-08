@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シグナル検証レポート</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif; margin: 0; padding: 16px; background: #0f1115; color: #e8e8e8; }
+  h1 { font-size: 1.2rem; margin: 0 0 4px; } h2 { font-size: 1rem; margin: 22px 0 8px; }
+  .updated, .note { font-size: 0.72rem; color: #999; line-height: 1.6; }
+  .box { background: #171a20; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.72rem; }
+  th, td { padding: 6px 5px; border-bottom: 1px solid #23262e; text-align: right; vertical-align: top; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: #999; font-weight: 600; }
+  .t { color: #888; font-size: 0.66rem; }
+  a { color: #6ab7ff; }
+</style></head><body>
+<a href="index.html">← ダッシュボードへ</a>
+<h1>シグナル検証レポート</h1>
+<div class="updated">作成: 2026-11-08 17:08 JST / 期間: 2023-11-06〜2026-11-06 / 対象 968銘柄</div>
+
+<h2>結論</h2>
+<div class="box"><div class="table-wrap"><table><tr><th>シグナル</th><th>判定</th></tr><tr><td>スクリーニングのスコア（20日後・TOPIX比）</td><td><b>偶然と区別できない</b><br><span class='t'>平均IC 0.042、t=+1.80</span></td></tr><tr><td>画面の既定表示（強いセクター×高スコア）（20日後・全銘柄平均との差）</td><td><b>効果あり（偶然とは言いにくい）</b><br><span class='t'>差 +1.20%、t=+2.23</span></td></tr><tr><td>「初動」バッジ（20日後・全銘柄平均との差）</td><td><b>偶然と区別できない</b><br><span class='t'>差 -0.11%、t=-0.31</span></td></tr><tr><td>予測モデルの買い候補シグナル（5日後・TOPIX比）</td><td><b>効果あり（偶然とは言いにくい）</b><br><span class='t'>差 +0.61%、t=+3.25（プラセボ +0.04%、t=+0.32）</span></td></tr><tr><td>決定木の買いやすいパターン（5日後・TOPIX比）</td><td><b>偶然と区別できない</b><br><span class='t'>差 +0.36%、t=+0.48（38銘柄）／的中率 学習79%→テスト40%／テスト期間に該当日がなかった銘柄 52%</span></td></tr></table></div>
+<div class="note">t値は「偶然でもこのくらいの差は出るか」の目安です。|t|が2以上なら偶然とは言いにくく、2未満なら偶然と区別できません。超過リターンはTOPIX(1306)比です。</div></div>
+
+<h2>① スクリーニングのスコア</h2>
+<div class="box">
+<div class="note">スコアの順位と、その後のリターンの順位の相関（情報係数・IC）。0なら無関係、プラスなら高スコアほど上がりやすい。実務では0.02〜0.05でも有用とされます。</div>
+<div class="table-wrap"><table><tr><th>対象</th><th>平均IC</th><th>t値</th><th>日数</th></tr>
+<tr><td>5日後・TOPIX比</td><td>0.013</td><td>+1.02</td><td>128</td></tr>
+<tr><td>20日後・TOPIX比</td><td>0.042</td><td>+1.80</td><td>32</td></tr>
+<tr><td>5日後・絶対</td><td>0.013</td><td>+1.02</td><td>128</td></tr>
+</table></div>
+<h2 style="font-size:0.9rem;">点数帯ごとの平均リターン</h2>
+<div class="table-wrap"><table><tr><th>スコア</th><th>件数</th><th>5日後</th><th>5日後TOPIX比</th><th>20日後TOPIX比</th></tr><tr><td>0〜2点未満</td><td>20400</td><td>+0.47%</td><td>-0.04%</td><td>-0.06%</td></tr><tr><td>2〜4点未満</td><td>58802</td><td>+0.54%</td><td>+0.03%</td><td>+0.16%</td></tr><tr><td>4〜6点未満</td><td>22787</td><td>+0.49%</td><td>+0.21%</td><td>+0.69%</td></tr><tr><td>6〜7点</td><td>2367</td><td>+0.25%</td><td>+0.16%</td><td>+1.04%</td></tr></table></div>
+</div>
+
+<h2>② 条件ごとの成績（その日の全銘柄平均との差）</h2>
+<div class="box">
+<div class="note">上昇相場＝TOPIXが75日移動平均より上の日、下落相場＝下の日。比較の土台として、全銘柄の5日後平均は 上昇相場 +0.35%・下落相場 +1.32%。</div>
+<h2 style="font-size:0.9rem;">スコア5点以上</h2>
+<div class="table-wrap"><table><tr><th>相場</th><th>件数</th><th>5日後(絶対)</th><th>5日後 差</th><th>20日後 差</th></tr><tr><td>全期間</td><td>7409</td><td>+0.37%</td><td>+0.01%<br><span class='t'>t=+0.10</span></td><td>+0.69%<br><span class='t'>t=+1.91</span></td></tr><tr><td>上昇相場</td><td>6625</td><td>+0.35%</td><td>+0.03%<br><span class='t'>t=+0.20</span></td><td>+0.22%<br><span class='t'>t=+0.43</span></td></tr><tr><td>下落相場</td><td>784</td><td>+0.52%</td><td>-0.08%<br><span class='t'>t=-0.27</span></td><td>-0.42%<br><span class='t'>t=-0.25</span></td></tr></table></div>
+<h2 style="font-size:0.9rem;">強いセクター内でスコア5点以上（画面の既定表示に近い条件）</h2>
+<div class="table-wrap"><table><tr><th>相場</th><th>件数</th><th>5日後(絶対)</th><th>5日後 差</th><th>20日後 差</th></tr><tr><td>全期間</td><td>4503</td><td>+0.45%</td><td>+0.11%<br><span class='t'>t=+0.67</span></td><td>+1.20%<br><span class='t'>t=+2.23</span></td></tr><tr><td>上昇相場</td><td>4038</td><td>+0.45%</td><td>+0.15%<br><span class='t'>t=+0.77</span></td><td>+0.15%<br><span class='t'>t=+0.21</span></td></tr><tr><td>下落相場</td><td>465</td><td>+0.39%</td><td>-0.07%<br><span class='t'>t=-0.21</span></td><td>-1.13%<br><span class='t'>t=-0.69</span></td></tr></table></div>
+<h2 style="font-size:0.9rem;">「初動」バッジあり</h2>
+<div class="table-wrap"><table><tr><th>相場</th><th>件数</th><th>5日後(絶対)</th><th>5日後 差</th><th>20日後 差</th></tr><tr><td>全期間</td><td>14652</td><td>+0.22%</td><td>-0.03%<br><span class='t'>t=-0.30</span></td><td>-0.11%<br><span class='t'>t=-0.31</span></td></tr><tr><td>上昇相場</td><td>13388</td><td>+0.24%</td><td>-0.06%<br><span class='t'>t=-0.55</span></td><td>-0.68%<br><span class='t'>t=-1.14</span></td></tr><tr><td>下落相場</td><td>1264</td><td>+0.02%</td><td>+0.13%<br><span class='t'>t=+0.39</span></td><td>-0.95%<br><span class='t'>t=-1.16</span></td></tr></table></div>
+</div>
+
+<h2>③④ 予測モデル・決定木パターン（本物 vs プラセボ）</h2>
+<div class="box">
+<div class="note">無作為に選んだ80銘柄で、現在の予測モデルをそのまま動かし、テスト期間（学習に使っていない直近120営業日）の成績を見ています。
+プラセボは、同じ銘柄の日々の値動きの順番をシャッフルした「予測できるはずのない株価」です。本物がプラセボより明確に良くなければ、成績は偶然の範囲です。t値は銘柄をまたいで計算しています。</div>
+<div class="table-wrap"><table><tr><th>項目</th><th>本物</th><th>プラセボ</th></tr>
+<tr><td>シグナルが出た銘柄の割合</td><td>96%</td><td>99%</td></tr>
+<tr><td>Precisionが「毎日買う」を上回った割合</td><td>51%</td><td>63%</td></tr>
+<tr><td>Precision − 毎日買った場合</td><td>+3.27%<br><span class='t'>t=+2.00</span></td><td>+3.47%<br><span class='t'>t=+2.80</span></td></tr>
+<tr><td>シグナル日の5日後リターン − 全日平均（参考）</td><td>+0.46%<br><span class='t'>t=+2.70</span></td><td>+0.40%<br><span class='t'>t=+2.84</span></td></tr>
+<tr><td>同上（TOPIX比）※判定に使用</td><td>+0.61%<br><span class='t'>t=+3.25</span></td><td>+0.04%<br><span class='t'>t=+0.32</span></td></tr>
+<tr><td>売買ルールの成績 − 持ち続けた場合</td><td>-8.87%<br><span class='t'>t=-2.64</span></td><td>-23.52%<br><span class='t'>t=-5.77</span></td></tr>
+</table></div>
+<h2 style="font-size:0.9rem;">決定木の「買いやすいパターン」に当てはまったら買う場合</h2>
+<div class="table-wrap"><table><tr><th>項目</th><th>本物</th><th>プラセボ</th></tr>
+<tr><td>学習期間での上昇的中率</td><td>79.2%</td><td>76.4%</td></tr>
+<tr><td>テスト期間での上昇的中率</td><td>39.6%</td><td>54.6%</td></tr>
+<tr><td>（参考）テスト期間に毎日買った場合</td><td>34.0%</td><td>39.7%</td></tr>
+<tr><td>パターン該当日の5日後リターン − 全日平均</td><td>+0.10%<br><span class='t'>t=+0.14</span></td><td>+1.38%<br><span class='t'>t=+3.90</span></td></tr>
+<tr><td>同上（TOPIX比）</td><td>+0.36%<br><span class='t'>t=+0.48</span></td><td>+0.63%<br><span class='t'>t=+1.66</span></td></tr>
+<tr><td>テスト期間に該当日がなかった銘柄</td><td>52%</td><td>60%</td></tr>
+</table></div>
+<div class="note">学習期間の的中率とテスト期間の的中率の差が大きいほど、パターンは「過去にたまたま当たっていただけ」ということになります。</div>
+</div>
+</body></html>
