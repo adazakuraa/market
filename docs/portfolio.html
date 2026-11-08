@@ -92,7 +92,7 @@
     <a href="portfolio.html" class="active">資金配分</a>
   </nav>
   <h1>余剰資金の配分シミュレーター</h1>
-  <div class="updated">最終更新: 2026-11-08 17:59 JST</div>
+  <div class="updated">最終更新: 2026-11-08 18:10 JST</div>
 
   <div class="disclaimer">
     ⚠️ 投資助言ではありません。前提（期待リターン・リスク・インフレ率）を置いたときに「リスク上限の範囲で実質の期待値が最大になる配分」を計算する試算ツールです。将来のリターンは保証されません。入力内容はこの端末内で計算され、外部には送信されません（入力の保存はこのブラウザ内のみ）。
@@ -143,11 +143,18 @@
       <div class="form-row"><label>NISAの現在の残高（時価・円）</label><input type="number" id="nisaBal" min="0" step="10000"></div>
       <div class="form-row"><label>NISA生涯枠の使用済み額（買付額・円）</label><input type="number" id="nisaUsed" min="0" step="10000"></div>
       <div class="form-row"><label>iDeCoの現在の残高（円）</label><input type="number" id="idecoBal" min="0" step="10000"></div>
-      <div class="form-row"><label>iDeCoの月額上限（円）※勤務先の制度で異なる</label><input type="number" id="idecoLimit" min="0" step="1000"></div>
-      <div class="form-row"><label>iDeCo口座手数料（月額・円）</label><input type="number" id="idecoFee" min="0" step="1"></div>
+      <div class="form-row" style="grid-column: 1 / -1;">
+        <label>自分で出す確定拠出年金の掛金</label>
+        <select id="dcType">
+          <option value="matching">企業型DCのマッチング拠出（会社の掛金に上乗せ）</option>
+          <option value="ideco">iDeCo（個人型）</option>
+        </select>
+      </div>
+      <div class="form-row"><label>掛金の月額上限（円）※勤務先の制度で異なる</label><input type="number" id="idecoLimit" min="0" step="1000"></div>
+      <div class="form-row" id="idecoFee-row"><label>iDeCo口座手数料（月額・円）</label><input type="number" id="idecoFee" min="0" step="1"></div>
       <div class="form-row"><label>iDeCo受取時の想定税率（%）</label><input type="number" id="idecoOutTax" min="0" max="55" step="1"></div>
     </div>
-    <label class="check-row"><input type="checkbox" id="useIdeco"> iDeCoを使う（60歳まで引き出せないお金にしてよい）</label>
+    <label class="check-row"><input type="checkbox" id="useIdeco"> 確定拠出年金（iDeCo／マッチング拠出）を使う（60歳まで引き出せないお金にしてよい）</label>
     <label class="check-row"><input type="checkbox" id="useGrowth"> NISA成長投資枠も使う（年120万円→360万円に拡大。中身は同じS&amp;P500として計算）</label>
     <div class="hint">iDeCo受取時の税率: 一時金で受け取り、退職所得控除の範囲内に収まるなら0%。退職金が多い場合などは5〜10%程度を入れておくと保守的です。</div>
   </div>
@@ -199,7 +206,7 @@
     ・iDeCoは掛金が全額所得控除となり、掛金×（所得税＋住民税の税率）が翌年の税金から戻る（減る）として計算します。受取時の税金は「受取時の想定税率」で差し引きます。60歳まで引き出せません。掛金を出せるのは65歳になるまでとして計算しています。<br>
     ・NISAはつみたて投資枠 年120万円（成長投資枠も使う場合は年360万円）、生涯1,800万円が上限です。枠は名目額なので、インフレが進むと実質的な枠は少しずつ小さくなる計算にしています。<br>
     ・毎年「その年に使えるお金（預金・国債と新たな積立額）」を配分し直します。国債は必要に応じて売却して組み替える想定、NISA・iDeCoは一度買ったら売らない（買い増しのみ）想定です。長期国債の途中売却による価格変動はリスク（標準偏差）として織り込んでいます。課税口座での株式投資は対象外のため、NISA・iDeCoの枠を超える株式は買いません。<br>
-    ・国債は個人向け国債を1万円単位、新窓販国債(10年)を5万円単位、iDeCoは月5,000円以上・1,000円単位で配分し、端数は預金に回しています。国債は毎月ではなく、たまった分を年に数回まとめて購入する想定です。<br>
+    ・国債は個人向け国債を1万円単位、新窓販国債(10年)を5万円単位、確定拠出年金の掛金は1,000円単位（iDeCoは月5,000円以上）で配分し、端数は預金に回しています。国債は毎月ではなく、たまった分を年に数回まとめて購入する想定です。<br>
     ・生活防衛資金は別に十分確保してある前提です。毎月の投資額は実質で一定（給料がインフレ並みに上がる）と仮定しています。年の途中の積立タイミングは年初にまとめて計算しています。<br>
     ・短期国債は個人向け国債（変動10年、1年経てば中途換金可）や新窓販国債の2年債など、長期国債は新窓販国債の10年債を想定しています。初期値は財務省の国債金利データの最新値（2年 1.86%・10年 2.806%（2026-11-05時点））です。<br>
     ・将来の幅はモンテカルロ法（1,000通りの乱数シナリオ）で出した目安です。リターンは正規分布を仮定しているため、実際の暴落のような極端な値動きは過小評価されがちです。
@@ -219,12 +226,14 @@
     // 購入単位(名目の円)。国債は額面単位でしか買えない
     const SHORT_UNIT = 10000;   // 個人向け国債: 1万円単位
     const LONG_UNIT = 50000;    // 新窓販国債(10年): 5万円単位
-    const IDECO_MIN = 5000;     // iDeCo掛金: 月5,000円以上
-    const IDECO_STEP = 1000;    //            1,000円単位
+    // 確定拠出年金の掛金ルール。iDeCoは月5,000円以上・1,000円単位。
+    // 企業型DCのマッチング拠出は下限がなく(会社の掛金以下・合計上限内)、1,000円単位で計算する
+    const IDECO_STEP = 1000;
+    let dcMin = 5000;   // readParams で dcType に応じて設定
 
     function idecoEffectiveLimit(limit) {
       const m = Math.floor(limit / IDECO_STEP) * IDECO_STEP;
-      return m >= IDECO_MIN ? m : 0;
+      return m >= dcMin ? m : 0;
     }
 
     // 最適化の結果(実質の金額)を、実際に買える単位に丸める。端数は預金に回す。
@@ -234,7 +243,7 @@
       // iDeCo: 月の掛金を1,000円単位に切り下げ、5,000円未満なら拠出しない
       const add = Math.max(0, out[4] - H[4]);
       let m = Math.floor(add * defl / 12 / IDECO_STEP + 1e-9) * IDECO_STEP;
-      if (m < IDECO_MIN) m = 0;
+      if (m < dcMin) m = 0;
       out[0] += add - m * 12 / defl;
       out[4] = H[4] + m * 12 / defl;
       // 手数料は預金から払う
@@ -275,6 +284,7 @@
       if (which !== 'assump') {
         $('taxMode').value = 'auto';
         $('spouse').value = 'none';
+        $('dcType').value = 'matching';
         $('useIdeco').checked = true;
         $('useGrowth').checked = false;
       }
@@ -284,6 +294,7 @@
       SAVE_FIELDS.forEach(k => { o[k] = $(k).value; });
       o.taxMode = $('taxMode').value;
       o.spouse = $('spouse').value;
+      o.dcType = $('dcType').value;
       o.useIdeco = $('useIdeco').checked;
       o.useGrowth = $('useGrowth').checked;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); } catch (e) { /* 保存できない環境では無視 */ }
@@ -296,6 +307,7 @@
       SAVE_FIELDS.forEach(k => { if (o[k] !== undefined && o[k] !== '') $(k).value = o[k]; });
       if (o.taxMode) $('taxMode').value = o.taxMode;
       if (o.spouse) $('spouse').value = o.spouse;
+      if (o.dcType) $('dcType').value = o.dcType;
       if (typeof o.useIdeco === 'boolean') $('useIdeco').checked = o.useIdeco;
       if (typeof o.useGrowth === 'boolean') $('useGrowth').checked = o.useGrowth;
     }
@@ -362,6 +374,11 @@
       p.age = Math.round(p.age);
       p.rho = Math.max(-1, Math.min(1, p.rho));
       p.spouse = $('spouse').value;
+      p.dcType = $('dcType').value;
+      dcMin = p.dcType === 'ideco' ? 5000 : IDECO_STEP;
+      if (p.dcType !== 'ideco') p.idecoFee = 0;   // マッチング拠出には個人の口座手数料はかからない
+      $('idecoFee-row').style.display = p.dcType === 'ideco' ? '' : 'none';
+      ASSETS[4].name = p.dcType === 'ideco' ? 'iDeCo（S&P500）' : '企業型DC・マッチング拠出（S&P500）';
       $('spouse-income-row').style.display = p.spouse === 'none' ? 'none' : '';
       const est = estimateTax(p.income, { type: p.spouse, incomeMan: p.spouseIncome });
       if ($('taxMode').value === 'auto') {
@@ -640,7 +657,7 @@
       if (p.monthly <= 0) warns.push('毎月投資に回すお金を入力してください。');
       if (p.useIdeco && p.age < IDECO_UNLOCK_AGE && p.age + p.years < IDECO_UNLOCK_AGE) warns.push(`運用期間（${p.years}年後＝${p.age + p.years}歳）の時点ではiDeCoはまだ引き出せません（${IDECO_UNLOCK_AGE}歳から）。その時にお金が必要なら「iDeCoを使う」のチェックを外して比べてください。`);
       if (p.useIdeco && p.age >= IDECO_MAX_CONTRIB_AGE) warns.push('65歳以上のため、iDeCoへの新規拠出はない計算です。');
-      if (p.useIdeco && p.idecoLimit > 0 && idecoEffectiveLimit(p.idecoLimit) === 0) warns.push(`iDeCoの掛金は月5,000円以上（1,000円単位）のため、月額上限${yen(p.idecoLimit)}ではiDeCoに拠出できない計算になります。ご自身の上限額を確認してください。`);
+      if (p.useIdeco && p.dcType === 'ideco' && p.idecoLimit > 0 && idecoEffectiveLimit(p.idecoLimit) === 0) warns.push(`iDeCoの掛金は月5,000円以上（1,000円単位）のため、月額上限${yen(p.idecoLimit)}ではiDeCoに拠出できない計算になります。会社の企業型DCのマッチング拠出なら「自分で出す確定拠出年金の掛金」で選び直してください。`);
       if (sim.infeasibleYears > 0) warns.push(`${sim.infeasibleYears}年分で、どう配分しても許容損失（実質${p.lossLimit}%）に収まりません（現金でもインフレで目減りする／すでに持っているNISA・iDeCoの株式だけで超えている、など）。その年は「悪い年の損失」が最も小さくなる配分にしています。`);
       if (warns.length) html += `<div class="warn-box">${warns.join('<br>')}</div>`;
 
@@ -673,7 +690,7 @@
         `個人向け国債(変動10年)など。1万円単位（今年 ${Math.round(flows[1] / SHORT_UNIT)}口）`,
         `新窓販国債の10年債など。5万円単位（今年 ${Math.round(flows[2] / LONG_UNIT)}口）。時価で売却可`,
         `年間枠 ${man(y1.capN)} のうち`,
-        y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち（月5,000円以上・1,000円単位）。節税で翌年 約${man(y1.refundNext)} 戻る` : 'iDeCoは使わない設定・または対象外',
+        y1.capI > 0 ? `月額上限 ${yen(y1.capI / 12)} のうち（${p.dcType === 'ideco' ? '月5,000円以上・' : ''}1,000円単位）。掛金は全額所得控除で、翌年 約${man(y1.refundNext)} 税金が戻る（減る）` : '確定拠出年金は使わない設定・または対象外',
       ];
       ASSETS.forEach((a, i) => {
         let val;
@@ -763,6 +780,7 @@
     });
     $('taxMode').addEventListener('change', render);
     $('spouse').addEventListener('change', render);
+    $('dcType').addEventListener('change', render);
     $('useIdeco').addEventListener('change', render);
     $('useGrowth').addEventListener('change', render);
 
