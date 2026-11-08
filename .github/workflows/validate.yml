@@ -1,0 +1,38 @@
+name: validate-signals
+
+# シグナル(スクリーニングのスコア・初動・予測モデル・決定木パターン)の過去成績を検証し、
+# docs/validation.html にレポートを出力する。時間がかかるため手動実行のみ。
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: dashboard-write
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate signals
+        run: python scripts/validate_signals.py
+
+      - name: Commit and push report
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'update signal validation report'
+          file_pattern: 'docs/validation.html data/validation.json'
