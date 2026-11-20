@@ -1,8 +1,8 @@
 {
  "status": "ok",
- "value": 2.077,
- "date": "2026-10-22",
+ "value": 1.821,
+ "date": "2026-11-19",
  "source": "財務省 10年ブレーク・イーブン・インフレ率(BEI)",
  "source_url": "https://www.mof.go.jp/jgbs/topics/bond/10year_inflation-indexed/bei.pdf",
- "fetched_at": "2026-11-20 01:38 JST"
+ "fetched_at": "2026-11-21 01:13 JST"
 }
